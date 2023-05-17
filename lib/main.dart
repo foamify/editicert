@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -59,7 +57,7 @@ class _HomePageState extends State<HomePage> {
 }
 
 class ResizableWidget extends StatefulWidget {
-  ResizableWidget(
+  const ResizableWidget(
       {super.key,
       required this.originalRect,
       required this.visualRect,
@@ -173,7 +171,6 @@ class _ResizableWidgetState extends State<ResizableWidget> {
   Widget buildResizer(({bool x, bool y}) flipValue, Rect rectValue,
       double gestureSize, Set<PhysicalKeyboardKey> keys,
       {bool fromRight = false, bool fromBottom = false}) {
-    print(keys);
     final pressedCmd = keys.contains(PhysicalKeyboardKey.metaLeft);
     return Positioned(
       left: switch ((flipValue.x, fromRight)) {
