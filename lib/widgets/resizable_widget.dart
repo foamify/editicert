@@ -166,6 +166,7 @@ class _ResizableWidgetState extends State<ResizableWidget> {
               _ => rectValue.left
             }
           : switch (alignment) {
+              _ when !edge && fromRight => rectValue.right - 1,
               _ when !edge => rectValue.left,
               _ when fromRight => rectValue.left,
               _ => rectValue.right
@@ -176,6 +177,7 @@ class _ResizableWidgetState extends State<ResizableWidget> {
               _ => rectValue.top
             }
           : switch (alignment) {
+              _ when !edge && fromBottom => rectValue.bottom - 1,
               _ when !edge => rectValue.top,
               _ when fromBottom => rectValue.top,
               _ => rectValue.bottom
