@@ -288,95 +288,89 @@ class _ResizableWidgetState extends State<ResizableWidget> {
           direction == Alignment.bottomLeft ||
           direction == Alignment.bottomRight;
       final pressedCmd = keys.value.contains(PhysicalKeyboardKey.metaLeft);
-
+      final delta = mousePosition - originalPosition;
+      const snapValue = 20;
+      final position = Offset(
+        snap(mousePosition.dx, snapValue),
+        snap(mousePosition.dy, snapValue),
+      );
       flip.value = (
         x: switch ((x: flip.value.x, fromRight: fromRight)) {
           (x: false, fromRight: false)
-              when mousePosition.dx > visualRect.value.right =>
+              when position.dx > visualRect.value.right =>
             true,
           (x: false, fromRight: true)
-              when mousePosition.dx < visualRect.value.left =>
+              when position.dx < visualRect.value.left =>
             true,
           (x: true, fromRight: false)
-              when mousePosition.dx < visualRect.value.left =>
+              when position.dx < visualRect.value.left =>
             false,
           (x: true, fromRight: true)
-              when mousePosition.dx > visualRect.value.right =>
+              when position.dx > visualRect.value.right =>
             false,
           _ => flip.value.x // should never be used
         },
         y: switch ((y: flip.value.y, fromBottom: fromBottom)) {
           (y: false, fromBottom: false)
-              when mousePosition.dy > visualRect.value.bottom =>
+              when position.dy > visualRect.value.bottom =>
             true,
           (y: false, fromBottom: true)
-              when mousePosition.dy < visualRect.value.top =>
+              when position.dy < visualRect.value.top =>
             true,
           (y: true, fromBottom: false)
-              when mousePosition.dy < visualRect.value.top =>
+              when position.dy < visualRect.value.top =>
             false,
           (y: true, fromBottom: true)
-              when mousePosition.dy > visualRect.value.bottom =>
+              when position.dy > visualRect.value.bottom =>
             false,
           _ => flip.value.y // should never be used
         }
       );
-
-      // handle resize according to direction, rotation, flip, and origin
-      newRect.value = Rect.fromLTRB(
-        rect.left +
-            switch (direction) {
-              _ when pressedCmd && fromRight =>
-                -(delta.dx * cos(rotation) - delta.dy * sin(rotation)),
-              _ when flip.value.x && fromRight =>
-                (delta.dx * cos(rotation) - delta.dy * sin(rotation)) +
-                    rect.width -
-                    2,
-              _ when flip.value.x =>
-                rect.width + (!fromLeft ? gestureSize : -1),
-              _ when !fromLeft => 0,
-              _ => delta.dx * cos(rotation) - delta.dy * sin(rotation)
-            },
-        rect.top +
-            switch (direction) {
-              _ when pressedCmd && fromBottom =>
-                -(delta.dy * cos(rotation) + delta.dx * sin(rotation)),
-              _ when flip.value.y && fromBottom =>
-                (delta.dy * cos(rotation) + delta.dx * sin(rotation)) +
-                    rect.height -
-                    2,
-              _ when flip.value.y =>
-                rect.height + (!fromTop ? gestureSize : -1),
-              _ when !fromTop => 0,
-              _ => delta.dy * cos(rotation) + delta.dx * sin(rotation)
-            },
-        rect.right +
-            switch (direction) {
-              _ when pressedCmd && fromLeft =>
-                -(delta.dx * cos(rotation) - delta.dy * sin(rotation)),
-              _ when flip.value.x && fromLeft =>
-                (delta.dx * cos(rotation) - delta.dy * sin(rotation)) -
-                    rect.width +
-                    2,
-              _ when flip.value.x =>
-                -rect.width + (!fromRight ? gestureSize : 1),
-              _ when !fromRight => 0,
-              _ => delta.dx * cos(rotation) + delta.dy * sin(rotation)
-            },
-        rect.bottom +
-            switch (direction) {
-              _ when pressedCmd && fromTop =>
-                -(delta.dy * cos(rotation) + delta.dx * sin(rotation)),
-              _ when flip.value.y && fromTop =>
-                (delta.dy * cos(rotation) + delta.dx * sin(rotation)) -
-                    rect.height +
-                    2,
-              _ when flip.value.y =>
-                -rect.height + (!fromBottom ? gestureSize : 1),
-              _ when !fromBottom => 0,
-              _ => delta.dy * cos(rotation) - delta.dx * sin(rotation)
-            },
-      );
+      final rect = originalRect.value;
+      newRect.value = edge
+          ? Rect.fromPoints(
+              position,
+              switch ((fromRight, fromBottom)) {
+                    (false, false) => rect.bottomRight,
+                    (true, false) => rect.bottomLeft,
+                    (false, true) => rect.topRight,
+                    (true, true) => rect.topLeft
+                  } -
+                  (pressedCmd ? delta : Offset.zero),
+            )
+          : Rect.fromPoints(
+              Offset(
+                  switch ((fromLeft, fromRight)) {
+                    (true, false) => position.dx,
+                    (false, true) => position.dx,
+                    _ => rect.right,
+                  },
+                  switch ((fromTop, fromBottom)) {
+                    (true, false) => position.dy,
+                    (false, true) => position.dy,
+                    _ => rect.top,
+                  }),
+              switch ((fromRight, fromBottom)) {
+                    (false, false) => rect.bottomRight,
+                    (true, false) => rect.bottomLeft,
+                    (false, true) => rect.topRight,
+                    (true, true) => rect.topLeft
+                  } -
+                  (pressedCmd
+                      ? Offset(
+                          switch ((fromLeft, fromRight)) {
+                            (true, false) => delta.dx,
+                            (false, true) => delta.dx,
+                            _ => 0
+                          },
+                          switch ((fromTop, fromBottom)) {
+                            (true, false) => delta.dy,
+                            (false, true) => delta.dy,
+                            _ => 0
+                          },
+                        )
+                      : Offset.zero),
+            );
     }
     // update visual rect with snapped values
     visualRect.value = Rect.fromLTRB(
