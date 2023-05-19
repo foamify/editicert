@@ -45,6 +45,7 @@ class _HomePageState extends State<HomePage> {
       visualRect: ValueNotifier(const Rect.fromLTWH(150, 150, 100, 200)),
       newRect: ValueNotifier(const Rect.fromLTWH(150, 150, 100, 200)),
       flip: ValueNotifier((x: false, y: false)),
+      keys: ValueNotifier(<PhysicalKeyboardKey>{}),
       originalPosition: ValueNotifier(Offset.zero),
     ),
   ]);
@@ -58,13 +59,13 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Expanded(
                     child: Stack(
-                      clipBehavior: Clip.none,
                         children: components
                             .map((e) => ResizableWidget(
                                   originalRect: e.originalRect,
                                   visualRect: e.visualRect,
                                   newRect: e.newRect,
                                   flip: e.flip,
+                                  keys: e.keys,
                                   originalPosition: e.originalPosition,
                                 ))
                             .toList()),
