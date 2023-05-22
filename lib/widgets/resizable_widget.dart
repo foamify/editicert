@@ -221,7 +221,6 @@ class _ResizableWidgetState extends State<ResizableWidget> {
                       ),
                     ),
                   ),
-
                   Transform.translate(
                     offset: tValue.rotatedEdges.tl,
                     child: Transform.translate(
@@ -234,9 +233,6 @@ class _ResizableWidgetState extends State<ResizableWidget> {
                             originalTriangle.value = triangle.value;
                           },
                           onPointerMove: (event) {
-                            final delta =
-                                event.position - originalPosition.value;
-
                             final tValue = originalTriangle.value;
                             final edges = tValue.edges;
 
@@ -258,6 +254,8 @@ class _ResizableWidgetState extends State<ResizableWidget> {
                               -tValue.angle,
                             );
 
+                            final delta =
+                                event.position - originalPosition.value;
                             final rDelta = rPosition - rOriginalPoint;
 
                             triangle.value = tValue.copyWith(
@@ -276,322 +274,12 @@ class _ResizableWidgetState extends State<ResizableWidget> {
                       ),
                     ),
                   ),
-
-                  // Positioned(
-                  //   left: rectValue.left,
-                  //   top: rectValue.top,
-                  //   child: Container(
-                  //     width: rectValue.width,
-                  //     height: rectValue.height,
-                  //     decoration:
-                  //         BoxDecoration(border: Border.all(color: Colors.white)),
-                  //   ),
-                  // ),
-                  /// Rotater
-
-                  // Transform.translate(
-                  //   offset: rotateRect(rectValue.inflate(gestureSize / 2),
-                  //           angle.value, rectValue.center)
-                  //       .tr,
-                  //   child: Transform.rotate(
-                  //     angle: angle.value,
-                  //     origin: const Offset(-gestureSize, -gestureSize),
-                  //     child: Transform.translate(
-                  //       offset: const Offset(-gestureSize, -gestureSize),
-                  //       child: Listener(
-                  //         onPointerMove: (event) {
-                  //           final newAngle = atan2(
-                  //                   event.position.dy - rectValue.center.dy,
-                  //                   event.position.dx - rectValue.center.dx) +
-                  //               pi / 3;
-                  //           print(newAngle / pi * 180);
-                  //           angle.value = newAngle;
-                  //         },
-                  //         child: MouseRegion(
-                  //           cursor: SystemMouseCursors.grabbing,
-                  //           child: Container(
-                  //             width: gestureSize * 2,
-                  //             height: gestureSize * 2,
-                  //             color: Colors.blueAccent,
-                  //           ),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-
-                  /// Resizer
-                  // Transform.translate(
-                  //   offset: Offset(rectValue.left - gestureSize / 2,
-                  //       rectValue.top - gestureSize / 2),
-                  //   child: Transform.flip(
-                  //     flipX: flipValue.x,
-                  //     flipY: flipValue.y,
-                  //     child: Transform.rotate(
-                  //       angle: angle.value *
-                  //           (!(flipValue.x && flipValue.y) &&
-                  //                   (flipValue.y || flipValue.x)
-                  //               ? -1
-                  //               : 1),
-                  //       child: SizedBox(
-                  //         width: rectValue.width + gestureSize,
-                  //         height: rectValue.height + gestureSize,
-                  //         child: Stack(
-                  //           clipBehavior: Clip.none,
-                  //           children: [
-                  //             Alignment.center,
-                  //             Alignment.centerLeft,
-                  //             Alignment.topCenter,
-                  //             Alignment.centerRight,
-                  //             Alignment.bottomCenter,
-                  //             Alignment.topLeft,
-                  //             Alignment.topRight,
-                  //             Alignment.bottomLeft,
-                  //             Alignment.bottomRight,
-                  //           ]
-                  //               .map((e) => buildResizer(flipValue,
-                  //                   newRectValue, gestureSize, keysValue, e))
-                  //               .toList(),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
                 ],
               ),
             );
           }),
     );
   }
-
-  // Widget buildResizer(
-  //   ({bool x, bool y}) flipValue,
-  //   Rect rectValue,
-  //   double gestureSize,
-  //   Set<PhysicalKeyboardKey> keys,
-  //   AlignmentGeometry alignment,
-  // ) {
-  //   final fromLeft = alignment == Alignment.centerLeft ||
-  //       alignment == Alignment.topLeft ||
-  //       alignment == Alignment.bottomLeft;
-  //   final fromRight = alignment == Alignment.centerRight ||
-  //       alignment == Alignment.topRight ||
-  //       alignment == Alignment.bottomRight;
-  //   final fromTop = alignment == Alignment.topLeft ||
-  //       alignment == Alignment.topCenter ||
-  //       alignment == Alignment.topRight;
-  //   final fromBottom = alignment == Alignment.bottomLeft ||
-  //       alignment == Alignment.bottomCenter ||
-  //       alignment == Alignment.bottomRight;
-  //   final edge = alignment == Alignment.topLeft ||
-  //       alignment == Alignment.topRight ||
-  //       alignment == Alignment.bottomLeft ||
-  //       alignment == Alignment.bottomRight;
-  //   return Positioned(
-  //     left: (!flipValue.x
-  //         ? switch (alignment) {
-  //             _ when fromRight => rectValue.right - 1,
-  //             _ => rectValue.left
-  //           }
-  //         : switch (alignment) {
-  //             _ when !edge && fromRight => rectValue.right - 1,
-  //             _ when !edge => rectValue.left,
-  //             _ when fromRight => rectValue.right,
-  //             _ => rectValue.left
-  //           }),
-  //     top: (!flipValue.y
-  //         ? switch (alignment) {
-  //             _ when fromBottom => rectValue.bottom - 1,
-  //             _ => rectValue.top
-  //           }
-  //         : switch (alignment) {
-  //             _ when !edge && fromBottom => rectValue.bottom - 1,
-  //             _ when !edge => rectValue.top,
-  //             _ when fromBottom => rectValue.top,
-  //             _ => rectValue.bottom
-  //           }),
-  //     child: Listener(
-  //       onPointerDown: (event) {
-  //         originalPosition.value = event.position;
-  //       },
-  //       onPointerUp: (event) {
-  //         originalRect.value = visualRect.value;
-  //       },
-  //       onPointerMove: (event) {
-  //         handleMoveResize(
-  //           direction: alignment,
-  //           mousePosition: event.position,
-  //           originalPosition: originalPosition.value,
-  //           rotation: angle.value,
-  //           origin: Offset.zero,
-  //         );
-  //       },
-  //       child: MouseRegion(
-  //         cursor: edge
-  //             ? SystemMouseCursors.precise
-  //             : switch ((fromLeft || fromRight, fromTop || fromBottom)) {
-  //                 (true, false) => SystemMouseCursors.resizeLeftRight,
-  //                 (false, true) => SystemMouseCursors.resizeUpDown,
-  //                 _ => SystemMouseCursors.grab
-  //               },
-  //         child: Container(
-  //           margin: edge ? null : EdgeInsets.all(gestureSize / 2),
-  //           color: alignment == Alignment.center
-  //               ? Colors.blueAccent.withOpacity(.25)
-  //               : Colors.white30,
-  //           width: switch (alignment) {
-  //             Alignment.topCenter ||
-  //             Alignment.bottomCenter ||
-  //             Alignment.center =>
-  //               max(0, rectValue.width),
-  //             Alignment.centerLeft || Alignment.centerRight => 1,
-  //             _ when edge => gestureSize,
-  //             _ => 0,
-  //           },
-  //           height: switch (alignment) {
-  //             Alignment.centerLeft ||
-  //             Alignment.centerRight ||
-  //             Alignment.center =>
-  //               max(0, rectValue.height),
-  //             Alignment.topCenter || Alignment.bottomCenter => 1,
-  //             _ when edge => gestureSize,
-  //             _ => 0,
-  //           },
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
-  // void handleMoveResize({
-  //   required Offset originalPosition,
-  //   required Offset mousePosition,
-  //   required AlignmentGeometry direction,
-  //   required Offset origin,
-  //   required double rotation,
-  // }) {
-  //   final delta = mousePosition - originalPosition;
-  //   final rect = originalRect.value;
-  //   // handle move
-  //   if (direction == Alignment.center) {
-  //     newRect.value = Rect.fromLTRB(
-  //       rect.left + delta.dx,
-  //       rect.top + delta.dy,
-  //       rect.right + delta.dx,
-  //       rect.bottom + delta.dy,
-  //     );
-  //   } else {
-  //     // handle resize
-  //
-  //     final fromLeft = direction == Alignment.centerLeft ||
-  //         direction == Alignment.topLeft ||
-  //         direction == Alignment.bottomLeft;
-  //     final fromRight = direction == Alignment.centerRight ||
-  //         direction == Alignment.topRight ||
-  //         direction == Alignment.bottomRight;
-  //     final fromTop = direction == Alignment.topLeft ||
-  //         direction == Alignment.topCenter ||
-  //         direction == Alignment.topRight;
-  //     final fromBottom = direction == Alignment.bottomLeft ||
-  //         direction == Alignment.bottomCenter ||
-  //         direction == Alignment.bottomRight;
-  //     final edge = direction == Alignment.topLeft ||
-  //         direction == Alignment.topRight ||
-  //         direction == Alignment.bottomLeft ||
-  //         direction == Alignment.bottomRight;
-  //     final pressedCmd = keys.value.contains(PhysicalKeyboardKey.metaLeft);
-  //     final delta = mousePosition - originalPosition;
-  //     const snapValue = 20;
-  //     final position = Offset(
-  //       snap(mousePosition.dx, snapValue),
-  //       snap(mousePosition.dy, snapValue),
-  //     );
-  //     final rect = originalRect.value;
-  //     newRect.value = edge
-  //         ? Rect.fromPoints(
-  //             position,
-  //             switch ((fromRight, fromBottom)) {
-  //                   (false, false) => rect.bottomRight,
-  //                   (true, false) => rect.bottomLeft,
-  //                   (false, true) => rect.topRight,
-  //                   (true, true) => rect.topLeft
-  //                 } -
-  //                 (pressedCmd ? delta : Offset.zero),
-  //           )
-  //         : Rect.fromPoints(
-  //             Offset(
-  //                 switch ((fromLeft, fromRight)) {
-  //                   (true, false) => position.dx,
-  //                   (false, true) => position.dx,
-  //                   _ => rect.right,
-  //                 },
-  //                 switch ((fromTop, fromBottom)) {
-  //                   (true, false) => position.dy,
-  //                   (false, true) => position.dy,
-  //                   _ => rect.top,
-  //                 }),
-  //             switch ((fromRight, fromBottom)) {
-  //                   (false, false) => rect.bottomRight,
-  //                   (true, false) => rect.bottomLeft,
-  //                   (false, true) => rect.topRight,
-  //                   (true, true) => rect.topLeft
-  //                 } -
-  //                 (pressedCmd
-  //                     ? Offset(
-  //                         switch ((fromLeft, fromRight)) {
-  //                           (true, false) => delta.dx,
-  //                           (false, true) => delta.dx,
-  //                           _ => 0
-  //                         },
-  //                         switch ((fromTop, fromBottom)) {
-  //                           (true, false) => delta.dy,
-  //                           (false, true) => delta.dy,
-  //                           _ => 0
-  //                         },
-  //                       )
-  //                     : Offset.zero),
-  //           );
-  //     flip.value = (
-  //       x: switch ((x: flip.value.x, fromRight: fromRight)) {
-  //         (x: false, fromRight: false)
-  //             when position.dx > visualRect.value.right =>
-  //           true,
-  //         (x: false, fromRight: true)
-  //             when position.dx < visualRect.value.left =>
-  //           true,
-  //         (x: true, fromRight: false)
-  //             when position.dx < visualRect.value.left =>
-  //           false,
-  //         (x: true, fromRight: true)
-  //             when position.dx > visualRect.value.right =>
-  //           false,
-  //         _ => flip.value.x // should never be used
-  //       },
-  //       y: switch ((y: flip.value.y, fromBottom: fromBottom)) {
-  //         (y: false, fromBottom: false)
-  //             when position.dy > visualRect.value.bottom =>
-  //           true,
-  //         (y: false, fromBottom: true)
-  //             when position.dy < visualRect.value.top =>
-  //           true,
-  //         (y: true, fromBottom: false)
-  //             when position.dy < visualRect.value.top =>
-  //           false,
-  //         (y: true, fromBottom: true)
-  //             when position.dy > visualRect.value.bottom =>
-  //           false,
-  //         _ => flip.value.y // should never be used
-  //       }
-  //     );
-  //   }
-  //   // update visual rect with snapped values
-  //   visualRect.value = Rect.fromLTRB(
-  //     snap(newRect.value.left, 10),
-  //     snap(newRect.value.top, 10),
-  //     snap(newRect.value.right, 10),
-  //     snap(newRect.value.bottom, 10),
-  //   );
-  // }
 
   double snap(double value, int snapValue) =>
       keys.value.contains(PhysicalKeyboardKey.altLeft)
