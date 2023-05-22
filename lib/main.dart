@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:editicert/widgets/resizable_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -39,10 +41,12 @@ class _HomePageState extends State<HomePage> {
   final index = ValueNotifier(0);
   final components = ValueNotifier([
     (
-      originalRect: ValueNotifier(const Rect.fromLTWH(150, 150, 100, 200)),
-      visualRect: ValueNotifier(const Rect.fromLTWH(150, 150, 100, 200)),
-      newRect: ValueNotifier(const Rect.fromLTWH(150, 150, 100, 200)),
-      flip: ValueNotifier((x: false, y: false)),
+      triangle: ValueNotifier(Triangle(
+        const Offset(0, 0),
+        const Size(200, 200),
+        0,
+        const Offset(0, 0),
+      )),
       keys: ValueNotifier(<PhysicalKeyboardKey>{}),
       originalPosition: ValueNotifier(Offset.zero),
     ),
@@ -59,21 +63,16 @@ class _HomePageState extends State<HomePage> {
                     child: Stack(
                         children: components
                             .map((e) => ResizableWidget(
-                                  originalRect: e.originalRect,
-                                  visualRect: e.visualRect,
-                                  newRect: e.newRect,
-                                  flip: e.flip,
+                                  triangle: e.triangle,
                                   keys: e.keys,
-                                  originalPosition: e.originalPosition,
                                 ))
                             .toList()),
                   ),
                   SizedBox(
                     width: 240,
                     child: ValueListenableBuilder(
-                        valueListenable: components.first.visualRect,
-                        builder: (context, value, child) {
-                          final rect = value;
+                        valueListenable: components.first.triangle,
+                        builder: (context, triangle, child) {
                           return ListView(
                             children: [
                               TextField(
@@ -82,7 +81,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 keyboardType: TextInputType.number,
                                 controller: TextEditingController(
-                                    text: rect.left.toStringAsFixed(1)),
+                                    text: triangle.pos.dx.toStringAsFixed(1)),
                               ),
                               TextField(
                                 decoration: const InputDecoration(
@@ -90,7 +89,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 keyboardType: TextInputType.number,
                                 controller: TextEditingController(
-                                    text: rect.top.toStringAsFixed(1)),
+                                    text: triangle.pos.dy.toStringAsFixed(1)),
                               ),
                               TextField(
                                 decoration: const InputDecoration(
@@ -98,7 +97,8 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 keyboardType: TextInputType.number,
                                 controller: TextEditingController(
-                                    text: rect.width.toStringAsFixed(1)),
+                                    text:
+                                        triangle.size.width.toStringAsFixed(1)),
                               ),
                               TextField(
                                 decoration: const InputDecoration(
@@ -106,7 +106,16 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 keyboardType: TextInputType.number,
                                 controller: TextEditingController(
-                                    text: rect.height.toStringAsFixed(1)),
+                                    text: triangle.size.height
+                                        .toStringAsFixed(1)),
+                              ),
+                              TextField(
+                                decoration: const InputDecoration(
+                                  label: Text('rotation'),
+                                ),
+                                keyboardType: TextInputType.number,
+                                controller: TextEditingController(
+                                    text: (triangle.angle / pi * 180).toStringAsFixed(1)),
                               ),
                             ],
                           );
