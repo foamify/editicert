@@ -3,6 +3,10 @@ import 'package:flutter/rendering.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+const sidebarWidth = 240.0;
+
+const gestureSize = 10.0;
+
 ({Offset bl, Offset br, Offset tl, Offset tr}) rotateRect(
     Rect rect, double angle, Offset origin) {
   final topLeft = rotatePoint(rect.topLeft, origin, angle);

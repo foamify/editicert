@@ -1,184 +1,208 @@
 import 'dart:math';
 
+import 'package:editicert/providers/component.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const gestureSize = 12.0;
-
-class Triangle {
-  Offset pos;
-  Size size;
-  double angle;
-  Offset origin;
-
-  Triangle(this.pos, this.size, this.angle, this.origin);
-
-  Rect get rect => Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height);
-
-  ({Offset bl, Offset br, Offset tl, Offset tr}) get rotatedEdges => rotateRect(
-        rect,
-        angle,
-        pos + Offset(size.width / 2, size.height / 2),
-      );
-
-  ({Offset bl, Offset br, Offset tl, Offset tr}) get edges => rotateRect(
-        rect,
-        angle,
-        pos
-        // + origin
-        ,
-      );
-
-  static fromEdges(
-    ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
-    bool flipX = false,
-    bool flipY = false,
-  }) {
-    final size = Size(
-      (edges.tl - edges.tr).distance * (flipX ? -1 : 1),
-      (edges.tl - edges.bl).distance * (flipY ? -1 : 1),
-    );
-    final angle = atan2(edges.tr.dy - edges.tl.dy, edges.tr.dx - edges.tl.dx);
-
-    final newEdges = rotateRect(
-        Rect.fromLTWH(edges.tl.dx, edges.tl.dy, size.width, size.height),
-        0,
-        Offset.zero);
-
-    // final origin = -Offset(size.width, size.height) / 2;
-    const origin = Offset.zero;
-    final newTriangle = Triangle(
-      newEdges.tl,
-      size,
-      angle + (flipX ? pi : 0),
-      origin,
-    );
-    return newTriangle;
-  }
-
-  copyWith({Offset? pos, Size? size, double? angle, Offset? origin}) {
-    return Triangle(pos ?? this.pos, size ?? this.size, angle ?? this.angle,
-        origin ?? this.origin);
-  }
-
-  @override
-  String toString() {
-    return 'Triangle{pos: $pos, size: $size, angle: $angle, origin: $origin}';
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Triangle &&
-          runtimeType == other.runtimeType &&
-          pos == other.pos &&
-          size == other.size &&
-          angle == other.angle &&
-          origin == other.origin;
-
-  @override
-  int get hashCode =>
-      pos.hashCode ^ size.hashCode ^ angle.hashCode ^ origin.hashCode;
-}
-
-class ComponentWidget extends StatelessWidget {
+class ComponentWidget extends ConsumerStatefulWidget {
   ComponentWidget({
     super.key,
-    required this.triangle,
-    required this.keys,
+    required this.index,
   });
 
-  final ValueNotifier<Triangle> triangle;
-  final ValueNotifier<Set<PhysicalKeyboardKey>> keys;
+  final int index;
 
+  @override
+  ConsumerState<ComponentWidget> createState() => _ComponentWidgetState();
+}
+
+class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
   final ValueNotifier<Offset> originalPosition = ValueNotifier(Offset.zero);
-  final originalTriangle =
-      ValueNotifier(Triangle(Offset.zero, Size.zero, 0, Offset.zero));
+
+  final _originalTriangle = ValueNotifier(Triangle(Offset.zero, Size.zero, 0));
+  final _triangle = ValueNotifier(Triangle(Offset.zero, Size.zero, 0));
+  final _visualTriangle = ValueNotifier(Triangle(Offset.zero, Size.zero, 0));
+
+  final _moving = ValueNotifier(false);
+
+  @override
+  void initState() {
+    final triangle = ref
+        .read(componentsProvider.select((value) => value[widget.index]))
+        .triangle;
+    _triangle.value = triangle;
+    _visualTriangle.value = triangle;
+    _triangle.addListener(() {
+      ref
+          .read(componentsProvider.notifier)
+          .replace(widget.index, triangle: _triangle.value);
+      _visualTriangle.value = _triangle.value;
+    });
+
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final keys = ref.watch(keysProvider);
+    final selected = ref.watch(
+        selectedProvider.select((value) => value.contains(widget.index)));
+    final hovered = ref
+        .watch(hoveredProvider.select((value) => value.contains(widget.index)));
+
+    ref.listen(componentsProvider, (previous, next) {
+      if (next[widget.index].triangle != _triangle.value) {
+        _visualTriangle.value = next[widget.index].triangle;
+      }
+    });
+
     /// rect, but all values are positive numbers
     final borderRadius = BorderRadius.circular(8);
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
       onKey: (value) => value.isKeyPressed(value.logicalKey)
-          ? keys.value.add(value.physicalKey)
-          : keys.value.remove(value.physicalKey),
+          ? keys.add(value.physicalKey)
+          : keys.remove(value.physicalKey),
       child: AnimatedBuilder(
           animation: Listenable.merge([
-            keys,
-            triangle,
+            _visualTriangle,
+            _moving,
           ]),
           builder: (context, child) {
-            final tValue = triangle.value;
-            final keysValue = keys.value;
+            final triangle = _visualTriangle.value;
+            final selectedValue = selected && !_moving.value;
+            final child = Container(
+              width: triangle.size.width < 0
+                  ? -triangle.size.width
+                  : triangle.size.width,
+              height: triangle.size.height < 0
+                  ? -triangle.size.height
+                  : triangle.size.height,
+              decoration: BoxDecoration(
+                borderRadius: borderRadius,
+                color: Colors.red,
+              ),
+              child: const Text('testfasd fa sdf'),
+            );
             return SizedBox(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height,
               child: Stack(
                 children: [
-                  // rotation controls
-                  ...[
-                    Alignment.topLeft,
-                    Alignment.topRight,
-                    Alignment.bottomLeft,
-                    Alignment.bottomRight,
-                  ].map((e) =>
-                      buildEdgeControl(tValue, alignment: e, rotate: true)),
+                  if (selectedValue)
+                    // rotation controls
+                    ...[
+                      Alignment.topLeft,
+                      Alignment.topRight,
+                      Alignment.bottomLeft,
+                      Alignment.bottomRight,
+                    ].map((e) => _buildEdgeControl(triangle,
+                        alignment: e, rotate: true)),
 
                   // content
                   Positioned(
-                    left: tValue.pos.dx +
-                        (tValue.size.width < 0 ? tValue.size.width : 0),
-                    top: tValue.pos.dy +
-                        (tValue.size.height < 0 ? tValue.size.height : 0),
+                    left: triangle.pos.dx +
+                        (triangle.size.width < 0 ? triangle.size.width : 0),
+                    top: triangle.pos.dy +
+                        (triangle.size.height < 0 ? triangle.size.height : 0),
                     child: Transform.rotate(
-                      angle: tValue.angle,
+                      angle: triangle.angle,
                       child: Transform.flip(
-                        flipX: tValue.size.width < 0,
-                        flipY: tValue.size.height < 0,
+                        flipX: triangle.size.width < 0,
+                        flipY: triangle.size.height < 0,
                         child: Listener(
                           onPointerDown: handlePointerDown,
                           onPointerMove: handleMove,
-                          child: Container(
-                            width: tValue.size.width < 0
-                                ? -tValue.size.width
-                                : tValue.size.width,
-                            height: tValue.size.height < 0
-                                ? -tValue.size.height
-                                : tValue.size.height,
-                            decoration: BoxDecoration(
-                              borderRadius: borderRadius,
-                              color: Colors.red,
-                            ),
-                            child: const Text('testfasd fa sdf'),
-                          ),
+                          onPointerUp: handlePointerUp,
+                          child: MouseRegion(
+                              onEnter: (_) => ref
+                                  .read(hoveredProvider.notifier)
+                                  .add(widget.index),
+                              onExit: (_) => ref
+                                  .read(hoveredProvider.notifier)
+                                  .remove(widget.index),
+                              child: child),
                         ),
                       ),
                     ),
                   ),
 
-                  // side resize controls
-                  ...[
-                    Alignment.topCenter,
-                    Alignment.bottomCenter,
-                    Alignment.centerLeft,
-                    Alignment.centerRight,
-                  ].map((e) => buildResizer(
-                        tValue,
-                        alignment: e,
-                      )),
+                  if (selectedValue)
+                    // side resize controls
+                    ...[
+                      Alignment.topCenter,
+                      Alignment.bottomCenter,
+                      Alignment.centerLeft,
+                      Alignment.centerRight,
+                    ].map((e) => _buildResizer(
+                          triangle,
+                          alignment: e,
+                        )),
 
-                  // edge resize controls
-                  ...[
-                    Alignment.topLeft,
-                    Alignment.topRight,
-                    Alignment.bottomLeft,
-                    Alignment.bottomRight,
-                  ].map((e) =>
-                      buildEdgeControl(tValue, alignment: e, resize: true)),
+                  if (selectedValue)
+                    // edge resize controls
+                    ...[
+                      Alignment.topLeft,
+                      Alignment.topRight,
+                      Alignment.bottomLeft,
+                      Alignment.bottomRight,
+                    ].map((e) => _buildEdgeControl(triangle,
+                        alignment: e, resize: true)),
+
+                  // content
+                  Positioned(
+                    left: triangle.pos.dx +
+                        (triangle.size.width < 0 ? triangle.size.width : 0),
+                    top: triangle.pos.dy +
+                        (triangle.size.height < 0 ? triangle.size.height : 0),
+                    child: Transform.rotate(
+                      angle: triangle.angle,
+                      child: Transform.flip(
+                        flipX: triangle.size.width < 0,
+                        flipY: triangle.size.height < 0,
+                        child: IgnorePointer(
+                          ignoring: selected,
+                          child: Listener(
+                            onPointerDown: (event) {
+                              ref.read(selectedProvider.notifier)
+                                ..clear()
+                                ..add(widget.index);
+                              handlePointerDown(event);
+                            },
+                            onPointerMove: handleMove,
+                            onPointerUp: handlePointerUp,
+                            child: MouseRegion(
+                              onEnter: (_) => ref
+                                  .read(hoveredProvider.notifier)
+                                  .add(widget.index),
+                              onExit: (_) => ref
+                                  .read(hoveredProvider.notifier)
+                                  .remove(widget.index),
+                              child: Container(
+                                width: triangle.size.width < 0
+                                    ? -triangle.size.width
+                                    : triangle.size.width,
+                                height: triangle.size.height < 0
+                                    ? -triangle.size.height
+                                    : triangle.size.height,
+                                decoration: hovered && !selected
+                                    ? BoxDecoration(
+                                        border: Border.all(
+                                        strokeAlign: .5,
+                                        width: 4,
+                                        color: Colors.blueAccent,
+                                      ))
+                                    : const BoxDecoration(),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -186,25 +210,31 @@ class ComponentWidget extends StatelessWidget {
     );
   }
 
-  Widget buildResizer(
+  Widget _buildResizer(
     Triangle tValue, {
     required Alignment alignment,
   }) {
+    const margin = 5.0;
+
     final edges = tValue.edges;
     final rotatedEdges = tValue.rotatedEdges;
     final width = switch (alignment) {
       Alignment.topCenter ||
       Alignment.bottomCenter when tValue.size.width < 0 =>
-        -tValue.size.width,
-      Alignment.topCenter || Alignment.bottomCenter => tValue.size.width,
-      _ => gestureSize,
+        -tValue.size.width - margin * 2,
+      Alignment.topCenter ||
+      Alignment.bottomCenter =>
+        tValue.size.width - margin * 2,
+      _ => 1.0,
     };
     final height = switch (alignment) {
       Alignment.centerLeft ||
       Alignment.centerRight when tValue.size.height < 0 =>
-        -tValue.size.height,
-      Alignment.centerLeft || Alignment.centerRight => tValue.size.height,
-      _ => gestureSize,
+        -tValue.size.height - margin * 2,
+      Alignment.centerLeft ||
+      Alignment.centerRight =>
+        tValue.size.height - margin * 2,
+      _ => 1.0,
     };
 
     final offset = switch (alignment) {
@@ -231,12 +261,13 @@ class ComponentWidget extends StatelessWidget {
       _ => Offset.zero,
     };
 
-    return Transform.translate(
+    return Positioned(
         // this is for the whole widget
-        offset: rotatedEdges.tl,
+        left: rotatedEdges.tl.dx,
+        top: rotatedEdges.tl.dy,
         child: Transform.rotate(
           angle: tValue.angle,
-          origin: -Offset(width, height) / 2,
+          origin: -Offset(width + margin * 2, height + margin * 2) / 2,
           child: Transform.translate(
             offset: offset,
             child: Listener(
@@ -244,12 +275,14 @@ class ComponentWidget extends StatelessWidget {
               onPointerMove: (event) {
                 handleResizeSide(event, alignment, selectedSide);
               },
+              onPointerUp: handlePointerUp,
               child: MouseRegion(
                 cursor: SystemMouseCursors.grab,
                 child: Container(
-                  width: width,
-                  height: height,
-                  color: Colors.green.withOpacity(.5),
+                  margin: const EdgeInsets.all(margin),
+                  width: max(width, 0),
+                  height: max(height, 0),
+                  color: Colors.blueAccent,
                 ),
               ),
             ),
@@ -257,19 +290,25 @@ class ComponentWidget extends StatelessWidget {
         ));
   }
 
-  void handlePointerDown(event) {
+  void handlePointerDown(PointerDownEvent event) {
     originalPosition.value = event.position;
-    originalTriangle.value = triangle.value;
+    _originalTriangle.value = _triangle.value;
   }
 
-  Widget buildEdgeControl(
-    Triangle tValue, {
+  /// basically save data
+  void handlePointerUp(PointerUpEvent event) {
+    _triangle.value = _visualTriangle.value;
+    _moving.value = false;
+  }
+
+  Widget _buildEdgeControl(
+    Triangle triangle, {
     Alignment? alignment,
     bool rotate = false,
     bool resize = false,
   }) {
-    final edges = tValue.edges;
-    final rotatedEdges = tValue.rotatedEdges;
+    final edges = triangle.edges;
+    final rotatedEdges = triangle.rotatedEdges;
 
     final rotatedEdge = switch (alignment) {
       Alignment.topLeft => rotatedEdges.tl,
@@ -297,7 +336,7 @@ class ComponentWidget extends StatelessWidget {
         // this is for the widget inside the widget
         offset: -const Offset(gestureSize, gestureSize) / (rotate ? 1 : 2),
         child: Transform.rotate(
-          angle: tValue.angle,
+          angle: triangle.angle,
           child: Transform.translate(
             offset: Offset.zero,
             child: Listener(
@@ -309,6 +348,7 @@ class ComponentWidget extends StatelessWidget {
                   handleRotate(event);
                 }
               },
+              onPointerUp: handlePointerUp,
               child: MouseRegion(
                 cursor: resize
                     ? SystemMouseCursors.precise
@@ -316,12 +356,15 @@ class ComponentWidget extends StatelessWidget {
                 child: Container(
                   width: alignment == Alignment.topCenter ||
                           alignment == Alignment.bottomCenter
-                      ? triangle.value.size.width
+                      ? triangle.size.width
                       : gestureSize * (rotate ? 2 : 1),
                   height: gestureSize * (rotate ? 2 : 1),
-                  color: rotate
-                      ? Colors.blueAccent.withOpacity(.5)
-                      : Colors.white60,
+                  decoration: rotate
+                      ? null
+                      : BoxDecoration(
+                          color: Colors.white,
+                          border:
+                              Border.all(width: 1, color: Colors.blueAccent)),
                 ),
               ),
             ),
@@ -331,29 +374,32 @@ class ComponentWidget extends StatelessWidget {
     );
   }
 
-  void handleMove(PointerMoveEvent event) {
+  void handleMove(
+    PointerMoveEvent event,
+  ) {
     final delta = event.position - originalPosition.value;
-    triangle.value = originalTriangle.value.copyWith(
-      pos: originalTriangle.value.pos + delta,
+    _triangle.value = _originalTriangle.value.copyWith(
+      pos: _originalTriangle.value.pos + delta,
     );
+    _moving.value = true;
   }
 
   void handleRotate(PointerMoveEvent event) {
-    final center = originalTriangle.value.rect.center;
-    final originalAngle = atan2(originalPosition.value.dx - center.dx,
+    final center = _originalTriangle.value.rect.center;
+    final originalAngle = atan2(
+        originalPosition.value.dx - sidebarWidth - center.dx,
         originalPosition.value.dy - center.dy);
-    final newAngle =
-        atan2(event.position.dx - center.dx, event.position.dy - center.dy);
+    final newAngle = atan2(event.position.dx - sidebarWidth - center.dx,
+        event.position.dy - center.dy);
     final deltaAngle = newAngle - originalAngle;
-    triangle.value = originalTriangle.value
-        .copyWith(angle: originalTriangle.value.angle - deltaAngle);
+
+    _triangle.value = _originalTriangle.value
+        .copyWith(angle: _originalTriangle.value.angle - deltaAngle);
   }
 
   void handleResizeSide(
       PointerMoveEvent event, Alignment alignment, Offset selectedSide) {
-    final tValue = originalTriangle.value;
-    final edges = tValue.edges;
-    final rEdges = tValue.rotatedEdges;
+    final tValue = _originalTriangle.value;
 
     final rOriginalPoint = rotatePoint(
       originalPosition.value,
@@ -414,9 +460,7 @@ class ComponentWidget extends StatelessWidget {
               _ => 0,
             }));
 
-    print(newRect.size);
-
-    triangle.value = Triangle.fromEdges(
+    _triangle.value = Triangle.fromEdges(
       newEdgesR,
       flipX: newRect.size.width < 0,
       flipY: newRect.size.height > 0,
@@ -425,7 +469,7 @@ class ComponentWidget extends StatelessWidget {
 
   void handleResizeEdges(
       PointerMoveEvent event, Alignment alignment, Offset selectedEdge) {
-    final tValue = originalTriangle.value;
+    final tValue = _originalTriangle.value;
 
     final rOriginalPoint = rotatePoint(
       originalPosition.value,
@@ -442,7 +486,7 @@ class ComponentWidget extends StatelessWidget {
     final delta = event.position - originalPosition.value;
     final rDelta = rPosition - rOriginalPoint;
 
-    triangle.value = tValue.copyWith(
+    _triangle.value = tValue.copyWith(
       pos: switch (alignment) {
         Alignment.topLeft => tValue.pos + delta / 2 + rDelta / 2,
         Alignment.topRight =>
@@ -472,8 +516,75 @@ class ComponentWidget extends StatelessWidget {
     );
   }
 
-  double snap(double value, int snapValue) =>
-      keys.value.contains(PhysicalKeyboardKey.altLeft)
+  double snap(double value, int snapValue, Set<PhysicalKeyboardKey> keys) =>
+      keys.contains(PhysicalKeyboardKey.altLeft)
           ? (value / snapValue).truncateToDouble() * snapValue
           : (value / 0.1).truncateToDouble() * 0.1;
+}
+
+class Triangle {
+  Offset pos;
+  Size size;
+  double angle;
+
+  Triangle(this.pos, this.size, this.angle);
+
+  Rect get rect => Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height);
+
+  ({Offset bl, Offset br, Offset tl, Offset tr}) get rotatedEdges => rotateRect(
+    rect,
+    angle,
+    pos + Offset(size.width / 2, size.height / 2),
+  );
+
+  ({Offset bl, Offset br, Offset tl, Offset tr}) get edges => rotateRect(
+    rect,
+    angle,
+    pos,
+  );
+
+  static fromEdges(
+      ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
+        bool flipX = false,
+        bool flipY = false,
+      }) {
+    final size = Size(
+      (edges.tl - edges.tr).distance * (flipX ? -1 : 1),
+      (edges.tl - edges.bl).distance * (flipY ? -1 : 1),
+    );
+    final angle = atan2(edges.tr.dy - edges.tl.dy, edges.tr.dx - edges.tl.dx);
+
+    final newEdges = rotateRect(
+        Rect.fromLTWH(edges.tl.dx, edges.tl.dy, size.width, size.height),
+        0,
+        Offset.zero);
+
+    final newTriangle = Triangle(
+      newEdges.tl,
+      size,
+      angle + (flipX ? pi : 0),
+    );
+    return newTriangle;
+  }
+
+  copyWith({Offset? pos, Size? size, double? angle, Offset? origin}) {
+    return Triangle(pos ?? this.pos, size ?? this.size, angle ?? this.angle);
+  }
+
+  @override
+  String toString() {
+    return 'Triangle{pos: $pos, size: $size, angle: $angle}';
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is Triangle &&
+              runtimeType == other.runtimeType &&
+              pos == other.pos &&
+              size == other.size &&
+              angle == other.angle;
+
+  @override
+  int get hashCode => pos.hashCode ^ size.hashCode ^ angle.hashCode;
 }
