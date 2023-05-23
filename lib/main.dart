@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import 'package:editicert/widgets/resizable_widget.dart';
+import 'package:editicert/widgets/component_widget.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -62,7 +63,7 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: Stack(
                         children: components
-                            .map((e) => ResizableWidget(
+                            .map((e) => ComponentWidget(
                                   triangle: e.triangle,
                                   keys: e.keys,
                                 ))
@@ -75,47 +76,137 @@ class _HomePageState extends State<HomePage> {
                         builder: (context, triangle, child) {
                           return ListView(
                             children: [
-                              TextField(
-                                decoration: const InputDecoration(
-                                  label: Text('x'),
-                                ),
-                                keyboardType: TextInputType.number,
-                                controller: TextEditingController(
-                                    text: triangle.pos.dx.toStringAsFixed(1)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 2.0, vertical: 2),
+                                      child: TextField(
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: const InputDecoration(
+                                          prefixText: 'X ',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                            text: triangle.pos.dx
+                                                .toStringAsFixed(1)),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 2.0, vertical: 2),
+                                      child: TextField(
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: const InputDecoration(
+                                          prefixText: 'Y ',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                            text: triangle.pos.dy
+                                                .toStringAsFixed(1)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  label: Text('y'),
-                                ),
-                                keyboardType: TextInputType.number,
-                                controller: TextEditingController(
-                                    text: triangle.pos.dy.toStringAsFixed(1)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 2.0, vertical: 2),
+                                      child: TextField(
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: const InputDecoration(
+                                          prefixText: 'W ',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                            text: triangle.size.width
+                                                .toStringAsFixed(1)),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 2.0, vertical: 2),
+                                      child: TextField(
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: const InputDecoration(
+                                          prefixText: 'H ',
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                            text: triangle.size.height
+                                                .toStringAsFixed(1)),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  label: Text('width'),
-                                ),
-                                keyboardType: TextInputType.number,
-                                controller: TextEditingController(
-                                    text:
-                                        triangle.size.width.toStringAsFixed(1)),
-                              ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  label: Text('height'),
-                                ),
-                                keyboardType: TextInputType.number,
-                                controller: TextEditingController(
-                                    text: triangle.size.height
-                                        .toStringAsFixed(1)),
-                              ),
-                              TextField(
-                                decoration: const InputDecoration(
-                                  label: Text('rotation'),
-                                ),
-                                keyboardType: TextInputType.number,
-                                controller: TextEditingController(
-                                    text: (triangle.angle / pi * 180).toStringAsFixed(1)),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 2.0, vertical: 2),
+                                      child: TextField(
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: const InputDecoration(
+                                          prefix: Padding(
+                                            padding: EdgeInsets.only(right: 6),
+                                            child: Icon(
+                                              Icons.rotate_90_degrees_ccw,
+                                              size: 12,
+                                            ),
+                                          ),
+                                          border: OutlineInputBorder(),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                          text: '${(switch (triangle.angle) {
+                                                > pi * 2 =>
+                                                  triangle.angle - pi * 2,
+                                                < 0 => pi * 2 - triangle.angle,
+                                                _ => triangle.angle
+                                              } / pi * 180).toStringAsFixed(1)}°',
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 2.0, vertical: 2),
+                                      child: TextField(
+                                        style: const TextStyle(fontSize: 12),
+                                        decoration: const InputDecoration(
+                                          prefix: Padding(
+                                            padding: EdgeInsets.only(right: 6),
+                                            child: Icon(
+                                              Icons.rounded_corner_rounded,
+                                              size: 12,
+                                            ),
+                                          ),
+                                          border:
+                                              OutlineInputBorder(gapPadding: 2),
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        controller: TextEditingController(
+                                          text: '0',
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           );

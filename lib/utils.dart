@@ -42,3 +42,12 @@ Offset closestOffsetOnLine(
 
   return closestOffset;
 }
+
+Rect rectFromEdges(({Offset bl, Offset br, Offset tl, Offset tr}) edges) {
+  return Rect.fromLTWH(
+    edges.tl.dx,
+    edges.tl.dy,
+    edges.tr.dx - edges.tl.dx,
+    edges.tr.dy - edges.bl.dy,
+  );
+}
