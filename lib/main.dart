@@ -2,12 +2,11 @@ import 'dart:math';
 
 import 'package:editicert/providers/component.dart';
 import 'package:editicert/utils.dart';
-import 'package:editicert/utils.dart';
-import 'package:editicert/widgets/component_widget.dart';
+import 'package:editicert/widgets/controller_widget.dart';
 import 'package:collection/collection.dart';
+import 'package:editicert/widgets/creator_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
@@ -28,18 +27,19 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: HomePage(),
+      home: const HomePage(),
     );
   }
 }
 
 class HomePage extends ConsumerWidget {
-  HomePage({
+  const HomePage({
     super.key,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final tool = ref.watch(toolProvider);
     final components = ref.watch(componentsProvider);
     if (components.isEmpty) {
       final components = ref.read(componentsProvider.notifier);
@@ -48,31 +48,31 @@ class HomePage extends ConsumerWidget {
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 2',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 3',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 4',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 5',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 6',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 7',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
       components.add((
-        name: 'Triangle 1',
+        name: 'Triangle 8',
         triangle: Triangle(Offset.zero, const Size(200, 200), 0)
       ));
     }
@@ -83,6 +83,7 @@ class HomePage extends ConsumerWidget {
         children: [
           Container(
             color: Theme.of(context).colorScheme.surfaceVariant,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
               Tooltip(
                 richMessage: TextSpan(
@@ -100,11 +101,16 @@ class HomePage extends ConsumerWidget {
                   ],
                 ),
                 child: Card(
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  margin: EdgeInsets.zero,
+                  color: tool == ToolData.pointer
+                      ? Theme.of(context).colorScheme.onInverseSurface
+                      : Theme.of(context).colorScheme.surfaceVariant,
                   elevation: 0,
                   clipBehavior: Clip.hardEdge,
                   child: InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      ref.read(toolProvider.notifier).setPointer();
+                    },
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Transform.rotate(
@@ -132,11 +138,16 @@ class HomePage extends ConsumerWidget {
                   ],
                 ),
                 child: Card(
+                  margin: EdgeInsets.zero,
                   clipBehavior: Clip.hardEdge,
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  color: tool == ToolData.create
+                      ? Theme.of(context).colorScheme.onInverseSurface
+                      : Theme.of(context).colorScheme.surfaceVariant,
                   elevation: 0,
                   child: InkWell(
-                    onTap: () {},
+                    onTap: () {
+                      ref.read(toolProvider.notifier).setCreate();
+                    },
                     child: const Padding(
                       padding: EdgeInsets.all(8.0),
                       child: Icon(
@@ -167,18 +178,23 @@ class HomePage extends ConsumerWidget {
                     children: components
                         .mapIndexed(
                           (i, e) => Container(
-                            color: switch ((
-                              selected.contains(i),
-                              hovered.contains(i),
-                            )) {
-                              (false, false) => Colors.transparent,
-                              (false, true) =>
-                                Theme.of(context).primaryColor.withOpacity(.5),
-                              (true, _) => Theme.of(context).primaryColor,
-                            },
+                            decoration: BoxDecoration(
+                              color: switch ((
+                                selected.contains(i),
+                                hovered.contains(i),
+                              )) {
+                                (false, false) => Colors.transparent,
+                                (false, true) => Theme.of(context)
+                                    .colorScheme
+                                    .onInverseSurface
+                                    .withOpacity(.5),
+                                (true, _) => Theme.of(context)
+                                    .colorScheme
+                                    .onInverseSurface,
+                              },
+                            ),
                             // color: Colors.transparent,
-                            margin: EdgeInsets.zero
-                                .copyWith(top: 1, left: 2, right: 1),
+                            margin: const EdgeInsets.only(left: 2, right: 1),
                             child: MouseRegion(
                               onEnter: (event) =>
                                   ref.read(hoveredProvider.notifier).add(i),
@@ -201,7 +217,8 @@ class HomePage extends ConsumerWidget {
                                   CupertinoIcons.square,
                                   size: 16,
                                 ),
-                                contentPadding: EdgeInsets.only(left: 4, right: 6),
+                                contentPadding:
+                                    const EdgeInsets.only(left: 4, right: 6),
                                 trailing: hovered.contains(i)
                                     ? const SizedBox(
                                         width: 18 * 2,
@@ -233,6 +250,7 @@ class HomePage extends ConsumerWidget {
                     GestureDetector(
                       onTap: () {
                         ref.read(selectedProvider.notifier).clear();
+                        ref.read(hoveredProvider.notifier).clear();
                       },
                       child: Container(
                         width: double.infinity,
@@ -240,9 +258,145 @@ class HomePage extends ConsumerWidget {
                         color: Colors.transparent,
                       ),
                     ),
-                    ...components.mapIndexed((i, e) => ComponentWidget(
-                          index: i,
-                        )),
+                    ...components.mapIndexed(
+                      (i, e) {
+                        final triangle = e.triangle;
+                        final borderRadius = BorderRadius.circular(8);
+                        final child = Container(
+                          width: triangle.size.width < 0
+                              ? -triangle.size.width
+                              : triangle.size.width,
+                          height: triangle.size.height < 0
+                              ? -triangle.size.height
+                              : triangle.size.height,
+                          decoration: BoxDecoration(
+                            borderRadius: borderRadius,
+                            border: Border.all(width: 1, color: Colors.grey),
+                            color: Colors.red,
+                          ),
+                          child: const Text('testfasd fa sdf'),
+                        );
+                        final edges = triangle.rotatedEdges;
+                        final edge = switch ((
+                          triangle.size.width < 0,
+                          triangle.size.height < 0
+                        )) {
+                          (true, false) => switch (
+                                (triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => edges.bl,
+                              < 135 => edges.tl,
+                              < 225 => edges.tr,
+                              < 315 => edges.br,
+                              < 360 => edges.bl,
+                              _ => edges.tl,
+                            },
+                          (true, true) => switch (
+                                (triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => edges.tl,
+                              < 135 => edges.bl,
+                              < 225 => edges.br,
+                              < 315 => edges.tr,
+                              < 360 => edges.tl,
+                              _ => edges.tl,
+                            },
+                          (false, true) => switch (
+                                (triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => edges.br,
+                              < 135 => edges.bl,
+                              < 225 => edges.tl,
+                              < 315 => edges.tr,
+                              < 360 => edges.br,
+                              _ => edges.tl,
+                            },
+                          _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => edges.tr,
+                              < 135 => edges.tl,
+                              < 225 => edges.bl,
+                              < 315 => edges.br,
+                              < 360 => edges.tr,
+                              _ => edges.tl,
+                            }
+                        };
+                        final newAngle = switch ((
+                          triangle.size.width < 0,
+                          triangle.size.height < 0
+                        )) {
+                          (true, false) => switch (
+                                (triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => pi / 2,
+                              < 135 => 0,
+                              < 225 => -pi / 2,
+                              < 315 => pi,
+                              < 360 => pi / 2,
+                              _ => 0.0,
+                            },
+                          (true, true) => switch (
+                                (triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => pi / 2,
+                              < 135 => 0,
+                              < 225 => -pi / 2,
+                              < 315 => pi,
+                              < 360 => pi / 2,
+                              _ => 0.0,
+                            },
+                          _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                              < 45 => pi / 2,
+                              < 135 => 0,
+                              < 225 => -pi / 2,
+                              < 315 => pi,
+                              < 360 => pi / 2,
+                              _ => 0.0,
+                            }
+                        };
+                        return [
+                          Positioned(
+                            left: edge.dx,
+                            top: edge.dy,
+                            child: Transform.rotate(
+                              angle: triangle.angle + newAngle,
+                              alignment: Alignment.topLeft,
+                              child: Transform.translate(
+                                offset: const Offset(0, -24),
+                                child: AnimatedSlide(
+                                  offset: Offset(
+                                      triangle.size.width < 0 ? -1 : 0, 0),
+                                  duration: Duration.zero,
+                                  child: Text(e.name),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            left: triangle.pos.dx +
+                                (triangle.size.width < 0
+                                    ? triangle.size.width
+                                    : 0),
+                            top: triangle.pos.dy +
+                                (triangle.size.height < 0
+                                    ? triangle.size.height
+                                    : 0),
+                            child: Transform.rotate(
+                              angle: triangle.angle,
+                              child: Transform.flip(
+                                flipX: triangle.size.width < 0,
+                                flipY: triangle.size.height < 0,
+                                child: child,
+                              ),
+                            ),
+                          ),
+                        ];
+                      },
+                    ).flattened,
+                    ...components.mapIndexed((i, e) {
+                      return ControllerWidget(
+                        index: i,
+                      );
+                    }),
+                    ...components.mapIndexed((i, e) {
+                      if (!selected.contains(i)) return const SizedBox.shrink();
+                      return ControllerWidget(index: i);
+                    }),
+                    if (tool == ToolData.create) const CreatorWidget(),
                   ]),
                 ),
                 Container(

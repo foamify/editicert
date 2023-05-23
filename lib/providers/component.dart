@@ -1,4 +1,4 @@
-import 'package:editicert/widgets/component_widget.dart';
+import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -73,3 +73,16 @@ class Hovered extends _$Hovered {
   bool contains(int index) => state.contains(index);
   void clear() => state = {...state..clear()};
 }
+
+@riverpod
+class Tool extends _$Tool {
+  @override
+  ToolData build() {
+    return ToolData.pointer;
+  }
+
+  void setPointer() => state = ToolData.pointer;
+  void setCreate() => state = ToolData.create;
+}
+
+enum ToolData { pointer, create }

@@ -66,4 +66,18 @@ final hoveredProvider = AutoDisposeNotifierProvider<Hovered, Set<int>>.internal(
 );
 
 typedef _$Hovered = AutoDisposeNotifier<Set<int>>;
+String _$toolHash() => r'727281369b2ea85070f6d30e8a614934e8d12e8e';
+
+/// See also [Tool].
+@ProviderFor(Tool)
+final toolProvider = AutoDisposeNotifierProvider<Tool, ToolData>.internal(
+  Tool.new,
+  name: r'toolProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$toolHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$Tool = AutoDisposeNotifier<ToolData>;
 // ignore_for_file: unnecessary_raw_strings, subtype_of_sealed_class, invalid_use_of_internal_member, do_not_use_environment, prefer_const_constructors, public_member_api_docs, avoid_private_typedef_functions

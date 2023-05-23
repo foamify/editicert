@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ComponentWidget extends ConsumerStatefulWidget {
-  ComponentWidget({
+class ControllerWidget extends ConsumerStatefulWidget {
+  const ControllerWidget({
     super.key,
     required this.index,
   });
@@ -15,10 +15,10 @@ class ComponentWidget extends ConsumerStatefulWidget {
   final int index;
 
   @override
-  ConsumerState<ComponentWidget> createState() => _ComponentWidgetState();
+  ConsumerState<ControllerWidget> createState() => _ComponentWidgetState();
 }
 
-class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
+class _ComponentWidgetState extends ConsumerState<ControllerWidget> {
   final ValueNotifier<Offset> originalPosition = ValueNotifier(Offset.zero);
 
   final _originalTriangle = ValueNotifier(Triangle(Offset.zero, Size.zero, 0));
@@ -58,8 +58,6 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
       }
     });
 
-    /// rect, but all values are positive numbers
-    final borderRadius = BorderRadius.circular(8);
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -74,19 +72,6 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
           builder: (context, child) {
             final triangle = _visualTriangle.value;
             final selectedValue = selected && !_moving.value;
-            final child = Container(
-              width: triangle.size.width < 0
-                  ? -triangle.size.width
-                  : triangle.size.width,
-              height: triangle.size.height < 0
-                  ? -triangle.size.height
-                  : triangle.size.height,
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                color: Colors.red,
-              ),
-              child: const Text('testfasd fa sdf'),
-            );
             return SizedBox(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height,
@@ -101,35 +86,6 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
                       Alignment.bottomRight,
                     ].map((e) => _buildEdgeControl(triangle,
                         alignment: e, rotate: true)),
-
-                  // content
-                  Positioned(
-                    left: triangle.pos.dx +
-                        (triangle.size.width < 0 ? triangle.size.width : 0),
-                    top: triangle.pos.dy +
-                        (triangle.size.height < 0 ? triangle.size.height : 0),
-                    child: Transform.rotate(
-                      angle: triangle.angle,
-                      child: Transform.flip(
-                        flipX: triangle.size.width < 0,
-                        flipY: triangle.size.height < 0,
-                        child: Listener(
-                          onPointerDown: handlePointerDown,
-                          onPointerMove: handleMove,
-                          onPointerUp: handlePointerUp,
-                          child: MouseRegion(
-                              onEnter: (_) => ref
-                                  .read(hoveredProvider.notifier)
-                                  .add(widget.index),
-                              onExit: (_) => ref
-                                  .read(hoveredProvider.notifier)
-                                  .remove(widget.index),
-                              child: child),
-                        ),
-                      ),
-                    ),
-                  ),
-
                   if (selectedValue)
                     // side resize controls
                     ...[
@@ -141,7 +97,6 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
                           triangle,
                           alignment: e,
                         )),
-
                   if (selectedValue)
                     // edge resize controls
                     ...[
@@ -151,8 +106,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
                       Alignment.bottomRight,
                     ].map((e) => _buildEdgeControl(triangle,
                         alignment: e, resize: true)),
-
-                  // content
+                  // movement control
                   Positioned(
                     left: triangle.pos.dx +
                         (triangle.size.width < 0 ? triangle.size.width : 0),
@@ -163,40 +117,37 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
                       child: Transform.flip(
                         flipX: triangle.size.width < 0,
                         flipY: triangle.size.height < 0,
-                        child: IgnorePointer(
-                          ignoring: selected,
-                          child: Listener(
-                            onPointerDown: (event) {
-                              ref.read(selectedProvider.notifier)
-                                ..clear()
-                                ..add(widget.index);
-                              handlePointerDown(event);
-                            },
-                            onPointerMove: handleMove,
-                            onPointerUp: handlePointerUp,
-                            child: MouseRegion(
-                              onEnter: (_) => ref
-                                  .read(hoveredProvider.notifier)
-                                  .add(widget.index),
-                              onExit: (_) => ref
-                                  .read(hoveredProvider.notifier)
-                                  .remove(widget.index),
-                              child: Container(
-                                width: triangle.size.width < 0
-                                    ? -triangle.size.width
-                                    : triangle.size.width,
-                                height: triangle.size.height < 0
-                                    ? -triangle.size.height
-                                    : triangle.size.height,
-                                decoration: hovered && !selected
-                                    ? BoxDecoration(
-                                        border: Border.all(
-                                        strokeAlign: .5,
-                                        width: 4,
-                                        color: Colors.blueAccent,
-                                      ))
-                                    : const BoxDecoration(),
-                              ),
+                        child: Listener(
+                          onPointerDown: (event) {
+                            ref.read(selectedProvider.notifier)
+                              ..clear()
+                              ..add(widget.index);
+                            handlePointerDown(event);
+                          },
+                          onPointerMove: handleMove,
+                          onPointerUp: handlePointerUp,
+                          child: MouseRegion(
+                            onEnter: (_) => ref
+                                .read(hoveredProvider.notifier)
+                                .add(widget.index),
+                            onExit: (_) => ref
+                                .read(hoveredProvider.notifier)
+                                .remove(widget.index),
+                            child: Container(
+                              width: triangle.size.width < 0
+                                  ? -triangle.size.width
+                                  : triangle.size.width,
+                              height: triangle.size.height < 0
+                                  ? -triangle.size.height
+                                  : triangle.size.height,
+                              decoration: hovered && !selected
+                                  ? BoxDecoration(
+                                      border: Border.all(
+                                      strokeAlign: .5,
+                                      width: 4,
+                                      color: Colors.blueAccent,
+                                    ))
+                                  : const BoxDecoration(),
                             ),
                           ),
                         ),
@@ -210,6 +161,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
     );
   }
 
+  /// Builds the side resizer
   Widget _buildResizer(
     Triangle tValue, {
     required Alignment alignment,
@@ -290,7 +242,10 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
         ));
   }
 
+  /// handles the pointer down event
   void handlePointerDown(PointerDownEvent event) {
+    _triangle.value = ref.read(
+        componentsProvider.select((value) => value[widget.index].triangle));
     originalPosition.value = event.position;
     _originalTriangle.value = _triangle.value;
   }
@@ -301,6 +256,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
     _moving.value = false;
   }
 
+  /// Builds the edge resize and rotate control
   Widget _buildEdgeControl(
     Triangle triangle, {
     Alignment? alignment,
@@ -374,6 +330,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
     );
   }
 
+  /// Handles movement
   void handleMove(
     PointerMoveEvent event,
   ) {
@@ -384,6 +341,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
     _moving.value = true;
   }
 
+  /// Handles rotation from the center of the widget to the pointer
   void handleRotate(PointerMoveEvent event) {
     final center = _originalTriangle.value.rect.center;
     final originalAngle = atan2(
@@ -397,6 +355,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
         .copyWith(angle: _originalTriangle.value.angle - deltaAngle);
   }
 
+  /// Handles resizing from the sides
   void handleResizeSide(
       PointerMoveEvent event, Alignment alignment, Offset selectedSide) {
     final tValue = _originalTriangle.value;
@@ -467,6 +426,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
     );
   }
 
+  /// Handles resizing from the edges
   void handleResizeEdges(
       PointerMoveEvent event, Alignment alignment, Offset selectedEdge) {
     final tValue = _originalTriangle.value;
@@ -516,6 +476,7 @@ class _ComponentWidgetState extends ConsumerState<ComponentWidget> {
     );
   }
 
+  /// Snaps the value to the nearest snap value if the keys are pressed
   double snap(double value, int snapValue, Set<PhysicalKeyboardKey> keys) =>
       keys.contains(PhysicalKeyboardKey.altLeft)
           ? (value / snapValue).truncateToDouble() * snapValue
@@ -532,22 +493,22 @@ class Triangle {
   Rect get rect => Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height);
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) get rotatedEdges => rotateRect(
-    rect,
-    angle,
-    pos + Offset(size.width / 2, size.height / 2),
-  );
+        rect,
+        angle,
+        pos + Offset(size.width / 2, size.height / 2),
+      );
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) get edges => rotateRect(
-    rect,
-    angle,
-    pos,
-  );
+        rect,
+        angle,
+        pos,
+      );
 
   static fromEdges(
-      ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
-        bool flipX = false,
-        bool flipY = false,
-      }) {
+    ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
+    bool flipX = false,
+    bool flipY = false,
+  }) {
     final size = Size(
       (edges.tl - edges.tr).distance * (flipX ? -1 : 1),
       (edges.tl - edges.bl).distance * (flipY ? -1 : 1),
@@ -579,11 +540,11 @@ class Triangle {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is Triangle &&
-              runtimeType == other.runtimeType &&
-              pos == other.pos &&
-              size == other.size &&
-              angle == other.angle;
+      other is Triangle &&
+          runtimeType == other.runtimeType &&
+          pos == other.pos &&
+          size == other.size &&
+          angle == other.angle;
 
   @override
   int get hashCode => pos.hashCode ^ size.hashCode ^ angle.hashCode;
