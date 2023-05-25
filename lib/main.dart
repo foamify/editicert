@@ -74,9 +74,6 @@ class ActivateShortcutAction extends Action<ActivateShortcutIntent> {
   void handleGoBackward() {
     final index = ref.read(selectedProvider).singleOrNull;
     if (index == null || index == 0) return;
-    ref.read(hoveredProvider.notifier).clear();
-    ref.read(selectedProvider.notifier).clear();
-    ref.read(selectedProvider.notifier).add(index - 1);
     ref.read(componentsProvider.notifier).reorder(index, index - 1);
   }
 
@@ -84,9 +81,6 @@ class ActivateShortcutAction extends Action<ActivateShortcutIntent> {
     final index = ref.read(selectedProvider).singleOrNull;
     if (index == null || index == ref.read(componentsProvider).length - 1)
       return;
-    ref.read(hoveredProvider.notifier).clear();
-    ref.read(selectedProvider.notifier).clear();
-    ref.read(selectedProvider.notifier).add(index + 1);
     ref.read(componentsProvider.notifier).reorder(index, index + 1);
   }
 }
@@ -140,30 +134,73 @@ class _HomePageState extends ConsumerState<HomePage> {
     final components = ref.watch(componentsProvider);
     if (components.isEmpty) {
       final components = ref.read(componentsProvider.notifier);
-      components.add(const ComponentData(
+      components.add(
+        ComponentData(
           name: 'Rectangle 1',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
+          triangle: const Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.redAccent,
+          borderRadius: BorderRadius.circular(180),
+        ),
+      );
+      components.add(
+        ComponentData(
           name: 'Rectangle 2',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
+          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.blueAccent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+      );
+      components.add(
+        ComponentData(
           name: 'Rectangle 3',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
+          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.greenAccent,
+          borderRadius: BorderRadius.circular(32),
+        ),
+      );
+      components.add(
+        const ComponentData(
           name: 'Rectangle 4',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
+          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.white30,
+          borderRadius: BorderRadius.only(
+              topRight: Radius.circular(16), bottomLeft: Radius.circular(16)),
+        ),
+      );
+      components.add(
+        const ComponentData(
           name: 'Rectangle 5',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
+          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.cyan,
+        ),
+      );
+      components.add(
+        const ComponentData(
           name: 'Rectangle 6',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
+          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.teal,
+        ),
+      );
+      components.add(
+        const ComponentData(
           name: 'Rectangle 7',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
-      components.add(const ComponentData(
-          name: 'Rectangle 8',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0)));
+          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          color: Colors.indigoAccent,
+        ),
+      );
+      components.add(
+        const ComponentData(
+            name: 'Rectangle 8',
+            triangle: Triangle(Offset.zero, Size(200, 200), 0),
+            color: Colors.purpleAccent,
+            shadow: [
+              BoxShadow(
+                offset: Offset(0, 4),
+                blurRadius: 12,
+                spreadRadius: 12,
+              ),
+            ]),
+      );
     }
     final selected = ref.watch(selectedProvider);
     final hovered = ref.watch(hoveredProvider);

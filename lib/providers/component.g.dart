@@ -21,7 +21,7 @@ final canvasTransformProvider = AutoDisposeProvider<Matrix4>.internal(
 );
 
 typedef CanvasTransformRef = AutoDisposeProviderRef<Matrix4>;
-String _$componentsHash() => r'960ee645bf083f66e4753e3cd1cc6eac09249f8e';
+String _$componentsHash() => r'a90fae945d1ca76056b7fb0ab070e10c80a471d1';
 
 /// See also [Components].
 @ProviderFor(Components)

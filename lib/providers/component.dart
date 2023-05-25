@@ -70,6 +70,12 @@ class Components extends _$Components {
     newState.removeAt(oldIndex);
     newState.insert(newIndex, component);
     state = [...newState];
+    if (ref.read(selectedProvider).singleOrNull == oldIndex) {
+      ref.read(selectedProvider.notifier)
+        ..clear()
+        ..add(newIndex);
+    }
+    ref.read(hoveredProvider.notifier).clear();
   }
 
   void replace(

@@ -4,13 +4,29 @@ Certificate Editor & Batch Exporter
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+[WIP]
 
-A few resources to get you started if this is your first Flutter project:
+## Todo:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Marquee
+- Modify from sidebar
+  - Pos
+  - Size
+  - Rotation
+  - BorderRadius
+    - All
+    - Each
+- Reorder from sidebar
+- Contents
+  - Text
+  - Shapes
+  - Images
+- Shadow
+- Clipping
+- Mask
+- Snap on key
+  - pos
+  - size
+  - angle
+- Square resize
+- TBA
