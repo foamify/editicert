@@ -6,12 +6,27 @@ part of 'component.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$componentsHash() => r'55feee43752d8d5765310999b10071a60319a9c9';
+String _$canvasTransformHash() => r'5ce65bc7f824bfe4de113e78ee33eaa013ed7fab';
+
+/// See also [canvasTransform].
+@ProviderFor(canvasTransform)
+final canvasTransformProvider = AutoDisposeProvider<Matrix4>.internal(
+  canvasTransform,
+  name: r'canvasTransformProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$canvasTransformHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef CanvasTransformRef = AutoDisposeProviderRef<Matrix4>;
+String _$componentsHash() => r'960ee645bf083f66e4753e3cd1cc6eac09249f8e';
 
 /// See also [Components].
 @ProviderFor(Components)
-final componentsProvider = AutoDisposeNotifierProvider<Components,
-    List<({String name, Triangle triangle})>>.internal(
+final componentsProvider =
+    AutoDisposeNotifierProvider<Components, List<ComponentData>>.internal(
   Components.new,
   name: r'componentsProvider',
   debugGetCreateSourceHash:
@@ -20,9 +35,8 @@ final componentsProvider = AutoDisposeNotifierProvider<Components,
   allTransitiveDependencies: null,
 );
 
-typedef _$Components
-    = AutoDisposeNotifier<List<({String name, Triangle triangle})>>;
-String _$keysHash() => r'3c74f4e6a2870e4e002d2c16ce7fab5594ce8fe5';
+typedef _$Components = AutoDisposeNotifier<List<ComponentData>>;
+String _$keysHash() => r'7b6effe0574f4369547330a966d4566095d68373';
 
 /// See also [Keys].
 @ProviderFor(Keys)
@@ -80,4 +94,22 @@ final toolProvider = AutoDisposeNotifierProvider<Tool, ToolData>.internal(
 );
 
 typedef _$Tool = AutoDisposeNotifier<ToolData>;
+String _$transformationControllerDataHash() =>
+    r'5e490ff2d2f7e0d48187401663236fe196941602';
+
+/// See also [TransformationControllerData].
+@ProviderFor(TransformationControllerData)
+final transformationControllerDataProvider = AutoDisposeNotifierProvider<
+    TransformationControllerData, TransformationController>.internal(
+  TransformationControllerData.new,
+  name: r'transformationControllerDataProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$transformationControllerDataHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$TransformationControllerData
+    = AutoDisposeNotifier<TransformationController>;
 // ignore_for_file: unnecessary_raw_strings, subtype_of_sealed_class, invalid_use_of_internal_member, do_not_use_environment, prefer_const_constructors, public_member_api_docs, avoid_private_typedef_functions

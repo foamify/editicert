@@ -1,10 +1,9 @@
-import 'package:flutter/rendering.dart';
 
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const sidebarWidth = 240.0;
-
+const topbarHeight = 48.0;
 const gestureSize = 10.0;
 
 ({Offset bl, Offset br, Offset tl, Offset tr}) rotateRect(
@@ -55,3 +54,9 @@ Rect rectFromEdges(({Offset bl, Offset br, Offset tl, Offset tr}) edges) {
     edges.tr.dy - edges.bl.dy,
   );
 }
+
+/// Snaps the value to the nearest snap value if the keys are pressed
+double snap(double value, int snapValue, Set<PhysicalKeyboardKey> keys) =>
+    keys.contains(PhysicalKeyboardKey.altLeft)
+        ? (value / snapValue).truncateToDouble() * snapValue
+        : (value / 0.1).truncateToDouble() * 0.1;

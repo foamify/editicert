@@ -576,6 +576,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  transparent_pointer:
+    dependency: "direct main"
+    description:
+      name: transparent_pointer
+      sha256: "27f5a7a63e517b6a56962bd473bbfcdcacce13fc996a264d6665da9a24650eb9"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   typed_data:
     dependency: transitive
     description:
