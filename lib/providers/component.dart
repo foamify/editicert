@@ -114,19 +114,19 @@ class Components extends _$Components {
 @riverpod
 class Keys extends _$Keys {
   @override
-  Set<PhysicalKeyboardKey> build() {
+  Set<LogicalKeyboardKey> build() {
     return {};
   }
 
-  Set<PhysicalKeyboardKey> get keys => state;
+  Set<LogicalKeyboardKey> get keys => state;
 
-  set keys(Set<PhysicalKeyboardKey> value) => state = value;
+  set keys(Set<LogicalKeyboardKey> value) => state = value;
 
-  void add(PhysicalKeyboardKey key) {
+  void add(LogicalKeyboardKey key) {
     if (!state.contains(key)) state = {...state..add(key)};
   }
 
-  void remove(PhysicalKeyboardKey key) {
+  void remove(LogicalKeyboardKey key) {
     if (state.contains(key)) {
       state = {...state..remove(key)};
     }

@@ -154,6 +154,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final components = ref.watch(componentsProvider);
     final selected = ref.watch(selectedProvider);
     final hovered = ref.watch(hoveredProvider);
+    final keys = ref.watch(keysProvider);
     final keysNotifier = ref.watch(keysProvider.notifier);
     final isToolHand = ref.watch(toolProvider) == ToolData.hand;
     if (components.isEmpty) {
@@ -229,20 +230,20 @@ class _HomePageState extends ConsumerState<HomePage> {
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
-      // onKey: (value) {
-      //   value.isKeyPressed(value.logicalKey)
-      //       ? keysNotifier.add(value.physicalKey)
-      //       : keysNotifier.remove(value.physicalKey);
-      //   if (value.isKeyPressed(LogicalKeyboardKey.keyV)) {
-      //     toolNotifier.setMove();
-      //   }
-      //   if (value.isKeyPressed(LogicalKeyboardKey.keyR)) {
-      //     toolNotifier.setCreate();
-      //   }
-      //   if (value.isKeyPressed(LogicalKeyboardKey.keyH)) {
-      //     toolNotifier.setHand();
-      //   }
-      // },
+      onKey: (value) {
+        value.isKeyPressed(value.logicalKey)
+            ? keysNotifier.add(value.logicalKey)
+            : keysNotifier.remove(value.logicalKey);
+        // if (value.isKeyPressed(LogicalKeyboardKey.keyV)) {
+        //   toolNotifier.setMove();
+        // }
+        // if (value.isKeyPressed(LogicalKeyboardKey.keyR)) {
+        //   toolNotifier.setCreate();
+        // }
+        // if (value.isKeyPressed(LogicalKeyboardKey.keyH)) {
+        //   toolNotifier.setHand();
+        // }
+      },
       child: Scaffold(
         body: Stack(
           clipBehavior: Clip.none,
@@ -339,10 +340,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                             // trackpadScrollCausesScale: pressedShift,
                             maxScale: 256,
                             minScale: .01,
+                            trackpadScrollCausesScale: keys.contains(LogicalKeyboardKey.metaLeft),
                             boundaryMargin:
                                 const EdgeInsets.all(double.infinity),
                             builder: (context, viewport) =>
-                                const SizedBox.shrink()),
+                                const SizedBox()),
                       ),
                     ),
                   ),
@@ -741,7 +743,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   List<Positioned> buildComponentWidget(ComponentData e) {
     final triangle = e.triangle;
-    final borderRadius = BorderRadius.circular(8);
     final child = Container(
       width:
           triangle.size.width < 0 ? -triangle.size.width : triangle.size.width,

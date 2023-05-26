@@ -36,12 +36,12 @@ final componentsProvider =
 );
 
 typedef _$Components = AutoDisposeNotifier<List<ComponentData>>;
-String _$keysHash() => r'7b6effe0574f4369547330a966d4566095d68373';
+String _$keysHash() => r'c6c3f44732921e4de7f43a36cb9f6302eeb169f2';
 
 /// See also [Keys].
 @ProviderFor(Keys)
 final keysProvider =
-    AutoDisposeNotifierProvider<Keys, Set<PhysicalKeyboardKey>>.internal(
+    AutoDisposeNotifierProvider<Keys, Set<LogicalKeyboardKey>>.internal(
   Keys.new,
   name: r'keysProvider',
   debugGetCreateSourceHash:
@@ -50,7 +50,7 @@ final keysProvider =
   allTransitiveDependencies: null,
 );
 
-typedef _$Keys = AutoDisposeNotifier<Set<PhysicalKeyboardKey>>;
+typedef _$Keys = AutoDisposeNotifier<Set<LogicalKeyboardKey>>;
 String _$selectedHash() => r'ba038842de4461d31b7ed70c316435834b147be7';
 
 /// See also [Selected].

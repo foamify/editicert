@@ -89,9 +89,9 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
     ref.read(componentsProvider.notifier).replace(index, triangle: newTriangle);
   }
 
-  bool pressedShift(Set<PhysicalKeyboardKey> keys) {
-    return keys.contains(PhysicalKeyboardKey.shiftLeft) ||
-        keys.contains(PhysicalKeyboardKey.shiftRight);
+  bool pressedShift(Set<LogicalKeyboardKey> keys) {
+    return keys.contains(LogicalKeyboardKey.shiftLeft) ||
+        keys.contains(LogicalKeyboardKey.shiftRight);
   }
 
   void handlePointerUp(PointerUpEvent event) {
