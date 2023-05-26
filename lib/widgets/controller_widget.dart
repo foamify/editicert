@@ -110,96 +110,94 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
           final tAngle = _visualTriangle.value.angle;
           final selectedValue = selected && !_moving.value;
 
-          return Positioned.fill(
-            child: Stack(
-              children: [
-                // movement control
-                Positioned(
-                  left: pos.dx + (tSize.width < 0 ? tSize.width : 0),
-                  top: pos.dy + (tSize.height < 0 ? tSize.height : 0),
-                  child: IgnorePointer(
-                    ignoring: hidden,
-                    child: Transform.rotate(
-                      angle: tAngle,
-                      child: Transform.flip(
-                        flipX: tSize.width < 0,
-                        flipY: tSize.height < 0,
-                        child: Listener(
-                          onPointerDown: (event) {
-                            ref.read(selectedProvider.notifier)
-                              ..clear()
-                              ..add(widget.index);
-                            handlePointerDownGlobal(event);
-                          },
-                          onPointerMove: handleMove,
-                          onPointerUp: handlePointerUp,
-                          child: MouseRegion(
-                            onEnter: (_) => ref
-                                .read(hoveredProvider.notifier)
-                                .add(widget.index),
-                            onExit: (_) => ref
-                                .read(hoveredProvider.notifier)
-                                .remove(widget.index),
-                            child: Container(
-                              width:
-                                  tSize.width < 0 ? -tSize.width : tSize.width,
-                              height: tSize.height < 0
-                                  ? -tSize.height
-                                  : tSize.height,
-                              decoration:
-                                  (hovered || selected) && !_moving.value
-                                      ? BoxDecoration(
-                                          border: Border.all(
-                                          strokeAlign: .5,
-                                          width: selectedValue ? 1 : 2,
-                                          color: Colors.blueAccent,
-                                        ))
-                                      : const BoxDecoration(),
-                            ),
+          return Stack(
+            children: [
+              // movement control
+              Positioned(
+                left: pos.dx + (tSize.width < 0 ? tSize.width : 0),
+                top: pos.dy + (tSize.height < 0 ? tSize.height : 0),
+                child: IgnorePointer(
+                  ignoring: hidden,
+                  child: Transform.rotate(
+                    angle: tAngle,
+                    child: Transform.flip(
+                      flipX: tSize.width < 0,
+                      flipY: tSize.height < 0,
+                      child: Listener(
+                        onPointerDown: (event) {
+                          ref.read(selectedProvider.notifier)
+                            ..clear()
+                            ..add(widget.index);
+                          handlePointerDownGlobal(event);
+                        },
+                        onPointerMove: locked ? null : handleMove,
+                        onPointerUp: handlePointerUp,
+                        child: MouseRegion(
+                          onEnter: (_) => ref
+                              .read(hoveredProvider.notifier)
+                              .add(widget.index),
+                          onExit: (_) => ref
+                              .read(hoveredProvider.notifier)
+                              .remove(widget.index),
+                          child: Container(
+                            width:
+                                tSize.width < 0 ? -tSize.width : tSize.width,
+                            height: tSize.height < 0
+                                ? -tSize.height
+                                : tSize.height,
+                            decoration:
+                                (hovered || selected) && !_moving.value
+                                    ? BoxDecoration(
+                                        border: Border.all(
+                                        strokeAlign: .5,
+                                        width: selectedValue ? 1 : 2,
+                                        color: Colors.blueAccent,
+                                      ))
+                                    : const BoxDecoration(),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
+              ),
 
-                IgnorePointer(
-                  ignoring: locked,
-                  child: Stack(
-                    children: [
-                      // rotation controls
-                      if (selectedValue)
-                        ...[
-                          Alignment.topLeft,
-                          Alignment.topRight,
-                          Alignment.bottomLeft,
-                          Alignment.bottomRight,
-                        ].map(
-                            (e) => _buildEdgeControl(alignment: e, rotate: true)),
-                      // side resize controls
-                      if (selectedValue)
-                        ...[
-                          Alignment.topCenter,
-                          Alignment.bottomCenter,
-                          Alignment.centerLeft,
-                          Alignment.centerRight,
-                        ].map((e) => _buildResizer(
-                              alignment: e,
-                            )),
-                      // edge resize controls
-                      if (selectedValue)
-                        ...[
-                          Alignment.topLeft,
-                          Alignment.topRight,
-                          Alignment.bottomLeft,
-                          Alignment.bottomRight,
-                        ].map(
-                            (e) => _buildEdgeControl(alignment: e, resize: true)),
-                    ],
-                  ),
-                )
-              ],
-            ),
+              IgnorePointer(
+                ignoring: locked,
+                child: Stack(
+                  children: [
+                    // rotation controls
+                    if (selectedValue)
+                      ...[
+                        Alignment.topLeft,
+                        Alignment.topRight,
+                        Alignment.bottomLeft,
+                        Alignment.bottomRight,
+                      ].map(
+                          (e) => _buildEdgeControl(alignment: e, rotate: true)),
+                    // side resize controls
+                    if (selectedValue)
+                      ...[
+                        Alignment.topCenter,
+                        Alignment.bottomCenter,
+                        Alignment.centerLeft,
+                        Alignment.centerRight,
+                      ].map((e) => _buildResizer(
+                            alignment: e,
+                          )),
+                    // edge resize controls
+                    if (selectedValue)
+                      ...[
+                        Alignment.topLeft,
+                        Alignment.topRight,
+                        Alignment.bottomLeft,
+                        Alignment.bottomRight,
+                      ].map(
+                          (e) => _buildEdgeControl(alignment: e, resize: true)),
+                  ],
+                ),
+              )
+            ],
           );
         });
   }

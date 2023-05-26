@@ -65,17 +65,18 @@ class Components extends _$Components {
   void removeAt(int index) => state.removeAt(index);
 
   void reorder(int oldIndex, int newIndex) {
+    ref.read(hoveredProvider.notifier).clear();
+    ref.read(selectedProvider.notifier).clear();
+
     final component = state[oldIndex];
     final newState = [...state];
     newState.removeAt(oldIndex);
     newState.insert(newIndex, component);
+
+    ref.read(selectedProvider.notifier).add(newIndex);
+
     state = [...newState];
-    if (ref.read(selectedProvider).singleOrNull == oldIndex) {
-      ref.read(selectedProvider.notifier)
-        ..clear()
-        ..add(newIndex);
-    }
-    ref.read(hoveredProvider.notifier).clear();
+    print(ref.read(selectedProvider).singleOrNull);
   }
 
   void replace(
@@ -169,15 +170,21 @@ class Hovered extends _$Hovered {
 class Tool extends _$Tool {
   @override
   ToolData build() {
-    return ToolData.pointer;
+    return ToolData.move;
   }
 
-  void setPointer() => state = ToolData.pointer;
+  void setMove() => state = ToolData.move;
 
   void setCreate() => state = ToolData.create;
+
+  void setHand() => state = ToolData.hand;
 }
 
-enum ToolData { pointer, create }
+enum ToolData {
+  move,
+  create,
+  hand,
+}
 
 @riverpod
 Matrix4 canvasTransform(CanvasTransformRef ref) {

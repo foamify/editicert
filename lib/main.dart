@@ -32,7 +32,7 @@ class MyApp extends ConsumerWidget {
       home: const HomePage(),
       shortcuts: {
         LogicalKeySet(LogicalKeyboardKey.keyV):
-            const ActivateToolIntent(ToolData.pointer),
+            const ActivateToolIntent(ToolData.move),
         LogicalKeySet(LogicalKeyboardKey.keyR):
             const ActivateToolIntent(ToolData.create),
         LogicalKeySet(LogicalKeyboardKey.bracketLeft):
@@ -41,7 +41,7 @@ class MyApp extends ConsumerWidget {
             ActivateShortcutIntent({LogicalKeyboardKey.bracketRight}),
       },
       actions: {
-        ActivateToolIntent: ActivateToolAction(ref),
+        // ActivateToolIntent: ActivateToolAction(ref),
         ActivateShortcutIntent: ActivateShortcutAction(ref),
       },
     );
@@ -100,10 +100,12 @@ class ActivateToolAction extends Action<ActivateToolIntent> {
   void invoke(ActivateToolIntent intent) {
     final notifier = ref.read(toolProvider.notifier);
     switch (intent.tool) {
-      case ToolData.pointer:
-        notifier.setPointer();
+      case ToolData.move:
+        notifier.setMove();
       case ToolData.create:
         notifier.setCreate();
+      case ToolData.hand:
+        notifier.setHand();
     }
   }
 }
@@ -208,17 +210,20 @@ class _HomePageState extends ConsumerState<HomePage> {
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
-      onKey: (value) {
-        value.isKeyPressed(value.logicalKey)
-            ? keysNotifier.add(value.physicalKey)
-            : keysNotifier.remove(value.physicalKey);
-        if (value.isKeyPressed(LogicalKeyboardKey.keyV)) {
-          toolNotifier.setPointer();
-        }
-        if (value.isKeyPressed(LogicalKeyboardKey.keyR)) {
-          toolNotifier.setCreate();
-        }
-      },
+      // onKey: (value) {
+      //   value.isKeyPressed(value.logicalKey)
+      //       ? keysNotifier.add(value.physicalKey)
+      //       : keysNotifier.remove(value.physicalKey);
+      //   if (value.isKeyPressed(LogicalKeyboardKey.keyV)) {
+      //     toolNotifier.setMove();
+      //   }
+      //   if (value.isKeyPressed(LogicalKeyboardKey.keyR)) {
+      //     toolNotifier.setCreate();
+      //   }
+      //   if (value.isKeyPressed(LogicalKeyboardKey.keyH)) {
+      //     toolNotifier.setHand();
+      //   }
+      // },
       child: Scaffold(
         body: Stack(
           clipBehavior: Clip.none,
@@ -231,54 +236,67 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onPointerUp: (event) => leftClick.value = false,
                 child: Stack(
                   children: [
-                    ValueListenableBuilder(
-                        valueListenable: leftClick,
-                        builder: (context, leftClick, child) {
-                          return InteractiveViewer.builder(
-                            transformationController: transformationController,
-                            panEnabled: !leftClick,
-                            minScale: .1,
-                            boundaryMargin:
-                                const EdgeInsets.all(double.infinity),
-                            builder: (context, viewport) =>
-                                Stack(clipBehavior: Clip.none, children: [
-                              ...components.mapIndexed(
-                                (i, e) {
-                                  return e.hidden
-                                      ? [const SizedBox.shrink()]
-                                      : buildComponentWidget(e);
-                                },
-                              ).flattened,
-                              const SizedBox.shrink(),
-                            ]),
-                          );
-                        }),
-                    TransparentPointer(
-                      child: Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              ref.read(selectedProvider.notifier).clear();
-                              ref.read(hoveredProvider.notifier).clear();
-                            },
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: MediaQuery.of(context).size.height,
-                              color: Colors.transparent,
-                            ),
-                          ),
-                          ...components.mapIndexed((i, e) {
-                            return ControllerWidget(i);
-                          }),
-                          ...components.mapIndexed((i, e) {
-                            return !selected.contains(i)
-                                ? const SizedBox.shrink()
-                                : ControllerWidget(i);
-                          }),
-                        ],
+                    // unselect all
+                    GestureDetector(
+                      onTap: () {
+                        ref.read(selectedProvider.notifier).clear();
+                        ref.read(hoveredProvider.notifier).clear();
+                      },
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height,
+                        color: Colors.transparent,
                       ),
                     ),
+                    // components
+                    ValueListenableBuilder(
+                      valueListenable: transformationController,
+                      builder: (context, value, child) {
+                        return Transform(
+                          transform: value,
+                          child: Stack(clipBehavior: Clip.none, children: [
+                            ...components.mapIndexed(
+                              (i, e) {
+                                return e.hidden
+                                    ? [const SizedBox.shrink()]
+                                    : buildComponentWidget(e);
+                              },
+                            ).flattened,
+                            const SizedBox.shrink(),
+                          ]),
+                        );
+                      }
+                    ),
+                    // controller for selections
+                    ...components.mapIndexed((i, e) {
+                      return !selected.contains(i) && !hovered.contains(i)
+                          ? ControllerWidget(i)
+                          : const SizedBox.shrink();
+                    }),
+                    // selected controller (at the front of every controllers)
+                    ...components.mapIndexed((i, e) {
+                      return !selected.contains(i) && !hovered.contains(i)
+                          ? const SizedBox.shrink()
+                          : ControllerWidget(i);
+                    }),
+                    //
                     if (tool == ToolData.create) const CreatorWidget(),
+                    // camera (kinda). workaround
+                    TransparentPointer(
+                      child: ValueListenableBuilder(
+                          valueListenable: leftClick,
+                          builder: (context, leftClick, child) {
+                            return InteractiveViewer.builder(
+                                transformationController:
+                                    transformationController,
+                                panEnabled: !leftClick,
+                                minScale: .1,
+                                boundaryMargin:
+                                    const EdgeInsets.all(double.infinity),
+                                builder: (context, viewport) =>
+                                    const SizedBox.shrink());
+                          }),
+                    ),
                   ],
                 ),
               ),
@@ -309,14 +327,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ),
                           child: Card(
                             margin: EdgeInsets.zero,
-                            color: tool == ToolData.pointer
+                            color: tool == ToolData.move
                                 ? Theme.of(context).colorScheme.onInverseSurface
                                 : Theme.of(context).colorScheme.surfaceVariant,
                             elevation: 0,
                             clipBehavior: Clip.hardEdge,
                             child: InkWell(
                               onTap: () {
-                                toolNotifier.setPointer();
+                                toolNotifier.setMove();
                               },
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
@@ -387,23 +405,21 @@ class _HomePageState extends ConsumerState<HomePage> {
                               .mapIndexed(
                                 (i, e) => Container(
                                   decoration: BoxDecoration(
-                                    color: switch ((
-                                      selected.contains(i),
-                                      hovered.contains(i),
-                                    )) {
-                                      (false, false) => Colors.transparent,
-                                      (false, true) => Theme.of(context)
-                                          .colorScheme
-                                          .onInverseSurface
-                                          .withOpacity(.5),
-                                      (true, _) => Theme.of(context)
-                                          .colorScheme
-                                          .onInverseSurface,
-                                    },
+                                    border: Border.all(
+                                      strokeAlign:
+                                          BorderSide.strokeAlignOutside,
+                                      color: switch ((
+                                        selected.contains(i),
+                                        hovered.contains(i),
+                                      )) {
+                                        (false, false) => Colors.transparent,
+                                        (false, true) =>
+                                          Colors.blueAccent.withOpacity(.5),
+                                        (true, _) => Colors.blueAccent
+                                      },
+                                    ),
                                   ),
                                   // color: Colors.transparent,
-                                  margin:
-                                      const EdgeInsets.only(left: 2, right: 1),
                                   child: MouseRegion(
                                     onEnter: (event) => ref
                                         .read(hoveredProvider.notifier)

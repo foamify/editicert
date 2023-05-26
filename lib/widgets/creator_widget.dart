@@ -96,6 +96,6 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
       ref.read(componentsProvider.notifier).removeAt(index);
       ref.read(selectedProvider.notifier).remove(index);
     }
-    ref.read(toolProvider.notifier).setPointer();
+    ref.read(toolProvider.notifier).setMove();
   }
 }
