@@ -128,6 +128,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
   }
 
+  final oMatrix = ValueNotifier(Matrix4.identity());
+
   @override
   Widget build(BuildContext context) {
     final globalStateData = ref.watch(globalStateProvider);
@@ -296,6 +298,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   //
                   if (tool == ToolData.create || isCreateTooling)
                     const CreatorWidget(),
+
                   // camera (kinda). workaround
                   TransparentPointer(
                     transparent: !isToolHand,
@@ -329,22 +332,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     !isNotCanvasTooling) ||
                                 isCanvasTooling,
                             onInteractionStart: (details) {
-                              if (isToolHand) {
+                              if (keys.contains(LogicalKeyboardKey.metaLeft)) {
+                                globalStateNotifier.update(globalStateData +
+                                    GlobalStates.zoomingCanvas);
+                              } else {
                                 globalStateNotifier.update(globalStateData +
                                     GlobalStates.panningCanvas);
                               }
                             },
                             onInteractionEnd: (details) =>
                                 globalStateNotifier.update(globalStateData -
-                                    GlobalStates.panningCanvas),
-                            // trackpadScrollCausesScale: pressedShift,
+                                    GlobalStates.panningCanvas -
+                                    GlobalStates.zoomingCanvas),
                             maxScale: 256,
                             minScale: .01,
-                            trackpadScrollCausesScale: keys.contains(LogicalKeyboardKey.metaLeft),
+                            trackpadScrollCausesScale: (keys.contains(
+                                        LogicalKeyboardKey.metaLeft) ||
+                                    globalStateData.containsAny(
+                                        {GlobalStates.zoomingCanvas})) &&
+                                !globalStateData
+                                    .containsAny({GlobalStates.panningCanvas}),
                             boundaryMargin:
                                 const EdgeInsets.all(double.infinity),
-                            builder: (context, viewport) =>
-                                const SizedBox()),
+                            builder: (context, viewport) => const SizedBox()),
                       ),
                     ),
                   ),

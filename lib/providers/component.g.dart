@@ -95,7 +95,7 @@ final toolProvider = AutoDisposeNotifierProvider<Tool, ToolData>.internal(
 
 typedef _$Tool = AutoDisposeNotifier<ToolData>;
 String _$transformationControllerDataHash() =>
-    r'5e490ff2d2f7e0d48187401663236fe196941602';
+    r'eb1d2e36ab9b5b3f22c5ed5c59d6e4757a6c87c4';
 
 /// See also [TransformationControllerData].
 @ProviderFor(TransformationControllerData)

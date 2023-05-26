@@ -199,7 +199,7 @@ class TransformationControllerData extends _$TransformationControllerData {
 
   void change(TransformationController value) => state = value;
 
-  void update(Matrix4 value) => state.value = value;
+  void update(Matrix4 value) => state = TransformationController(value);
 }
 
 @riverpod
