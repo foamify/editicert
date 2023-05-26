@@ -229,6 +229,10 @@ class _HomePageState extends ConsumerState<HomePage> {
             ]),
       );
     }
+    final isZooming = globalStateData.containsAny({GlobalStates.zoomingCanvas});
+    final pressedMeta = keys.contains(LogicalKeyboardKey.metaLeft) ||
+        keys.contains(LogicalKeyboardKey.metaRight) ||
+        keys.contains(LogicalKeyboardKey.meta);
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -312,7 +316,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       child: MouseRegion(
                         cursor: switch ((
                           leftClick,
-                          (isToolHand && !isNotCanvasTooling) || isCanvasTooling
+                          isToolHand && (!isNotCanvasTooling || isCanvasTooling)
                         )) {
                           (false, true) => SystemMouseCursors.grab,
                           (true, true) => SystemMouseCursors.grabbing,
@@ -328,14 +332,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                         child: InteractiveViewer.builder(
                             transformationController: transformationController,
-                            panEnabled: ((!leftClick || isToolHand) &&
-                                    !isNotCanvasTooling) ||
-                                isCanvasTooling,
+                            panEnabled: (isToolHand &&
+                                    (!isNotCanvasTooling || isCanvasTooling)) ||
+                                (isCanvasTooling && !leftClick && !isZooming),
                             onInteractionStart: (details) {
-                              if (keys.contains(LogicalKeyboardKey.metaLeft)) {
+                              if (pressedMeta) {
                                 globalStateNotifier.update(globalStateData +
                                     GlobalStates.zoomingCanvas);
-                              } else {
+                              } else if (isToolHand) {
+                                globalStateNotifier.update(globalStateData +
+                                    GlobalStates.panningCanvas);
+                              }
+                            },
+                            onInteractionUpdate: (details) {
+                              if (details.scale == 1 && !pressedMeta) {
                                 globalStateNotifier.update(globalStateData +
                                     GlobalStates.panningCanvas);
                               }
@@ -346,10 +356,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     GlobalStates.zoomingCanvas),
                             maxScale: 256,
                             minScale: .01,
-                            trackpadScrollCausesScale: (keys.contains(
-                                        LogicalKeyboardKey.metaLeft) ||
-                                    globalStateData.containsAny(
-                                        {GlobalStates.zoomingCanvas})) &&
+                            trackpadScrollCausesScale: (pressedMeta ||
+                                    isZooming) &&
                                 !globalStateData
                                     .containsAny({GlobalStates.panningCanvas}),
                             boundaryMargin:
