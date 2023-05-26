@@ -130,12 +130,21 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var globalStateData = ref.watch(globalStateProvider);
+    final globalStateData = ref.watch(globalStateProvider);
+    final globalStateNotifier = ref.watch(globalStateProvider.notifier);
     final leftClick = globalStateData.states.contains(GlobalStates.leftClick);
+    final isCreateTooling = globalStateData.containsAny({
+      GlobalStates.creating,
+    });
     final isComponentTooling = globalStateData.containsAny({
       GlobalStates.draggingComponent,
       GlobalStates.resizingComponent,
       GlobalStates.rotatingComponent,
+    });
+    final isNotCanvasTooling = isComponentTooling || isCreateTooling;
+    final isCanvasTooling = globalStateData.containsAny({
+      GlobalStates.panningCanvas,
+      GlobalStates.zoomingCanvas,
     });
 
     final transformationController =
@@ -284,23 +293,22 @@ class _HomePageState extends ConsumerState<HomePage> {
                         : ControllerWidget(i);
                   }),
                   //
-                  if (tool == ToolData.create) const CreatorWidget(),
+                  if (tool == ToolData.create || isCreateTooling)
+                    const CreatorWidget(),
                   // camera (kinda). workaround
                   TransparentPointer(
                     transparent: !isToolHand,
                     child: Listener(
-                      onPointerDown: (event) => ref
-                          .read(globalStateProvider.notifier)
-                          .update(ref.read(globalStateProvider) +
+                      onPointerDown: (event) => globalStateNotifier.update(
+                          ref.read(globalStateProvider) +
                               GlobalStates.leftClick),
-                      onPointerUp: (event) => ref
-                          .read(globalStateProvider.notifier)
-                          .update(ref.read(globalStateProvider) -
+                      onPointerUp: (event) => globalStateNotifier.update(
+                          ref.read(globalStateProvider) -
                               GlobalStates.leftClick),
                       child: MouseRegion(
                         cursor: switch ((
                           leftClick,
-                          isToolHand && !isComponentTooling
+                          (isToolHand && !isNotCanvasTooling) || isCanvasTooling
                         )) {
                           (false, true) => SystemMouseCursors.grab,
                           (true, true) => SystemMouseCursors.grabbing,
@@ -316,8 +324,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                         },
                         child: InteractiveViewer.builder(
                             transformationController: transformationController,
-                            panEnabled: (!leftClick || isToolHand) &&
-                                !isComponentTooling,
+                            panEnabled: ((!leftClick || isToolHand) &&
+                                    !isNotCanvasTooling) ||
+                                isCanvasTooling,
+                            onInteractionStart: (details) {
+                              if (isToolHand) {
+                                globalStateNotifier.update(globalStateData +
+                                    GlobalStates.panningCanvas);
+                              }
+                            },
+                            onInteractionEnd: (details) =>
+                                globalStateNotifier.update(globalStateData -
+                                    GlobalStates.panningCanvas),
                             // trackpadScrollCausesScale: pressedShift,
                             maxScale: 256,
                             minScale: .01,
@@ -340,80 +358,82 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Tooltip(
-                          richMessage: TextSpan(
-                            children: [
-                              const TextSpan(
-                                text: 'Move ',
+                        ...[
+                          (
+                            text: 'Move',
+                            shortcut: 'V',
+                            tool: ToolData.move,
+                            onTap: () {
+                              toolNotifier.setMove();
+                            },
+                            icon: Transform.rotate(
+                              angle: -pi / 4,
+                              alignment: const Alignment(-0.2, 0),
+                              child: const Icon(
+                                Icons.navigation_outlined,
+                                size: 18,
                               ),
-                              TextSpan(
-                                text: ' V',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.grey.shade600,
-                                ),
-                              )
-                            ],
+                            )
                           ),
-                          child: Card(
-                            margin: EdgeInsets.zero,
-                            color: tool == ToolData.move
-                                ? Theme.of(context).colorScheme.onInverseSurface
-                                : Theme.of(context).colorScheme.surfaceVariant,
-                            elevation: 0,
-                            clipBehavior: Clip.hardEdge,
-                            child: InkWell(
-                              onTap: () {
-                                toolNotifier.setMove();
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Transform.rotate(
-                                  angle: -pi / 4,
-                                  alignment: const Alignment(-0.2, 0),
-                                  child: const Icon(Icons.navigation_outlined,
-                                      size: 18),
+                          (
+                            text: 'Rectangle',
+                            shortcut: 'R',
+                            tool: ToolData.create,
+                            onTap: () {
+                              toolNotifier.setCreate();
+                            },
+                            icon: const Icon(
+                              CupertinoIcons.square,
+                              size: 18,
+                            )
+                          ),
+                          (
+                            text: 'Hand',
+                            shortcut: 'H',
+                            tool: ToolData.hand,
+                            onTap: () {
+                              toolNotifier.setHand();
+                            },
+                            icon: const Icon(
+                              CupertinoIcons.hand_raised,
+                              size: 18,
+                            )
+                          ),
+                        ].map((e) => Tooltip(
+                              richMessage: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '${e.text} ',
+                                  ),
+                                  TextSpan(
+                                    text: ' ${e.shortcut}',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  )
+                                ],
+                              ),
+                              child: Card(
+                                margin: EdgeInsets.zero,
+                                color: tool == e.tool
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .onInverseSurface
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surfaceVariant,
+                                elevation: 0,
+                                clipBehavior: Clip.hardEdge,
+                                child: InkWell(
+                                  onTap: e.onTap,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: e.icon,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ),
-                        Tooltip(
-                          richMessage: TextSpan(
-                            children: [
-                              const TextSpan(
-                                text: 'Rectangle ',
-                              ),
-                              TextSpan(
-                                text: ' R',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.grey.shade600,
-                                ),
-                              )
-                            ],
-                          ),
-                          child: Card(
-                            margin: EdgeInsets.zero,
-                            clipBehavior: Clip.hardEdge,
-                            color: tool == ToolData.create
-                                ? Theme.of(context).colorScheme.onInverseSurface
-                                : Theme.of(context).colorScheme.surfaceVariant,
-                            elevation: 0,
-                            child: InkWell(
-                              onTap: () {
-                                toolNotifier.setCreate();
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Icon(
-                                  CupertinoIcons.square,
-                                  size: 18,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                            )),
                       ]),
                 ),
                 Expanded(

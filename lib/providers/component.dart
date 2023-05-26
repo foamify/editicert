@@ -246,4 +246,5 @@ enum GlobalStates {
   draggingComponent,
   resizingComponent,
   rotatingComponent,
+  creating,
 }

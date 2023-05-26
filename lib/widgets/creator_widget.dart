@@ -37,6 +37,9 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
   }
 
   void handlePointerDown(PointerDownEvent event) {
+    ref
+        .read(globalStateProvider.notifier)
+        .update(ref.read(globalStateProvider) + GlobalStates.creating);
     final tController = ref.read(transformationControllerDataProvider);
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
@@ -92,6 +95,10 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
   }
 
   void handlePointerUp(PointerUpEvent event) {
+    ref
+        .read(globalStateProvider.notifier)
+        .update(ref.read(globalStateProvider) - GlobalStates.creating);
+
     final index = ref.read(componentsProvider).length - 1;
     final triangle = ref.read(componentsProvider)[index].triangle;
     if (triangle.size.width == 0 || triangle.size.height == 0) {
