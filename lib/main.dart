@@ -380,15 +380,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                               child: Transform.rotate(
                                 angle: triangle.angle + newAngle,
                                 alignment: Alignment.topLeft,
-                                child: Transform.translate(
-                                  offset: const Offset(0, -24) *
-                                      matrix.getMaxScaleOnAxis(),
-                                  child: AnimatedSlide(
-                                    offset: Offset(
-                                        triangle.size.width < 0 ? -1 : 0, -1),
-                                    duration: Duration.zero,
-                                    child: Text(e.name),
-                                  ),
+                                child: AnimatedSlide(
+                                  offset: Offset(
+                                      triangle.size.width < 0 ? -1 : 0, -1),
+                                  duration: Duration.zero,
+                                  child: Text(e.name),
                                 ),
                               ),
                             );
