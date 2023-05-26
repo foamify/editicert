@@ -21,6 +21,7 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Editicert',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -281,14 +282,107 @@ class _HomePageState extends ConsumerState<HomePage> {
                             ...components.mapIndexed(
                               (i, e) {
                                 return e.hidden
-                                    ? [const SizedBox.shrink()]
+                                    ? const SizedBox.shrink()
                                     : buildComponentWidget(e);
                               },
-                            ).flattened,
+                            ),
                             const SizedBox.shrink(),
                           ]),
                         );
                       }),
+                  ...components.mapIndexed(
+                    (i, e) {
+                      final triangle = e.triangle;
+
+                      final edges = triangle.rotatedEdges;
+                      var edge = switch ((triangle.size.width < 0, triangle.size.height < 0)) {
+                        (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => edges.bl,
+                          < 135 => edges.tl,
+                          < 225 => edges.tr,
+                          < 315 => edges.br,
+                          < 360 => edges.bl,
+                          _ => edges.tl,
+                        },
+                        (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => edges.tl,
+                          < 135 => edges.bl,
+                          < 225 => edges.br,
+                          < 315 => edges.tr,
+                          < 360 => edges.tl,
+                          _ => edges.tl,
+                        },
+                        (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => edges.br,
+                          < 135 => edges.bl,
+                          < 225 => edges.tl,
+                          < 315 => edges.tr,
+                          < 360 => edges.br,
+                          _ => edges.tl,
+                        },
+                        _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => edges.tr,
+                          < 135 => edges.tl,
+                          < 225 => edges.bl,
+                          < 315 => edges.br,
+                          < 360 => edges.tr,
+                          _ => edges.tl,
+                        }
+                      };
+                      final newAngle =
+                      switch ((triangle.size.width < 0, triangle.size.height < 0)) {
+                        (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => pi / 2,
+                          < 135 => 0,
+                          < 225 => -pi / 2,
+                          < 315 => pi,
+                          < 360 => pi / 2,
+                          _ => 0.0,
+                        },
+                        (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => pi / 2,
+                          < 135 => 0,
+                          < 225 => -pi / 2,
+                          < 315 => pi,
+                          < 360 => pi / 2,
+                          _ => 0.0,
+                        },
+                        _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                          < 45 => pi / 2,
+                          < 135 => 0,
+                          < 225 => -pi / 2,
+                          < 315 => pi,
+                          < 360 => pi / 2,
+                          _ => 0.0,
+                        }
+                      };
+
+                      edge = MatrixUtils.transformPoint(transformationController.value, edge);
+
+                      return Positioned(
+                        left: edge.dx,
+                        top: edge.dy,
+                        child: ValueListenableBuilder(
+                          valueListenable:
+                              ref.watch(transformationControllerDataProvider),
+                          builder: (context, value, child) => Transform.rotate(
+                            angle: triangle.angle + newAngle,
+                            alignment: Alignment.topLeft,
+                            child: Transform.translate(
+                              offset: const Offset(0, -24) *
+                                  value.getMaxScaleOnAxis(),
+                              child: AnimatedSlide(
+                                offset:
+                                    Offset(triangle.size.width < 0 ? -1 : 0, -1),
+                                duration: Duration.zero,
+                                child: Text(e.name),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   // controller for selections
                   ...components.mapIndexed((i, e) {
                     return ControllerWidget(i);
@@ -376,85 +470,102 @@ class _HomePageState extends ConsumerState<HomePage> {
                   color: Theme.of(context).colorScheme.surfaceVariant,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        ...[
-                          (
-                            text: 'Move',
-                            shortcut: 'V',
-                            tool: ToolData.move,
-                            onTap: () {
-                              toolNotifier.setMove();
-                            },
-                            icon: Transform.rotate(
-                              angle: -pi / 4,
-                              alignment: const Alignment(-0.2, 0),
-                              child: const Icon(
-                                Icons.navigation_outlined,
-                                size: 18,
-                              ),
-                            )
-                          ),
-                          (
-                            text: 'Rectangle',
-                            shortcut: 'R',
-                            tool: ToolData.create,
-                            onTap: () {
-                              toolNotifier.setCreate();
-                            },
-                            icon: const Icon(
-                              CupertinoIcons.square,
-                              size: 18,
-                            )
-                          ),
-                          (
-                            text: 'Hand',
-                            shortcut: 'H',
-                            tool: ToolData.hand,
-                            onTap: () {
-                              toolNotifier.setHand();
-                            },
-                            icon: const Icon(
-                              CupertinoIcons.hand_raised,
-                              size: 18,
-                            )
-                          ),
-                        ].map((e) => Tooltip(
-                              richMessage: TextSpan(
-                                children: [
-                                  TextSpan(
-                                    text: '${e.text} ',
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            ...[
+                              (
+                                text: 'Move',
+                                shortcut: 'V',
+                                tool: ToolData.move,
+                                onTap: () {
+                                  toolNotifier.setMove();
+                                },
+                                icon: Transform.rotate(
+                                  angle: -pi / 4,
+                                  alignment: const Alignment(-0.2, 0),
+                                  child: const Icon(
+                                    Icons.navigation_outlined,
+                                    size: 18,
                                   ),
-                                  TextSpan(
-                                    text: ' ${e.shortcut}',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.grey.shade600,
+                                )
+                              ),
+                              (
+                                text: 'Rectangle',
+                                shortcut: 'R',
+                                tool: ToolData.create,
+                                onTap: () {
+                                  toolNotifier.setCreate();
+                                },
+                                icon: const Icon(
+                                  CupertinoIcons.square,
+                                  size: 18,
+                                )
+                              ),
+                              (
+                                text: 'Hand',
+                                shortcut: 'H',
+                                tool: ToolData.hand,
+                                onTap: () {
+                                  toolNotifier.setHand();
+                                },
+                                icon: const Icon(
+                                  CupertinoIcons.hand_raised,
+                                  size: 18,
+                                )
+                              ),
+                            ].map((e) => Tooltip(
+                                  richMessage: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '${e.text} ',
+                                      ),
+                                      TextSpan(
+                                        text: ' ${e.shortcut}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                  child: Card(
+                                    margin: EdgeInsets.zero,
+                                    color: tool == e.tool
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onInverseSurface
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .surfaceVariant,
+                                    elevation: 0,
+                                    clipBehavior: Clip.hardEdge,
+                                    child: InkWell(
+                                      onTap: e.onTap,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: e.icon,
+                                      ),
                                     ),
-                                  )
-                                ],
-                              ),
-                              child: Card(
-                                margin: EdgeInsets.zero,
-                                color: tool == e.tool
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .onInverseSurface
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .surfaceVariant,
-                                elevation: 0,
-                                clipBehavior: Clip.hardEdge,
-                                child: InkWell(
-                                  onTap: e.onTap,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: e.icon,
                                   ),
-                                ),
-                              ),
-                            )),
-                      ]),
+                                )),
+                          ]),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ValueListenableBuilder(
+                            valueListenable: transformationController,
+                            builder: (context, value, child) {
+                              return Text(
+                                  '${(value.getMaxScaleOnAxis() * 100).truncate()}%');
+                            },
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: Row(
@@ -759,7 +870,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  List<Positioned> buildComponentWidget(ComponentData e) {
+  Widget buildComponentWidget(ComponentData e) {
     final triangle = e.triangle;
     final child = Container(
       width:
@@ -774,99 +885,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       child: const Text('testfasd fa sdf'),
     );
-    final edges = triangle.rotatedEdges;
-    final edge = switch ((triangle.size.width < 0, triangle.size.height < 0)) {
-      (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => edges.bl,
-          < 135 => edges.tl,
-          < 225 => edges.tr,
-          < 315 => edges.br,
-          < 360 => edges.bl,
-          _ => edges.tl,
-        },
-      (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => edges.tl,
-          < 135 => edges.bl,
-          < 225 => edges.br,
-          < 315 => edges.tr,
-          < 360 => edges.tl,
-          _ => edges.tl,
-        },
-      (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => edges.br,
-          < 135 => edges.bl,
-          < 225 => edges.tl,
-          < 315 => edges.tr,
-          < 360 => edges.br,
-          _ => edges.tl,
-        },
-      _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => edges.tr,
-          < 135 => edges.tl,
-          < 225 => edges.bl,
-          < 315 => edges.br,
-          < 360 => edges.tr,
-          _ => edges.tl,
-        }
-    };
-    final newAngle =
-        switch ((triangle.size.width < 0, triangle.size.height < 0)) {
-      (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => pi / 2,
-          < 135 => 0,
-          < 225 => -pi / 2,
-          < 315 => pi,
-          < 360 => pi / 2,
-          _ => 0.0,
-        },
-      (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => pi / 2,
-          < 135 => 0,
-          < 225 => -pi / 2,
-          < 315 => pi,
-          < 360 => pi / 2,
-          _ => 0.0,
-        },
-      _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-          < 45 => pi / 2,
-          < 135 => 0,
-          < 225 => -pi / 2,
-          < 315 => pi,
-          < 360 => pi / 2,
-          _ => 0.0,
-        }
-    };
-    return [
-      Positioned(
-        left: edge.dx,
-        top: edge.dy,
-        child: Transform.rotate(
-          angle: triangle.angle + newAngle,
-          alignment: Alignment.topLeft,
-          child: Transform.translate(
-            offset: const Offset(0, -24),
-            child: AnimatedSlide(
-              offset: Offset(triangle.size.width < 0 ? -1 : 0, 0),
-              duration: Duration.zero,
-              child: Text(e.name),
-            ),
-          ),
+    return Positioned(
+      left:
+          triangle.pos.dx + (triangle.size.width < 0 ? triangle.size.width : 0),
+      top: triangle.pos.dy +
+          (triangle.size.height < 0 ? triangle.size.height : 0),
+      child: Transform.rotate(
+        angle: triangle.angle,
+        child: Transform.flip(
+          flipX: triangle.size.width < 0,
+          flipY: triangle.size.height < 0,
+          child: child,
         ),
       ),
-      Positioned(
-        left: triangle.pos.dx +
-            (triangle.size.width < 0 ? triangle.size.width : 0),
-        top: triangle.pos.dy +
-            (triangle.size.height < 0 ? triangle.size.height : 0),
-        child: Transform.rotate(
-          angle: triangle.angle,
-          child: Transform.flip(
-            flipX: triangle.size.width < 0,
-            flipY: triangle.size.height < 0,
-            child: child,
-          ),
-        ),
-      ),
-    ];
+    );
   }
 }
