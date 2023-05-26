@@ -35,13 +35,15 @@ class MyApp extends ConsumerWidget {
             const ActivateToolIntent(ToolData.move),
         LogicalKeySet(LogicalKeyboardKey.keyR):
             const ActivateToolIntent(ToolData.create),
+        LogicalKeySet(LogicalKeyboardKey.keyH):
+            const ActivateToolIntent(ToolData.hand),
         LogicalKeySet(LogicalKeyboardKey.bracketLeft):
             ActivateShortcutIntent({LogicalKeyboardKey.bracketLeft}),
         LogicalKeySet(LogicalKeyboardKey.bracketRight):
             ActivateShortcutIntent({LogicalKeyboardKey.bracketRight}),
       },
       actions: {
-        // ActivateToolIntent: ActivateToolAction(ref),
+        ActivateToolIntent: ActivateToolAction(ref),
         ActivateShortcutIntent: ActivateShortcutAction(ref),
       },
     );
@@ -79,8 +81,9 @@ class ActivateShortcutAction extends Action<ActivateShortcutIntent> {
 
   void handleGoForward() {
     final index = ref.read(selectedProvider).singleOrNull;
-    if (index == null || index == ref.read(componentsProvider).length - 1)
+    if (index == null || index == ref.read(componentsProvider).length - 1) {
       return;
+    }
     ref.read(componentsProvider.notifier).reorder(index, index + 1);
   }
 }
@@ -120,8 +123,6 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  final leftClick = ValueNotifier(false);
-
   @override
   void initState() {
     super.initState();
@@ -129,11 +130,23 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var globalStateData = ref.watch(globalStateProvider);
+    final leftClick = globalStateData.states.contains(GlobalStates.leftClick);
+    final isComponentTooling = globalStateData.containsAny({
+      GlobalStates.draggingComponent,
+      GlobalStates.resizingComponent,
+      GlobalStates.rotatingComponent,
+    });
+
     final transformationController =
         ref.watch(transformationControllerDataProvider);
     final tool = ref.watch(toolProvider);
     final toolNotifier = ref.watch(toolProvider.notifier);
     final components = ref.watch(componentsProvider);
+    final selected = ref.watch(selectedProvider);
+    final hovered = ref.watch(hoveredProvider);
+    final keysNotifier = ref.watch(keysProvider.notifier);
+    final isToolHand = ref.watch(toolProvider) == ToolData.hand;
     if (components.isEmpty) {
       final components = ref.read(componentsProvider.notifier);
       components.add(
@@ -147,7 +160,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       components.add(
         ComponentData(
           name: 'Rectangle 2',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          triangle: const Triangle(Offset.zero, Size(200, 200), 0),
           color: Colors.blueAccent,
           borderRadius: BorderRadius.circular(8),
         ),
@@ -155,7 +168,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       components.add(
         ComponentData(
           name: 'Rectangle 3',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0),
+          triangle: const Triangle(Offset.zero, Size(200, 200), 0),
           color: Colors.greenAccent,
           borderRadius: BorderRadius.circular(32),
         ),
@@ -204,9 +217,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ]),
       );
     }
-    final selected = ref.watch(selectedProvider);
-    final hovered = ref.watch(hoveredProvider);
-    final keysNotifier = ref.watch(keysProvider.notifier);
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -231,25 +241,22 @@ class _HomePageState extends ConsumerState<HomePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: sidebarWidth)
                   .copyWith(top: topbarHeight),
-              child: Listener(
-                onPointerDown: (event) => leftClick.value = true,
-                onPointerUp: (event) => leftClick.value = false,
-                child: Stack(
-                  children: [
-                    // unselect all
-                    GestureDetector(
-                      onTap: () {
-                        ref.read(selectedProvider.notifier).clear();
-                        ref.read(hoveredProvider.notifier).clear();
-                      },
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: MediaQuery.of(context).size.height,
-                        color: Colors.transparent,
-                      ),
+              child: Stack(
+                children: [
+                  // unselect all
+                  GestureDetector(
+                    onTap: () {
+                      ref.read(selectedProvider.notifier).clear();
+                      ref.read(hoveredProvider.notifier).clear();
+                    },
+                    child: Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: MediaQuery.of(context).size.height,
+                      color: Colors.transparent,
                     ),
-                    // components
-                    ValueListenableBuilder(
+                  ),
+                  // components
+                  ValueListenableBuilder(
                       valueListenable: transformationController,
                       builder: (context, value, child) {
                         return Transform(
@@ -265,40 +272,63 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const SizedBox.shrink(),
                           ]),
                         );
-                      }
+                      }),
+                  // controller for selections
+                  ...components.mapIndexed((i, e) {
+                    return ControllerWidget(i);
+                  }),
+                  // selected controller (at the front of every controllers)
+                  ...components.mapIndexed((i, e) {
+                    return !selected.contains(i)
+                        ? const SizedBox.shrink()
+                        : ControllerWidget(i);
+                  }),
+                  //
+                  if (tool == ToolData.create) const CreatorWidget(),
+                  // camera (kinda). workaround
+                  TransparentPointer(
+                    transparent: !isToolHand,
+                    child: Listener(
+                      onPointerDown: (event) => ref
+                          .read(globalStateProvider.notifier)
+                          .update(ref.read(globalStateProvider) +
+                              GlobalStates.leftClick),
+                      onPointerUp: (event) => ref
+                          .read(globalStateProvider.notifier)
+                          .update(ref.read(globalStateProvider) -
+                              GlobalStates.leftClick),
+                      child: MouseRegion(
+                        cursor: switch ((
+                          leftClick,
+                          isToolHand && !isComponentTooling
+                        )) {
+                          (false, true) => SystemMouseCursors.grab,
+                          (true, true) => SystemMouseCursors.grabbing,
+                          _
+                              when globalStateData.containsAny(
+                                  {GlobalStates.resizingComponent}) =>
+                            SystemMouseCursors.precise,
+                          _
+                              when globalStateData.containsAny(
+                                  {GlobalStates.rotatingComponent}) =>
+                            SystemMouseCursors.grabbing,
+                          _ => MouseCursor.defer
+                        },
+                        child: InteractiveViewer.builder(
+                            transformationController: transformationController,
+                            panEnabled: (!leftClick || isToolHand) &&
+                                !isComponentTooling,
+                            // trackpadScrollCausesScale: pressedShift,
+                            maxScale: 256,
+                            minScale: .01,
+                            boundaryMargin:
+                                const EdgeInsets.all(double.infinity),
+                            builder: (context, viewport) =>
+                                const SizedBox.shrink()),
+                      ),
                     ),
-                    // controller for selections
-                    ...components.mapIndexed((i, e) {
-                      return !selected.contains(i) && !hovered.contains(i)
-                          ? ControllerWidget(i)
-                          : const SizedBox.shrink();
-                    }),
-                    // selected controller (at the front of every controllers)
-                    ...components.mapIndexed((i, e) {
-                      return !selected.contains(i) && !hovered.contains(i)
-                          ? const SizedBox.shrink()
-                          : ControllerWidget(i);
-                    }),
-                    //
-                    if (tool == ToolData.create) const CreatorWidget(),
-                    // camera (kinda). workaround
-                    TransparentPointer(
-                      child: ValueListenableBuilder(
-                          valueListenable: leftClick,
-                          builder: (context, leftClick, child) {
-                            return InteractiveViewer.builder(
-                                transformationController:
-                                    transformationController,
-                                panEnabled: !leftClick,
-                                minScale: .1,
-                                boundaryMargin:
-                                    const EdgeInsets.all(double.infinity),
-                                builder: (context, viewport) =>
-                                    const SizedBox.shrink());
-                          }),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             Column(

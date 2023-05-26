@@ -21,7 +21,7 @@ final canvasTransformProvider = AutoDisposeProvider<Matrix4>.internal(
 );
 
 typedef CanvasTransformRef = AutoDisposeProviderRef<Matrix4>;
-String _$componentsHash() => r'a90fae945d1ca76056b7fb0ab070e10c80a471d1';
+String _$componentsHash() => r'9eea16bc473f8f9cd07c0d159a43fc1e07a25c5b';
 
 /// See also [Components].
 @ProviderFor(Components)
@@ -80,7 +80,7 @@ final hoveredProvider = AutoDisposeNotifierProvider<Hovered, Set<int>>.internal(
 );
 
 typedef _$Hovered = AutoDisposeNotifier<Set<int>>;
-String _$toolHash() => r'727281369b2ea85070f6d30e8a614934e8d12e8e';
+String _$toolHash() => r'08fb06c5be4e17e1d3d4b05b9dca425f8a826107';
 
 /// See also [Tool].
 @ProviderFor(Tool)
@@ -112,4 +112,19 @@ final transformationControllerDataProvider = AutoDisposeNotifierProvider<
 
 typedef _$TransformationControllerData
     = AutoDisposeNotifier<TransformationController>;
+String _$globalStateHash() => r'a6ffaabc843975eb5412b3519d4101aea2aaafef';
+
+/// See also [GlobalState].
+@ProviderFor(GlobalState)
+final globalStateProvider =
+    AutoDisposeNotifierProvider<GlobalState, GlobalStateData>.internal(
+  GlobalState.new,
+  name: r'globalStateProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$globalStateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$GlobalState = AutoDisposeNotifier<GlobalStateData>;
 // ignore_for_file: unnecessary_raw_strings, subtype_of_sealed_class, invalid_use_of_internal_member, do_not_use_environment, prefer_const_constructors, public_member_api_docs, avoid_private_typedef_functions

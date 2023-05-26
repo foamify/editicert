@@ -76,7 +76,6 @@ class Components extends _$Components {
     ref.read(selectedProvider.notifier).add(newIndex);
 
     state = [...newState];
-    print(ref.read(selectedProvider).singleOrNull);
   }
 
   void replace(
@@ -201,4 +200,50 @@ class TransformationControllerData extends _$TransformationControllerData {
   void change(TransformationController value) => state = value;
 
   void update(Matrix4 value) => state.value = value;
+}
+
+@riverpod
+class GlobalState extends _$GlobalState {
+  @override
+  GlobalStateData build() {
+    return GlobalStateData({});
+  }
+
+  void update(GlobalStateData value) => state = value;
+
+  void clear() => state = GlobalStateData({});
+}
+
+class GlobalStateData {
+  GlobalStateData(this.states);
+
+  final Set<GlobalStates> states;
+
+  bool containsAny(Set<GlobalStates> states) =>
+      states.any((element) => this.states.contains(element));
+
+  GlobalStateData copyWith({
+    required Set<GlobalStates> states,
+  }) =>
+      GlobalStateData(states);
+
+  GlobalStateData merge(GlobalStateData other) =>
+      GlobalStateData(states..addAll(other.states));
+
+  GlobalStateData operator +(GlobalStates other) =>
+      GlobalStateData(states..add(other));
+
+  GlobalStateData operator -(GlobalStates other) =>
+      GlobalStateData(states..remove(other));
+}
+
+enum GlobalStates {
+  leftClick,
+  rightClick,
+  middleClick,
+  panningCanvas,
+  zoomingCanvas,
+  draggingComponent,
+  resizingComponent,
+  rotatingComponent,
 }

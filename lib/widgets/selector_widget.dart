@@ -12,7 +12,7 @@ class SelectorWidget extends ConsumerStatefulWidget {
 class _SelectorWidgetState extends ConsumerState<SelectorWidget> {
   @override
   Widget build(BuildContext context) {
-    return Listener(
+    return const Listener(
       child: Stack(
         children: [],
       ),

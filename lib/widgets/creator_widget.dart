@@ -15,7 +15,7 @@ class CreatorWidget extends ConsumerStatefulWidget {
 }
 
 class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
-  final oTriangle = ValueNotifier(Triangle(Offset.zero, Size.zero, 0));
+  final oTriangle = ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
 
   final oPosition = ValueNotifier(Offset.zero);
 
@@ -38,12 +38,13 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
 
   void handlePointerDown(PointerDownEvent event) {
     final tController = ref.read(transformationControllerDataProvider);
-    oPosition.value = tController.toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
+    oPosition.value = tController
+        .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
     final index = ref.read(componentsProvider).length;
     ref.read(componentsProvider.notifier).add(ComponentData(
-      triangle: oTriangle.value,
-      name: 'Rectangle ${index + 1}',
-    ));
+          triangle: oTriangle.value,
+          name: 'Rectangle ${index + 1}',
+        ));
   }
 
   void handlePointerMove(PointerMoveEvent event) {
@@ -57,7 +58,8 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
       ..clear()
       ..add(index);
 
-    final pos = tController.toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
+    final pos = tController
+        .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
     final deltaX = (oPosition.value.dx - pos.dx) > 0;
     final deltaY = (oPosition.value.dy - pos.dy) > 0;
 
@@ -86,7 +88,7 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
 
   bool pressedShift(Set<PhysicalKeyboardKey> keys) {
     return keys.contains(PhysicalKeyboardKey.shiftLeft) ||
-      keys.contains(PhysicalKeyboardKey.shiftRight);
+        keys.contains(PhysicalKeyboardKey.shiftRight);
   }
 
   void handlePointerUp(PointerUpEvent event) {

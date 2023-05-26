@@ -58,8 +58,6 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
   final _visualTriangle =
       ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
 
-  final _moving = ValueNotifier(false);
-
   @override
   void initState() {
     final triangle = ref
@@ -98,17 +96,22 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
       transformationControllerDataProvider,
       (previous, next) {},
     );
+
+    final moving = ref
+        .watch(globalStateProvider)
+        .states
+        .contains(GlobalStates.draggingComponent);
+
     return AnimatedBuilder(
         animation: Listenable.merge([
           _visualTriangle,
-          _moving,
           ref.watch(transformationControllerDataProvider),
         ]),
         builder: (context, child) {
           final pos = getPos();
           final tSize = getSize();
           final tAngle = _visualTriangle.value.angle;
-          final selectedValue = selected && !_moving.value;
+          final selectedValue = selected && !moving;
 
           return Stack(
             children: [
@@ -128,6 +131,10 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                           ref.read(selectedProvider.notifier)
                             ..clear()
                             ..add(widget.index);
+
+                          ref.read(globalStateProvider.notifier).update(
+                              ref.read(globalStateProvider) +
+                                  GlobalStates.draggingComponent);
                           handlePointerDownGlobal(event);
                         },
                         onPointerMove: locked ? null : handleMove,
@@ -140,20 +147,17 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                               .read(hoveredProvider.notifier)
                               .remove(widget.index),
                           child: Container(
-                            width:
-                                tSize.width < 0 ? -tSize.width : tSize.width,
-                            height: tSize.height < 0
-                                ? -tSize.height
-                                : tSize.height,
-                            decoration:
-                                (hovered || selected) && !_moving.value
-                                    ? BoxDecoration(
-                                        border: Border.all(
-                                        strokeAlign: .5,
-                                        width: selectedValue ? 1 : 2,
-                                        color: Colors.blueAccent,
-                                      ))
-                                    : const BoxDecoration(),
+                            width: tSize.width < 0 ? -tSize.width : tSize.width,
+                            height:
+                                tSize.height < 0 ? -tSize.height : tSize.height,
+                            decoration: (hovered || selected) && !moving
+                                ? BoxDecoration(
+                                    border: Border.all(
+                                    strokeAlign: .5,
+                                    width: selectedValue ? 1 : 2,
+                                    color: Colors.blueAccent,
+                                  ))
+                                : const BoxDecoration(),
                           ),
                         ),
                       ),
@@ -207,14 +211,6 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
         tControl().value, _visualTriangle.value.pos);
   }
 
-  /// handles the pointer down event
-  void handlePointerDownLocal(PointerDownEvent event) {
-    _triangle.value = ref.read(
-        componentsProvider.select((value) => value[widget.index].triangle));
-    _originalPosition.value = event.position;
-    _originalTriangle.value = _triangle.value;
-  }
-
   /// handles the pointer down event for rotation
   void handlePointerDownGlobal(PointerDownEvent event) {
     _triangle.value = ref.read(
@@ -225,8 +221,12 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   /// basically save data
   void handlePointerUp(PointerUpEvent event) {
+    ref.read(globalStateProvider.notifier).update(
+        ref.read(globalStateProvider) -
+            GlobalStates.draggingComponent -
+            GlobalStates.resizingComponent -
+            GlobalStates.rotatingComponent);
     _triangle.value = _visualTriangle.value;
-    _moving.value = false;
   }
 
   //------------------------------build functions------------------------------
@@ -272,7 +272,14 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
           child: Transform.translate(
             offset: Offset.zero,
             child: Listener(
-              onPointerDown: handlePointerDownGlobal,
+              onPointerDown: (event) {
+                ref.read(globalStateProvider.notifier).update(
+                    ref.read(globalStateProvider) +
+                        (rotate
+                            ? GlobalStates.rotatingComponent
+                            : GlobalStates.resizingComponent));
+                handlePointerDownGlobal(event);
+              },
               onPointerMove: (event) {
                 if (resize && alignment != null) {
                   handleResizeEdges(event, alignment, selectedEdge);
@@ -368,7 +375,13 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
           child: Transform.translate(
             offset: offset,
             child: Listener(
-              onPointerDown: handlePointerDownGlobal,
+              onPointerDown: (event) {
+                handlePointerDownGlobal(event);
+
+                ref.read(globalStateProvider.notifier).update(
+                    ref.read(globalStateProvider) +
+                        GlobalStates.resizingComponent);
+              },
               onPointerMove: (event) {
                 handleResizeSide(event, alignment, selectedSide);
               },
@@ -397,7 +410,6 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
     _triangle.value = _originalTriangle.value.copyWith(
       pos: _originalTriangle.value.pos + delta * getScale(),
     );
-    _moving.value = true;
   }
 
   /// Handles rotation from the center of the widget to the pointer

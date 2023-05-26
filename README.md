@@ -28,5 +28,9 @@ Certificate Editor & Batch Exporter
   - pos
   - size
   - angle
-- Square resize
+- Square resize when pressing key
+- Eyedrop
+  - Without showing the controls
+- Zoom with pan when pressing meta key
+- Show scale% on topbar
 - TBA
