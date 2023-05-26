@@ -418,9 +418,9 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
         ref.read(canvasTransformProvider), _originalTriangle.value.rect.center);
     final originalAngle = atan2(
         _originalPosition.value.dx - sidebarWidth - center.dx,
-        _originalPosition.value.dy - center.dy);
+        _originalPosition.value.dy - topbarHeight - center.dy);
     final newAngle = atan2(event.position.dx - sidebarWidth - center.dx,
-        event.position.dy - center.dy);
+        event.position.dy - topbarHeight - center.dy);
     final deltaAngle = newAngle - originalAngle;
 
     _triangle.value = _originalTriangle.value
