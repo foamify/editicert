@@ -338,10 +338,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                             onInteractionStart: (details) {
                               if (pressedMeta) {
                                 globalStateNotifier.update(globalStateData +
-                                    GlobalStates.zoomingCanvas - GlobalStates.panningCanvas);
+                                    GlobalStates.zoomingCanvas);
                               } else if (isToolHand) {
                                 globalStateNotifier.update(globalStateData +
-                                    GlobalStates.panningCanvas - GlobalStates.zoomingCanvas);
+                                    GlobalStates.panningCanvas);
                               }
                             },
                             onInteractionUpdate: (details) {
