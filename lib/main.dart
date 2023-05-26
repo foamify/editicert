@@ -292,95 +292,107 @@ class _HomePageState extends ConsumerState<HomePage> {
                       }),
                   ...components.mapIndexed(
                     (i, e) {
-                      final triangle = e.triangle;
-
-                      final edges = triangle.rotatedEdges;
-                      var edge = switch ((triangle.size.width < 0, triangle.size.height < 0)) {
-                        (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => edges.bl,
-                          < 135 => edges.tl,
-                          < 225 => edges.tr,
-                          < 315 => edges.br,
-                          < 360 => edges.bl,
-                          _ => edges.tl,
-                        },
-                        (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => edges.tl,
-                          < 135 => edges.bl,
-                          < 225 => edges.br,
-                          < 315 => edges.tr,
-                          < 360 => edges.tl,
-                          _ => edges.tl,
-                        },
-                        (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => edges.br,
-                          < 135 => edges.bl,
-                          < 225 => edges.tl,
-                          < 315 => edges.tr,
-                          < 360 => edges.br,
-                          _ => edges.tl,
-                        },
-                        _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => edges.tr,
-                          < 135 => edges.tl,
-                          < 225 => edges.bl,
-                          < 315 => edges.br,
-                          < 360 => edges.tr,
-                          _ => edges.tl,
-                        }
-                      };
-                      final newAngle =
-                      switch ((triangle.size.width < 0, triangle.size.height < 0)) {
-                        (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => pi / 2,
-                          < 135 => 0,
-                          < 225 => -pi / 2,
-                          < 315 => pi,
-                          < 360 => pi / 2,
-                          _ => 0.0,
-                        },
-                        (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => pi / 2,
-                          < 135 => 0,
-                          < 225 => -pi / 2,
-                          < 315 => pi,
-                          < 360 => pi / 2,
-                          _ => 0.0,
-                        },
-                        _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                          < 45 => pi / 2,
-                          < 135 => 0,
-                          < 225 => -pi / 2,
-                          < 315 => pi,
-                          < 360 => pi / 2,
-                          _ => 0.0,
-                        }
-                      };
-
-                      edge = MatrixUtils.transformPoint(transformationController.value, edge);
-
-                      return Positioned(
-                        left: edge.dx,
-                        top: edge.dy,
-                        child: ValueListenableBuilder(
+                      return ValueListenableBuilder(
                           valueListenable:
                               ref.watch(transformationControllerDataProvider),
-                          builder: (context, value, child) => Transform.rotate(
-                            angle: triangle.angle + newAngle,
-                            alignment: Alignment.topLeft,
-                            child: Transform.translate(
-                              offset: const Offset(0, -24) *
-                                  value.getMaxScaleOnAxis(),
-                              child: AnimatedSlide(
-                                offset:
-                                    Offset(triangle.size.width < 0 ? -1 : 0, -1),
-                                duration: Duration.zero,
-                                child: Text(e.name),
+                          builder: (context, matrix, child) {
+                            final triangle = e.triangle;
+
+                            final edges = triangle.rotatedEdges;
+                            var edge = switch ((
+                              triangle.size.width < 0,
+                              triangle.size.height < 0
+                            )) {
+                              (true, false) => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => edges.bl,
+                                  < 135 => edges.tl,
+                                  < 225 => edges.tr,
+                                  < 315 => edges.br,
+                                  < 360 => edges.bl,
+                                  _ => edges.tl,
+                                },
+                              (true, true) => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => edges.tl,
+                                  < 135 => edges.bl,
+                                  < 225 => edges.br,
+                                  < 315 => edges.tr,
+                                  < 360 => edges.tl,
+                                  _ => edges.tl,
+                                },
+                              (false, true) => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => edges.br,
+                                  < 135 => edges.bl,
+                                  < 225 => edges.tl,
+                                  < 315 => edges.tr,
+                                  < 360 => edges.br,
+                                  _ => edges.tl,
+                                },
+                              _ => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => edges.tr,
+                                  < 135 => edges.tl,
+                                  < 225 => edges.bl,
+                                  < 315 => edges.br,
+                                  < 360 => edges.tr,
+                                  _ => edges.tl,
+                                }
+                            };
+                            final newAngle = switch ((
+                              triangle.size.width < 0,
+                              triangle.size.height < 0
+                            )) {
+                              (true, false) => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => pi / 2,
+                                  < 135 => 0,
+                                  < 225 => -pi / 2,
+                                  < 315 => pi,
+                                  < 360 => pi / 2,
+                                  _ => 0.0,
+                                },
+                              (true, true) => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => pi / 2,
+                                  < 135 => 0,
+                                  < 225 => -pi / 2,
+                                  < 315 => pi,
+                                  < 360 => pi / 2,
+                                  _ => 0.0,
+                                },
+                              _ => switch (
+                                    (triangle.angle / pi * 180 + 90) % 360) {
+                                  < 45 => pi / 2,
+                                  < 135 => 0,
+                                  < 225 => -pi / 2,
+                                  < 315 => pi,
+                                  < 360 => pi / 2,
+                                  _ => 0.0,
+                                }
+                            };
+
+                            edge = MatrixUtils.transformPoint(matrix, edge);
+                            return Positioned(
+                              left: edge.dx,
+                              top: edge.dy,
+                              child: Transform.rotate(
+                                angle: triangle.angle + newAngle,
+                                alignment: Alignment.topLeft,
+                                child: Transform.translate(
+                                  offset: const Offset(0, -24) *
+                                      matrix.getMaxScaleOnAxis(),
+                                  child: AnimatedSlide(
+                                    offset: Offset(
+                                        triangle.size.width < 0 ? -1 : 0, -1),
+                                    duration: Duration.zero,
+                                    child: Text(e.name),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                        ),
-                      );
+                            );
+                          });
                     },
                   ),
                   // controller for selections
