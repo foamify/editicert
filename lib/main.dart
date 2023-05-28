@@ -25,7 +25,7 @@ class MyApp extends ConsumerWidget {
       title: 'Editicert',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.cyan,
+          seedColor: Colors.blueGrey,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
@@ -133,107 +133,54 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final (
+      transform: _,
+      :backgroundColor,
+      :backgroundHidden,
+      :backgroundOpacity,
+    ) = ref.watch(canvasStateProvider);
+
+    //
     final globalStateData = ref.watch(globalStateProvider);
     final globalStateNotifier = ref.watch(globalStateProvider.notifier);
-    final leftClick = globalStateData.states.contains(GlobalStates.leftClick);
-    final isCreateTooling = globalStateData.containsAny({
-      GlobalStates.creating,
-    });
-    final isComponentTooling = globalStateData.containsAny({
-      GlobalStates.draggingComponent,
-      GlobalStates.resizingComponent,
-      GlobalStates.rotatingComponent,
-    });
+    final leftClick = ref.watch(globalStateProvider
+        .select((value) => value.states.contains(GlobalStates.leftClick)));
+    final isCreateTooling =
+        ref.watch(globalStateProvider.select((value) => value.containsAny({
+              GlobalStates.creating,
+            })));
+    final isComponentTooling =
+        ref.watch(globalStateProvider.select((value) => value.containsAny({
+              GlobalStates.draggingComponent,
+              GlobalStates.resizingComponent,
+              GlobalStates.rotatingComponent,
+            })));
     final isNotCanvasTooling = isComponentTooling || isCreateTooling;
-    final isCanvasTooling = globalStateData.containsAny({
-      GlobalStates.panningCanvas,
-      GlobalStates.zoomingCanvas,
-    });
+    final isCanvasTooling =
+        ref.watch(globalStateProvider.select((value) => value.containsAny({
+              GlobalStates.panningCanvas,
+              GlobalStates.zoomingCanvas,
+            })));
+    final isZooming = ref.watch(globalStateProvider
+        .select((value) => value.containsAny({GlobalStates.zoomingCanvas})));
 
     final transformationController =
         ref.watch(transformationControllerDataProvider);
+    //
     final tool = ref.watch(toolProvider);
+    final isToolHand = tool == ToolData.hand;
     final toolNotifier = ref.watch(toolProvider.notifier);
+    //
     final components = ref.watch(componentsProvider);
     final selected = ref.watch(selectedProvider);
     final hovered = ref.watch(hoveredProvider);
+    //
     final keys = ref.watch(keysProvider);
     final keysNotifier = ref.watch(keysProvider.notifier);
-    final isToolHand = ref.watch(toolProvider) == ToolData.hand;
-    if (components.isEmpty) {
-      final components = ref.read(componentsProvider.notifier);
-      components.add(
-        ComponentData(
-          name: 'Rectangle 1',
-          triangle: const Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.redAccent,
-          borderRadius: BorderRadius.circular(180),
-        ),
-      );
-      components.add(
-        ComponentData(
-          name: 'Rectangle 2',
-          triangle: const Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.blueAccent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-      );
-      components.add(
-        ComponentData(
-          name: 'Rectangle 3',
-          triangle: const Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.greenAccent,
-          borderRadius: BorderRadius.circular(32),
-        ),
-      );
-      components.add(
-        const ComponentData(
-          name: 'Rectangle 4',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.white30,
-          borderRadius: BorderRadius.only(
-              topRight: Radius.circular(16), bottomLeft: Radius.circular(16)),
-        ),
-      );
-      components.add(
-        const ComponentData(
-          name: 'Rectangle 5',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.cyan,
-        ),
-      );
-      components.add(
-        const ComponentData(
-          name: 'Rectangle 6',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.teal,
-        ),
-      );
-      components.add(
-        const ComponentData(
-          name: 'Rectangle 7',
-          triangle: Triangle(Offset.zero, Size(200, 200), 0),
-          color: Colors.indigoAccent,
-        ),
-      );
-      components.add(
-        const ComponentData(
-            name: 'Rectangle 8',
-            triangle: Triangle(Offset.zero, Size(200, 200), 0),
-            color: Colors.purpleAccent,
-            shadow: [
-              BoxShadow(
-                offset: Offset(0, 4),
-                blurRadius: 12,
-                spreadRadius: 12,
-              ),
-            ]),
-      );
-    }
-    final isZooming = globalStateData.containsAny({GlobalStates.zoomingCanvas});
     final pressedMeta = keys.contains(LogicalKeyboardKey.metaLeft) ||
         keys.contains(LogicalKeyboardKey.metaRight) ||
         keys.contains(LogicalKeyboardKey.meta);
+
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -252,6 +199,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         // }
       },
       child: Scaffold(
+        backgroundColor: backgroundColor,
         body: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -290,105 +238,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                           ]),
                         );
                       }),
+                  // components label
                   ...components.mapIndexed(
                     (i, e) {
-                      return ValueListenableBuilder(
-                          valueListenable:
-                              ref.watch(transformationControllerDataProvider),
-                          builder: (context, matrix, child) {
-                            final triangle = e.triangle;
-
-                            final edges = triangle.rotatedEdges;
-                            var edge = switch ((
-                              triangle.size.width < 0,
-                              triangle.size.height < 0
-                            )) {
-                              (true, false) => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => edges.bl,
-                                  < 135 => edges.tl,
-                                  < 225 => edges.tr,
-                                  < 315 => edges.br,
-                                  < 360 => edges.bl,
-                                  _ => edges.tl,
-                                },
-                              (true, true) => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => edges.tl,
-                                  < 135 => edges.bl,
-                                  < 225 => edges.br,
-                                  < 315 => edges.tr,
-                                  < 360 => edges.tl,
-                                  _ => edges.tl,
-                                },
-                              (false, true) => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => edges.br,
-                                  < 135 => edges.bl,
-                                  < 225 => edges.tl,
-                                  < 315 => edges.tr,
-                                  < 360 => edges.br,
-                                  _ => edges.tl,
-                                },
-                              _ => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => edges.tr,
-                                  < 135 => edges.tl,
-                                  < 225 => edges.bl,
-                                  < 315 => edges.br,
-                                  < 360 => edges.tr,
-                                  _ => edges.tl,
-                                }
-                            };
-                            final newAngle = switch ((
-                              triangle.size.width < 0,
-                              triangle.size.height < 0
-                            )) {
-                              (true, false) => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => pi / 2,
-                                  < 135 => 0,
-                                  < 225 => -pi / 2,
-                                  < 315 => pi,
-                                  < 360 => pi / 2,
-                                  _ => 0.0,
-                                },
-                              (true, true) => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => pi / 2,
-                                  < 135 => 0,
-                                  < 225 => -pi / 2,
-                                  < 315 => pi,
-                                  < 360 => pi / 2,
-                                  _ => 0.0,
-                                },
-                              _ => switch (
-                                    (triangle.angle / pi * 180 + 90) % 360) {
-                                  < 45 => pi / 2,
-                                  < 135 => 0,
-                                  < 225 => -pi / 2,
-                                  < 315 => pi,
-                                  < 360 => pi / 2,
-                                  _ => 0.0,
-                                }
-                            };
-
-                            edge = MatrixUtils.transformPoint(matrix, edge);
-                            return Positioned(
-                              left: edge.dx,
-                              top: edge.dy,
-                              child: Transform.rotate(
-                                angle: triangle.angle + newAngle,
-                                alignment: Alignment.topLeft,
-                                child: AnimatedSlide(
-                                  offset: Offset(
-                                      triangle.size.width < 0 ? -1 : 0, -1),
-                                  duration: Duration.zero,
-                                  child: Text(e.name),
-                                ),
-                              ),
-                            );
-                          });
+                      return buildComponentLabel(e, backgroundColor);
                     },
                   ),
                   // controller for selections
@@ -475,7 +328,15 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Container(
                   height: topbarHeight,
-                  color: Theme.of(context).colorScheme.surfaceVariant,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.grey.withOpacity(.375),
+                        width: 1,
+                      ),
+                    ),
+                  ),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -492,7 +353,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   toolNotifier.setMove();
                                 },
                                 icon: Transform.rotate(
-                                  angle: -pi / 4,
+                                  angle: -pi / 5,
                                   alignment: const Alignment(-0.2, 0),
                                   child: const Icon(
                                     Icons.navigation_outlined,
@@ -580,23 +441,15 @@ class _HomePageState extends ConsumerState<HomePage> {
                     children: [
                       Container(
                         width: sidebarWidth,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                          border: Border(
-                            top: BorderSide(
-                              color: Colors.grey.withOpacity(.5),
-                              width: 1,
-                            ),
-                          ),
-                        ),
+                        color: Theme.of(context).colorScheme.surfaceVariant,
                         child: ListView(
                           children: components
                               .mapIndexed(
                                 (i, e) => Container(
+                                  height: 32,
                                   decoration: BoxDecoration(
                                     border: Border.all(
-                                      strokeAlign:
-                                          BorderSide.strokeAlignOutside,
+                                      strokeAlign: BorderSide.strokeAlignInside,
                                       color: switch ((
                                         selected.contains(i),
                                         hovered.contains(i),
@@ -616,29 +469,31 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     onExit: (event) => ref
                                         .read(hoveredProvider.notifier)
                                         .remove(i),
-                                    child: ListTile(
-                                      textColor: e.hidden ? Colors.grey : null,
-                                      iconColor: e.hidden ? Colors.grey : null,
+                                    child: InkWell(
                                       onTap: () {
                                         ref.read(selectedProvider.notifier)
                                           ..clear()
                                           ..add(i);
                                       },
-                                      hoverColor: Colors.transparent,
-                                      // selected: selected.contains(i),
-                                      horizontalTitleGap: 4,
-                                      title: Text(
-                                        e.name,
-                                        style: const TextStyle(fontSize: 12),
-                                      ),
-                                      leading: const Icon(
-                                        CupertinoIcons.square,
-                                        size: 16,
-                                      ),
-                                      contentPadding: const EdgeInsets.only(
-                                          left: 4, right: 6),
-                                      trailing: hovered.contains(i)
-                                          ? SizedBox(
+                                      child: Row(
+                                        children: [
+                                          const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 8.0),
+                                            child: Icon(
+                                              Icons.rectangle_outlined,
+                                              size: 12,
+                                            ),
+                                          ),
+                                          Text(
+                                            e.name,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                          ),
+                                          const Spacer(),
+                                          if (hovered.contains(i))
+                                            SizedBox(
                                               width: 18 * 2,
                                               child: Row(
                                                 mainAxisAlignment:
@@ -704,9 +559,101 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                   ),
                                                 ],
                                               ),
-                                            )
-                                          : null,
+                                            ),
+                                        ],
+                                      ),
                                     ),
+                                    // child: ListTile(
+                                    //   textColor: e.hidden ? Colors.grey : null,
+                                    //   iconColor: e.hidden ? Colors.grey : null,
+                                    //   onTap: () {
+                                    //     ref.read(selectedProvider.notifier)
+                                    //       ..clear()
+                                    //       ..add(i);
+                                    //   },
+                                    //   hoverColor: Colors.transparent,
+                                    //   // selected: selected.contains(i),
+                                    //   horizontalTitleGap: 4,
+                                    //   title: Text(
+                                    //     e.name,
+                                    //     style: const TextStyle(fontSize: 12),
+                                    //   ),
+                                    //   leading: const Icon(
+                                    //     CupertinoIcons.square,
+                                    //     size: 16,
+                                    //   ),
+                                    //   contentPadding: const EdgeInsets.only(
+                                    //       left: 4, right: 6),
+                                    //   trailing: hovered.contains(i)
+                                    //       ? SizedBox(
+                                    //           width: 18 * 2,
+                                    //           child: Row(
+                                    //             mainAxisAlignment:
+                                    //                 MainAxisAlignment
+                                    //                     .spaceBetween,
+                                    //             children: [
+                                    //               IconButton(
+                                    //                 hoverColor:
+                                    //                     Colors.transparent,
+                                    //                 splashColor:
+                                    //                     Colors.transparent,
+                                    //                 focusColor:
+                                    //                     Colors.transparent,
+                                    //                 highlightColor:
+                                    //                     Colors.transparent,
+                                    //                 padding: EdgeInsets.zero,
+                                    //                 constraints: BoxConstraints
+                                    //                     .tight(Size(
+                                    //                         e.locked ? 14 : 18,
+                                    //                         double.infinity)),
+                                    //                 onPressed: () => ref
+                                    //                     .read(componentsProvider
+                                    //                         .notifier)
+                                    //                     .replace(i,
+                                    //                         locked: !e.locked),
+                                    //                 icon: Icon(
+                                    //                   e.locked
+                                    //                       ? CupertinoIcons
+                                    //                           .lock_fill
+                                    //                       : CupertinoIcons
+                                    //                           .lock_open_fill,
+                                    //                   size: 14,
+                                    //                 ),
+                                    //               ),
+                                    //               IconButton(
+                                    //                 hoverColor:
+                                    //                     Colors.transparent,
+                                    //                 splashColor:
+                                    //                     Colors.transparent,
+                                    //                 focusColor:
+                                    //                     Colors.transparent,
+                                    //                 highlightColor:
+                                    //                     Colors.transparent,
+                                    //                 padding: EdgeInsets.zero,
+                                    //                 constraints:
+                                    //                     BoxConstraints.tight(
+                                    //                         const Size(
+                                    //                             18,
+                                    //                             double
+                                    //                                 .infinity)),
+                                    //                 onPressed: () => ref
+                                    //                     .read(componentsProvider
+                                    //                         .notifier)
+                                    //                     .replace(i,
+                                    //                         hidden: !e.hidden),
+                                    //                 icon: Icon(
+                                    //                   e.hidden
+                                    //                       ? CupertinoIcons
+                                    //                           .eye_slash
+                                    //                       : CupertinoIcons.eye,
+                                    //                   size: 14,
+                                    //                 ),
+                                    //               ),
+                                    //             ],
+                                    //           ),
+                                    //         )
+                                    //       : null,
+                                    // ),
                                   ),
                                 ),
                               )
@@ -716,157 +663,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       const Expanded(
                         child: SizedBox.shrink(),
                       ),
-                      Container(
-                        padding: const EdgeInsets.only(top: 12),
-                        width: sidebarWidth,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceVariant,
-                          border: Border(
-                            top: BorderSide(
-                              color: Colors.grey.withOpacity(.5),
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: Builder(builder: (context) {
-                          if (selected.isEmpty) {
-                            return const SizedBox.expand();
-                          }
-                          final triangle = components[selected.first].triangle;
-                          return ListView(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 2.0, vertical: 2),
-                                      child: TextField(
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: const InputDecoration(
-                                          prefixText: 'X ',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        controller: TextEditingController(
-                                            text: triangle.pos.dx
-                                                .toStringAsFixed(1)),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 2.0, vertical: 2),
-                                      child: TextField(
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: const InputDecoration(
-                                          prefixText: 'Y ',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        controller: TextEditingController(
-                                            text: triangle.pos.dy
-                                                .toStringAsFixed(1)),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 2.0, vertical: 2),
-                                      child: TextField(
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: const InputDecoration(
-                                          prefixText: 'W ',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        controller: TextEditingController(
-                                            text: triangle.size.width
-                                                .toStringAsFixed(1)),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 2.0, vertical: 2),
-                                      child: TextField(
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: const InputDecoration(
-                                          prefixText: 'H ',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        controller: TextEditingController(
-                                            text: triangle.size.height
-                                                .toStringAsFixed(1)),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 2.0, vertical: 2),
-                                      child: TextField(
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: const InputDecoration(
-                                          prefix: Padding(
-                                            padding: EdgeInsets.only(right: 6),
-                                            child: Icon(
-                                              size: 12,
-                                              CupertinoIcons.rotate_right,
-                                            ),
-                                          ),
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        controller: TextEditingController(
-                                          text:
-                                              '${((triangle.angle % (pi * 2)) / pi * 180).toStringAsFixed(1)}°',
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 2.0, vertical: 2),
-                                      child: TextField(
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: const InputDecoration(
-                                          prefix: Padding(
-                                            padding: EdgeInsets.only(right: 6),
-                                            child: Icon(
-                                              Icons.rounded_corner_rounded,
-                                              size: 12,
-                                            ),
-                                          ),
-                                          border:
-                                              OutlineInputBorder(gapPadding: 2),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        controller: TextEditingController(
-                                          text: '0',
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        }),
-                      )
+                      const RightSidebar(),
                     ],
                   ),
                 ),
@@ -876,6 +673,101 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
     );
+  }
+
+  ValueListenableBuilder<Matrix4> buildComponentLabel(
+      ComponentData e, Color backgroundColor) {
+    return ValueListenableBuilder(
+        valueListenable: ref.watch(transformationControllerDataProvider),
+        builder: (context, matrix, child) {
+          final triangle = e.triangle;
+
+          final edges = triangle.rotatedEdges;
+          var edge =
+              switch ((triangle.size.width < 0, triangle.size.height < 0)) {
+            (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => edges.bl,
+                < 135 => edges.tl,
+                < 225 => edges.tr,
+                < 315 => edges.br,
+                < 360 => edges.bl,
+                _ => edges.tl,
+              },
+            (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => edges.tl,
+                < 135 => edges.bl,
+                < 225 => edges.br,
+                < 315 => edges.tr,
+                < 360 => edges.tl,
+                _ => edges.tl,
+              },
+            (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => edges.br,
+                < 135 => edges.bl,
+                < 225 => edges.tl,
+                < 315 => edges.tr,
+                < 360 => edges.br,
+                _ => edges.tl,
+              },
+            _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => edges.tr,
+                < 135 => edges.tl,
+                < 225 => edges.bl,
+                < 315 => edges.br,
+                < 360 => edges.tr,
+                _ => edges.tl,
+              }
+          };
+          final newAngle =
+              switch ((triangle.size.width < 0, triangle.size.height < 0)) {
+            (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => pi / 2,
+                < 135 => 0,
+                < 225 => -pi / 2,
+                < 315 => pi,
+                < 360 => pi / 2,
+                _ => 0.0,
+              },
+            (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => pi / 2,
+                < 135 => 0,
+                < 225 => -pi / 2,
+                < 315 => pi,
+                < 360 => pi / 2,
+                _ => 0.0,
+              },
+            _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+                < 45 => pi / 2,
+                < 135 => 0,
+                < 225 => -pi / 2,
+                < 315 => pi,
+                < 360 => pi / 2,
+                _ => 0.0,
+              }
+          };
+
+          edge = MatrixUtils.transformPoint(matrix, edge);
+          return Positioned(
+            left: edge.dx,
+            top: edge.dy,
+            child: Transform.rotate(
+              angle: triangle.angle + newAngle,
+              alignment: Alignment.topLeft,
+              child: AnimatedSlide(
+                offset: Offset(triangle.size.width < 0 ? -1 : 0, -1),
+                duration: Duration.zero,
+                child: Text(
+                  e.name,
+                  style: TextStyle(
+                    color: backgroundColor.computeLuminance() > 0.5
+                        ? Colors.black.withOpacity(.5)
+                        : Colors.white.withOpacity(.5),
+                  ),
+                ),
+              ),
+            ),
+          );
+        });
   }
 
   Widget buildComponentWidget(ComponentData e) {
@@ -905,6 +797,269 @@ class _HomePageState extends ConsumerState<HomePage> {
           flipY: triangle.size.height < 0,
           child: child,
         ),
+      ),
+    );
+  }
+}
+
+class RightSidebar extends ConsumerWidget {
+  const RightSidebar({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selected = ref.watch(selectedProvider);
+    final (
+      transform: _,
+      :backgroundColor,
+      :backgroundOpacity,
+      :backgroundHidden,
+    ) = ref.watch(canvasStateProvider);
+    final triangle = ref.watch(componentsProvider.select((value) =>
+        selected.firstOrNull == null ? null : value[selected.first].triangle));
+
+    final controls = triangle == null
+        ? null
+        : [
+            (
+              children: [
+                (
+                  prefix: Text(
+                    'X',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: triangle.pos.dx.toStringAsFixed(1),
+                  ),
+                ),
+                (
+                  prefix: Text(
+                    'Y',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: triangle.pos.dy.toStringAsFixed(1),
+                  ),
+                ),
+              ]
+            ),
+            (
+              children: [
+                (
+                  prefix: Text(
+                    'W',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: triangle.size.width.toStringAsFixed(1),
+                  ),
+                ),
+                (
+                  prefix: Text(
+                    'H',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: triangle.size.height.toStringAsFixed(1),
+                  ),
+                ),
+              ]
+            ),
+            (
+              children: [
+                (
+                  prefix: Transform.translate(
+                    offset: const Offset(0, -1),
+                    child: const Icon(
+                      size: 14,
+                      CupertinoIcons.rotate_right,
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text:
+                        '${((triangle.angle % (pi * 2)) / pi * 180).toStringAsFixed(1)}°',
+                  ),
+                ),
+                (
+                  prefix: Transform.translate(
+                    offset: const Offset(0, 1),
+                    child: const Icon(
+                      Icons.rounded_corner_rounded,
+                      size: 12,
+                    ),
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: '0',
+                  ),
+                ),
+              ]
+            ),
+          ];
+
+    final backgroundControl = SizedBox(
+      height: 16,
+      child: Row(
+        children: [
+          SizedBox(
+            width: textFieldWidth,
+            child: Row(
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(1),
+                    color: backgroundColor,
+                  ),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: TextEditingController(
+                      text: backgroundColor.value
+                          .toRadixString(16)
+                          .toUpperCase()
+                          .substring(2),
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    decoration: const InputDecoration.collapsed(hintText: ''),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '${(backgroundOpacity * 100).truncate()}%',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          Expanded(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  hoverColor: Colors.transparent,
+                  splashColor: Colors.transparent,
+                  focusColor: Colors.transparent,
+                  highlightColor: Colors.transparent,
+                  padding: EdgeInsets.zero,
+                  constraints:
+                      BoxConstraints.tight(const Size(18, double.infinity)),
+                  onPressed: () => ref
+                      .read(canvasStateProvider.notifier)
+                      .update(backgroundHidden: !backgroundHidden),
+                  icon: Icon(
+                    backgroundHidden
+                        ? CupertinoIcons.eye_slash
+                        : CupertinoIcons.eye,
+                    size: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    return Container(
+      width: sidebarWidth,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+      ),
+      child: ListView(
+        children: [
+          ...[
+            (
+              title: Text(
+                'Background',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              contents: [backgroundControl]
+            ),
+            if (triangle != null)
+              (
+                title: null,
+                contents: [
+                  Transform.translate(
+                    // offset: const Offset(0, -8),
+                    offset: Offset.zero,
+                    child: Column(
+                      children: [
+                        ...controls!.map(
+                          (e) => SizedBox(
+                            height: 32,
+                            child: Row(
+                              children: [
+                                ...e.children.map(
+                                  (e) => SizedBox(
+                                    width: textFieldWidth,
+                                    child: Row(
+                                      children: [
+                                        // w: 24
+                                        Container(
+                                          width: 16,
+                                          height: 16,
+                                          margin:
+                                              const EdgeInsets.only(right: 6),
+                                          child: e.prefix,
+                                        ),
+                                        // w: 72
+                                        Expanded(
+                                          child: TextField(
+                                            cursorHeight: 12,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall,
+                                            decoration:
+                                                const InputDecoration.collapsed(
+                                                    hintText: ''),
+                                            keyboardType: e.keyboardType,
+                                            controller: e.controller,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                ]
+              )
+          ].map((e) => Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey.withOpacity(.5),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (e.title != null) SizedBox(height: 32, child: e.title),
+                    ...e.contents.map((e) => e),
+                  ],
+                ),
+              )),
+        ],
       ),
     );
   }

@@ -7,7 +7,29 @@ Certificate Editor & Batch Exporter
 [WIP]
 
 ## Todo:
-
+- Tests
+  - Making components
+  - Moving components
+    - Using canvas
+    - Using sidebar
+  - Resizing components
+    - Using canvas
+      - From the edge
+      - From the side
+    - Using sidebar
+  - Rotating components
+    - Using canvas
+    - Using sidebar
+  - Hovering components
+    - From canvas
+    - From sidebar
+  - Selecting components
+    - From canvas
+    - From sidebar
+  - Selecting tool
+    - Using shortcuts
+    - Using topbar
+  - 
 - Marquee
 - Modify from sidebar
   - Pos

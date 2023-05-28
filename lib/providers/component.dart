@@ -10,7 +10,7 @@ class ComponentData {
   const ComponentData({
     this.name = 'Component',
     this.triangle = const Triangle(Offset.zero, Size(200, 100), 0),
-    this.color = const Color(0xFF333333),
+    this.color = const Color(0xFF9E9E9E),
     this.borderRadius = BorderRadius.zero,
     this.border = const Border(),
     this.shadow = const [],
@@ -248,3 +248,69 @@ enum GlobalStates {
   rotatingComponent,
   creating,
 }
+
+@riverpod
+class CanvasState extends _$CanvasState {
+  @override
+  CanvasData build() {
+    return (
+      transform: Matrix4.identity(),
+      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundHidden: true,
+      backgroundOpacity: 1,
+    );
+  }
+
+  void update({
+    Matrix4? transform,
+    Color? backgroundColor,
+    bool? backgroundHidden,
+    double? backgroundOpacity,
+  }) {
+    state = state.copyWith(
+      transform: transform,
+      backgroundColor: backgroundColor,
+      backgroundHidden: backgroundHidden,
+      backgroundOpacity: backgroundOpacity,
+    );
+  }
+}
+
+typedef CanvasData = ({
+  Matrix4 transform,
+  Color backgroundColor,
+  bool backgroundHidden,
+  double backgroundOpacity,
+});
+
+extension CDataEx on CanvasData {
+  CanvasData copyWith({
+    Matrix4? transform,
+    Color? backgroundColor,
+    bool? backgroundHidden,
+    double? backgroundOpacity,
+  }) {
+    return (
+      transform: transform ?? this.transform,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      backgroundHidden: backgroundHidden ?? this.backgroundHidden,
+      backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
+    );
+  }
+}
+
+// class CanvasData {
+//   CanvasData({
+//     Matrix4? transform,
+//     this.backgroundColor = const Color(0xFFF5F5F5),
+//     this.backgroundHidden = true,
+//     this.backgroundOpacity = 1,
+//   }) {
+//     this.transform = transform ?? Matrix4.identity();
+//   }
+//
+//   late final Matrix4 transform;
+//   final Color backgroundColor;
+//   final bool backgroundHidden;
+//   final double backgroundOpacity;
+// }

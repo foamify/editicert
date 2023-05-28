@@ -127,4 +127,31 @@ final globalStateProvider =
 );
 
 typedef _$GlobalState = AutoDisposeNotifier<GlobalStateData>;
+String _$canvasStateHash() => r'9cee52cca9e90fe25a077c213ec407aaa1f1229e';
+
+/// See also [CanvasState].
+@ProviderFor(CanvasState)
+final canvasStateProvider = AutoDisposeNotifierProvider<
+    CanvasState,
+    ({
+      Color backgroundColor,
+      bool backgroundHidden,
+      double backgroundOpacity,
+      Matrix4 transform
+    })>.internal(
+  CanvasState.new,
+  name: r'canvasStateProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$canvasStateHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef _$CanvasState = AutoDisposeNotifier<
+    ({
+      Color backgroundColor,
+      bool backgroundHidden,
+      double backgroundOpacity,
+      Matrix4 transform
+    })>;
 // ignore_for_file: unnecessary_raw_strings, subtype_of_sealed_class, invalid_use_of_internal_member, do_not_use_environment, prefer_const_constructors, public_member_api_docs, avoid_private_typedef_functions
