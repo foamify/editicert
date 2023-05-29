@@ -7,25 +7,36 @@ Certificate Editor & Batch Exporter
 [WIP]
 
 ## Todo:
+- Frame component
 - Tests
   - Making components
   - Moving components
     - Using canvas
     - Using sidebar
+    - In global canvas
+    - In a frame
   - Resizing components
     - Using canvas
       - From the edge
       - From the side
     - Using sidebar
+    - In global canvas
+    - In a frame
   - Rotating components
     - Using canvas
     - Using sidebar
+    - In global canvas
+    - In a frame
   - Hovering components
     - From canvas
     - From sidebar
+    - In global canvas
+    - In a frame
   - Selecting components
     - From canvas
     - From sidebar
+    - In global canvas
+    - In a frame
   - Selecting tool
     - Using shortcuts
     - Using topbar

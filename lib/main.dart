@@ -446,7 +446,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           children: components
                               .mapIndexed(
                                 (i, e) => Container(
-                                  padding: EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.only(right: 8),
                                   height: 32,
                                   decoration: BoxDecoration(
                                     border: Border.all(

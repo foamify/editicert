@@ -318,7 +318,8 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
     required Alignment alignment,
   }) {
     final tValue = _visualTriangle.value;
-    const margin = 5.0;
+    final scale = ref.read(canvasTransformProvider).getMaxScaleOnAxis();
+    final margin = 5.0;
 
     final edges = tValue.edges;
     final rotatedEdges = getRotatedEdges();
@@ -343,13 +344,13 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
     final offset = switch (alignment) {
       Alignment.topCenter when tSize.width < 0 =>
-        Offset(-width, -gestureSize / 2),
+        Offset(-width - margin * 2, -gestureSize / 2) ,
       Alignment.topCenter => const Offset(0, -gestureSize / 2),
       Alignment.centerLeft when tSize.height < 0 =>
         Offset(-gestureSize / 2, tSize.height),
       Alignment.centerLeft => const Offset(-gestureSize / 2, 0),
       Alignment.bottomCenter when tSize.width < 0 =>
-        Offset(-width, tSize.height - gestureSize / 2),
+        Offset(-width - margin * 2, tSize.height - gestureSize / 2),
       Alignment.bottomCenter => Offset(0, tSize.height - gestureSize / 2),
       Alignment.centerRight when tSize.height < 0 =>
         Offset(tSize.width - gestureSize / 2, tSize.height),
@@ -389,10 +390,10 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
               child: MouseRegion(
                 cursor: SystemMouseCursors.grab,
                 child: Container(
-                  margin: const EdgeInsets.all(margin),
+                  margin: EdgeInsets.all(margin),
                   width: max(width, 0),
                   height: max(height, 0),
-                  color: Colors.blueAccent,
+                  // color: Colors.redAccent,
                 ),
               ),
             ),
