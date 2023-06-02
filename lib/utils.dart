@@ -2,12 +2,12 @@ import 'dart:math';
 import 'package:flutter/services.dart';
 
 const sidebarWidth = 240.0;
-const topbarHeight = 48.0;
+const topbarHeight = 52.0;
 const gestureSize = 10.0;
 const textFieldWidth = 96.0;
 
 ({Offset bl, Offset br, Offset tl, Offset tr}) rotateRect(
-    Rect rect, double angle, Offset origin) {
+    Rect rect, double angle, Offset origin,) {
   final topLeft = rotatePoint(rect.topLeft, origin, angle);
   final topRight = rotatePoint(rect.topRight, origin, angle);
   final bottomLeft = rotatePoint(rect.bottomLeft, origin, angle);
@@ -23,11 +23,12 @@ Offset rotatePoint(Offset point, Offset origin, double angle) {
   final double dy = sin(angle) * (point.dx - origin.dx) +
       cos(angle) * (point.dy - origin.dy) +
       origin.dy;
+
   return Offset(dx, dy);
 }
 
 Offset closestOffsetOnLine(
-    Offset outsideOffset, double rotationDegree, Offset originalOffset) {
+    Offset outsideOffset, double rotationDegree, Offset originalOffset,) {
   // Step 1: Convert the rotation degree to radians.
   double rotationRadians = rotationDegree * pi / 180;
 
@@ -38,7 +39,7 @@ Offset closestOffsetOnLine(
   double projectionLength = directionVector.dx * cos(rotationRadians) +
       directionVector.dy * sin(rotationRadians);
   Offset projectionVector = Offset(projectionLength * cos(rotationRadians),
-      projectionLength * sin(rotationRadians));
+      projectionLength * sin(rotationRadians),);
 
   // Step 4: Add the projection vector to the original offset to get the closest offset on the line.
   Offset closestOffset = outsideOffset + projectionVector;
@@ -47,11 +48,14 @@ Offset closestOffsetOnLine(
 }
 
 Rect rectFromEdges(({Offset bl, Offset br, Offset tl, Offset tr}) edges) {
+  final topLeft = edges.tl;
+  final topRight = edges.tr;
+
   return Rect.fromLTWH(
-    edges.tl.dx,
-    edges.tl.dy,
-    edges.tr.dx - edges.tl.dx,
-    edges.tr.dy - edges.bl.dy,
+    topLeft.dx,
+    topLeft.dy,
+    topRight.dx - topLeft.dx,
+    topRight.dy - edges.bl.dy,
   );
 }
 

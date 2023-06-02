@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:editicert/providers/component.dart';
+import 'package:editicert/providers/components.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/material.dart';
@@ -67,15 +67,18 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
     final deltaY = (oPosition.value.dy - pos.dy) > 0;
 
     final longestSide = max((oPosition.value.dx - pos.dx).abs(),
-        (oPosition.value.dy - pos.dy).abs());
+        (oPosition.value.dy - pos.dy).abs(),);
+
+    final xScale = (deltaX ? -1 : 1);
+    final yScale = (deltaY ? -1 : 1);
 
     final newRect = Rect.fromPoints(
       oPosition.value,
       shift
           ? oPosition.value +
               Offset(
-                longestSide * (deltaX ? -1 : 1),
-                longestSide * (deltaY ? -1 : 1),
+                longestSide * xScale,
+                longestSide * yScale,
               )
           : Offset(
               pos.dx,
@@ -94,13 +97,14 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
         keys.contains(LogicalKeyboardKey.shiftRight);
   }
 
-  void handlePointerUp(PointerUpEvent event) {
+  void handlePointerUp(PointerUpEvent _) {
     ref
         .read(globalStateProvider.notifier)
         .update(ref.read(globalStateProvider) - GlobalStates.creating);
 
-    final index = ref.read(componentsProvider).length - 1;
-    final triangle = ref.read(componentsProvider)[index].triangle;
+    final components = ref.read(componentsProvider);
+    final index = components.length - 1;
+    final triangle = components[index].triangle;
     if (triangle.size.width == 0 || triangle.size.height == 0) {
       ref.read(componentsProvider.notifier).removeAt(index);
       ref.read(selectedProvider.notifier).remove(index);

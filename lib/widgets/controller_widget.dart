@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:editicert/providers/component.dart';
+import 'package:editicert/providers/components.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,11 +28,13 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
         .triangle
         .rotatedEdges;
 
+    final transform = tControl().value;
+
     return (
-      tl: MatrixUtils.transformPoint(tControl().value, edge.tl),
-      tr: MatrixUtils.transformPoint(tControl().value, edge.tr),
-      bl: MatrixUtils.transformPoint(tControl().value, edge.bl),
-      br: MatrixUtils.transformPoint(tControl().value, edge.br),
+      tl: MatrixUtils.transformPoint(transform, edge.tl),
+      tr: MatrixUtils.transformPoint(transform, edge.tr),
+      bl: MatrixUtils.transformPoint(transform, edge.bl),
+      br: MatrixUtils.transformPoint(transform, edge.br),
     );
   }
 
@@ -42,11 +44,13 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
         .triangle
         .edges;
 
+    final transform = tControl().value;
+
     return (
-      tl: MatrixUtils.transformPoint(tControl().value, edge.tl),
-      tr: MatrixUtils.transformPoint(tControl().value, edge.tr),
-      bl: MatrixUtils.transformPoint(tControl().value, edge.bl),
-      br: MatrixUtils.transformPoint(tControl().value, edge.br),
+      tl: MatrixUtils.transformPoint(transform, edge.tl),
+      tr: MatrixUtils.transformPoint(transform, edge.tr),
+      bl: MatrixUtils.transformPoint(transform, edge.bl),
+      br: MatrixUtils.transformPoint(transform, edge.br),
     );
   }
 
@@ -78,7 +82,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
   @override
   Widget build(BuildContext context) {
     final selected = ref.watch(
-        selectedProvider.select((value) => value.contains(widget.index)));
+        selectedProvider.select((value) => value.contains(widget.index)),);
     final hovered = ref
         .watch(hoveredProvider.select((value) => value.contains(widget.index)));
     final component =
@@ -91,11 +95,6 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
         _visualTriangle.value = next[widget.index].triangle;
       }
     });
-
-    ref.listen(
-      transformationControllerDataProvider,
-      (previous, next) {},
-    );
 
     final moving = ref
         .watch(globalStateProvider)
@@ -112,6 +111,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
           final tSize = getSize();
           final tAngle = _visualTriangle.value.angle;
           final selectedValue = selected && !moving;
+          final borderWidth = selectedValue ? 1.0 : 2.0;
 
           return Stack(
             children: [
@@ -134,7 +134,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
                           ref.read(globalStateProvider.notifier).update(
                               ref.read(globalStateProvider) +
-                                  GlobalStates.draggingComponent);
+                                  GlobalStates.draggingComponent,);
                           handlePointerDownGlobal(event);
                         },
                         onPointerMove: locked ? null : handleMove,
@@ -154,9 +154,9 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                                 ? BoxDecoration(
                                     border: Border.all(
                                     strokeAlign: .5,
-                                    width: selectedValue ? 1 : 2,
+                                    width: borderWidth,
                                     color: Colors.blueAccent,
-                                  ))
+                                  ),)
                                 : const BoxDecoration(),
                           ),
                         ),
@@ -178,7 +178,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                         Alignment.bottomLeft,
                         Alignment.bottomRight,
                       ].map(
-                          (e) => _buildEdgeControl(alignment: e, rotate: true)),
+                          (e) => _buildEdgeControl(alignment: e, rotate: true),),
                     // side resize controls
                     if (selectedValue)
                       ...[
@@ -197,35 +197,35 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                         Alignment.bottomLeft,
                         Alignment.bottomRight,
                       ].map(
-                          (e) => _buildEdgeControl(alignment: e, resize: true)),
+                          (e) => _buildEdgeControl(alignment: e, resize: true),),
                   ],
                 ),
-              )
+              ),
             ],
           );
-        });
+        },);
   }
 
   Offset getPos() {
     return MatrixUtils.transformPoint(
-        tControl().value, _visualTriangle.value.pos);
+        tControl().value, _visualTriangle.value.pos,);
   }
 
   /// handles the pointer down event for rotation
   void handlePointerDownGlobal(PointerDownEvent event) {
     _triangle.value = ref.read(
-        componentsProvider.select((value) => value[widget.index].triangle));
+        componentsProvider.select((value) => value[widget.index].triangle),);
     _originalPosition.value = event.position;
     _originalTriangle.value = _triangle.value;
   }
 
   /// basically save data
-  void handlePointerUp(PointerUpEvent event) {
+  void handlePointerUp(PointerUpEvent _) {
     ref.read(globalStateProvider.notifier).update(
         ref.read(globalStateProvider) -
             GlobalStates.draggingComponent -
             GlobalStates.resizingComponent -
-            GlobalStates.rotatingComponent);
+            GlobalStates.rotatingComponent,);
     _triangle.value = _visualTriangle.value;
   }
 
@@ -240,14 +240,15 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
     final triangle = _visualTriangle.value;
     final edges = getEdges();
     final rotatedEdges = getRotatedEdges();
+    final topRight = rotatedEdges.tl;
 
     final rotatedEdge = switch (alignment) {
-      Alignment.topLeft => rotatedEdges.tl,
+      Alignment.topLeft => topRight,
       Alignment.topRight => rotatedEdges.tr,
       Alignment.bottomLeft => rotatedEdges.bl,
       Alignment.bottomRight => rotatedEdges.br,
       //
-      Alignment.topCenter => rotatedEdges.tl,
+      Alignment.topCenter => topRight,
       _ => Offset.zero,
     };
 
@@ -259,6 +260,8 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
       //
       _ => Offset.zero,
     };
+
+    final edgeScale = rotate ? 2 : 1;
 
     return Positioned(
       // this is for the whole widget
@@ -277,7 +280,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                     ref.read(globalStateProvider) +
                         (rotate
                             ? GlobalStates.rotatingComponent
-                            : GlobalStates.resizingComponent));
+                            : GlobalStates.resizingComponent),);
                 handlePointerDownGlobal(event);
               },
               onPointerMove: (event) {
@@ -296,14 +299,14 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
                   width: alignment == Alignment.topCenter ||
                           alignment == Alignment.bottomCenter
                       ? triangle.size.width
-                      : gestureSize * (rotate ? 2 : 1),
-                  height: gestureSize * (rotate ? 2 : 1),
+                      : gestureSize * edgeScale,
+                  height: gestureSize * edgeScale,
                   decoration: rotate
                       ? null
                       : BoxDecoration(
                           color: Colors.white,
                           border:
-                              Border.all(width: 1, color: Colors.blueAccent)),
+                              Border.all(width: 1, color: Colors.blueAccent),),
                 ),
               ),
             ),
@@ -318,8 +321,8 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
     required Alignment alignment,
   }) {
     final tValue = _visualTriangle.value;
-    final scale = ref.read(canvasTransformProvider).getMaxScaleOnAxis();
-    final margin = 5.0;
+    // final scale = ref.read(canvasTransformProvider).getMaxScaleOnAxis();
+    const margin = 5.0;
 
     final edges = tValue.edges;
     final rotatedEdges = getRotatedEdges();
@@ -344,7 +347,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
     final offset = switch (alignment) {
       Alignment.topCenter when tSize.width < 0 =>
-        Offset(-width - margin * 2, -gestureSize / 2) ,
+        Offset(-width - margin * 2, -gestureSize / 2),
       Alignment.topCenter => const Offset(0, -gestureSize / 2),
       Alignment.centerLeft when tSize.height < 0 =>
         Offset(-gestureSize / 2, tSize.height),
@@ -357,19 +360,22 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
       Alignment.centerRight => Offset(tSize.width - gestureSize / 2, 0),
       _ => Offset.zero,
     };
+    final topLeft = edges.tl;
+    final bottomRight = edges.br;
+    final rTopLeft = rotatedEdges.tl;
 
     final selectedSide = switch (alignment) {
-      Alignment.topCenter => edges.tl,
-      Alignment.centerLeft => edges.tl,
-      Alignment.bottomCenter => edges.br,
-      Alignment.centerRight => edges.br,
+      Alignment.topCenter => topLeft,
+      Alignment.centerLeft => topLeft,
+      Alignment.bottomCenter => bottomRight,
+      Alignment.centerRight => bottomRight,
       _ => Offset.zero,
     };
 
     return Positioned(
         // this is for the whole widget
-        left: rotatedEdges.tl.dx,
-        top: rotatedEdges.tl.dy,
+        left: rTopLeft.dx,
+        top: rTopLeft.dy,
         child: Transform.rotate(
           angle: tValue.angle,
           origin: -Offset(width + margin * 2, height + margin * 2) / 2,
@@ -381,7 +387,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
                 ref.read(globalStateProvider.notifier).update(
                     ref.read(globalStateProvider) +
-                        GlobalStates.resizingComponent);
+                        GlobalStates.resizingComponent,);
               },
               onPointerMove: (event) {
                 handleResizeSide(event, alignment, selectedSide);
@@ -390,7 +396,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
               child: MouseRegion(
                 cursor: SystemMouseCursors.grab,
                 child: Container(
-                  margin: EdgeInsets.all(margin),
+                  margin: const EdgeInsets.all(margin),
                   width: max(width, 0),
                   height: max(height, 0),
                   // color: Colors.redAccent,
@@ -398,7 +404,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
               ),
             ),
           ),
-        ));
+        ),);
   }
 
   //------------------------------handle controls------------------------------
@@ -416,12 +422,12 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
   /// Handles rotation from the center of the widget to the pointer
   void handleRotate(PointerMoveEvent event) {
     final center = MatrixUtils.transformPoint(
-        ref.read(canvasTransformProvider), _originalTriangle.value.rect.center);
+        ref.read(canvasTransformProvider), _originalTriangle.value.rect.center,);
     final originalAngle = atan2(
         _originalPosition.value.dx - sidebarWidth - center.dx,
-        _originalPosition.value.dy - topbarHeight - center.dy);
+        _originalPosition.value.dy - topbarHeight - center.dy,);
     final newAngle = atan2(event.position.dx - sidebarWidth - center.dx,
-        event.position.dy - topbarHeight - center.dy);
+        event.position.dy - topbarHeight - center.dy,);
     final deltaAngle = newAngle - originalAngle;
 
     _triangle.value = _originalTriangle.value
@@ -430,7 +436,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   /// Handles resizing from the sides
   void handleResizeSide(
-      PointerMoveEvent event, Alignment alignment, Offset selectedSide) {
+      PointerMoveEvent event, Alignment alignment, Offset selectedSide,) {
     final tValue = _originalTriangle.value;
 
     final rOriginalPoint = rotatePoint(
@@ -490,7 +496,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
               Alignment.topCenter => rDelta.dy / 2,
               Alignment.bottomCenter => -rDelta.dy / 2,
               _ => 0,
-            }));
+            },),);
 
     _triangle.value = Triangle.fromEdges(
       newEdgesR,
@@ -501,7 +507,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   /// Handles resizing from the edges
   void handleResizeEdges(
-      PointerMoveEvent event, Alignment alignment, Offset selectedEdge) {
+      PointerMoveEvent event, Alignment alignment, Offset selectedEdge,) {
     final tSize = getSize();
     final tValue = _originalTriangle.value;
 
@@ -520,8 +526,9 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
       -tValue.angle,
     );
 
-    final delta = (position - oPosition) * getScale();
-    final rDelta = (rPosition - rOriginalPoint) * getScale();
+    final scale = getScale();
+    final delta = (position - oPosition) * scale;
+    final rDelta = (rPosition - rOriginalPoint) * scale;
 
     _triangle.value = tValue.copyWith(
       pos: switch (alignment) {
@@ -584,26 +591,29 @@ class Triangle {
     bool flipX = false,
     bool flipY = false,
   }) {
+    final topLeft = edges.tl;
+
     final size = Size(
-      (edges.tl - edges.tr).distance * (flipX ? -1 : 1),
-      (edges.tl - edges.bl).distance * (flipY ? -1 : 1),
+      (topLeft - edges.tr).distance * (flipX ? -1 : 1),
+      (topLeft - edges.bl).distance * (flipY ? -1 : 1),
     );
-    final angle = atan2(edges.tr.dy - edges.tl.dy, edges.tr.dx - edges.tl.dx);
+    final angle = atan2(edges.tr.dy - topLeft.dy, edges.tr.dx - topLeft.dx);
 
     final newEdges = rotateRect(
-        Rect.fromLTWH(edges.tl.dx, edges.tl.dy, size.width, size.height),
+        Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height),
         0,
-        Offset.zero);
+        Offset.zero,);
 
     final newTriangle = Triangle(
       newEdges.tl,
       size,
       angle + (flipX ? pi : 0),
     );
+
     return newTriangle;
   }
 
-  copyWith({Offset? pos, Size? size, double? angle, Offset? origin}) {
+  copyWith({Offset? pos, Size? size, double? angle}) {
     return Triangle(pos ?? this.pos, size ?? this.size, angle ?? this.angle);
   }
 

@@ -3,55 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'component.g.dart';
-
-@immutable
-class ComponentData {
-  const ComponentData({
-    this.name = 'Component',
-    this.triangle = const Triangle(Offset.zero, Size(200, 100), 0),
-    this.color = const Color(0xFF9E9E9E),
-    this.borderRadius = BorderRadius.zero,
-    this.border = const Border(),
-    this.shadow = const [],
-    this.content = const SizedBox.shrink(),
-    this.hidden = false,
-    this.locked = false,
-  });
-
-  final String name;
-  final Triangle triangle;
-  final Color color;
-  final BorderRadius borderRadius;
-  final Border border;
-  final List<BoxShadow> shadow;
-  final Widget content;
-  final bool hidden;
-  final bool locked;
-
-  ComponentData copyWith({
-    required String? name,
-    required Triangle? triangle,
-    required Color? color,
-    required BorderRadius? borderRadius,
-    required Border? border,
-    required List<BoxShadow>? shadow,
-    required Widget? content,
-    required bool? hidden,
-    required bool? locked,
-  }) =>
-      ComponentData(
-        name: name ?? this.name,
-        triangle: triangle ?? this.triangle,
-        color: color ?? this.color,
-        borderRadius: borderRadius ?? this.borderRadius,
-        border: border ?? this.border,
-        shadow: shadow ?? this.shadow,
-        content: content ?? this.content,
-        hidden: hidden ?? this.hidden,
-        locked: locked ?? this.locked,
-      );
-}
+part 'components.g.dart';
 
 @riverpod
 class Components extends _$Components {
@@ -109,6 +61,54 @@ class Components extends _$Components {
     );
     state = [...newState];
   }
+}
+
+@immutable
+class ComponentData {
+  const ComponentData({
+    this.name = 'Component',
+    this.triangle = const Triangle(Offset.zero, Size(200, 100), 0),
+    this.color = const Color(0xFF9E9E9E),
+    this.borderRadius = BorderRadius.zero,
+    this.border = const Border(),
+    this.shadow = const [],
+    this.content = const SizedBox.shrink(),
+    this.hidden = false,
+    this.locked = false,
+  });
+
+  final String name;
+  final Triangle triangle;
+  final Color color;
+  final BorderRadius borderRadius;
+  final Border border;
+  final List<BoxShadow> shadow;
+  final Widget content;
+  final bool hidden;
+  final bool locked;
+
+  ComponentData copyWith({
+    required String? name,
+    required Triangle? triangle,
+    required Color? color,
+    required BorderRadius? borderRadius,
+    required Border? border,
+    required List<BoxShadow>? shadow,
+    required Widget? content,
+    required bool? hidden,
+    required bool? locked,
+  }) =>
+      ComponentData(
+        name: name ?? this.name,
+        triangle: triangle ?? this.triangle,
+        color: color ?? this.color,
+        borderRadius: borderRadius ?? this.borderRadius,
+        border: border ?? this.border,
+        shadow: shadow ?? this.shadow,
+        content: content ?? this.content,
+        hidden: hidden ?? this.hidden,
+        locked: locked ?? this.locked,
+      );
 }
 
 @riverpod

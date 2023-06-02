@@ -1,6 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
-import 'package:editicert/providers/component.dart';
+import 'package:editicert/providers/components.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:collection/collection.dart';
@@ -9,14 +11,33 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
+import 'package:window_manager/window_manager.dart';
 
-void main() {
-  runApp(const ProviderScope(child: MyApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
+  await WindowManipulator.initialize();
+
+  await WindowManipulator.makeTitlebarTransparent();
+  await WindowManipulator.enableFullSizeContentView();
+  await WindowManipulator.hideTitle();
+  await WindowManipulator.addToolbar();
+  await WindowManipulator.setToolbarStyle(
+    toolbarStyle: NSWindowToolbarStyle.unified,
+  );
+
+  await windowManager.waitUntilReadyToShow();
+
+  runApp(const ProviderScope(child: Main()));
+
+  unawaited(windowManager.show());
+  unawaited(windowManager.focus());
 }
 
-class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+class Main extends ConsumerWidget {
+  const Main({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -136,8 +157,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final (
       transform: _,
       :backgroundColor,
-      :backgroundHidden,
-      :backgroundOpacity,
+      backgroundHidden: _,
+      backgroundOpacity: _,
     ) = ref.watch(canvasStateProvider);
 
     //
@@ -181,6 +202,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         keys.contains(LogicalKeyboardKey.metaRight) ||
         keys.contains(LogicalKeyboardKey.meta);
 
+    final mqSize = MediaQuery.of(context).size;
+    final colorScheme = Theme.of(context).colorScheme;
+
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -215,8 +239,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ref.read(hoveredProvider.notifier).clear();
                     },
                     child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height,
+                      width: mqSize.width,
+                      height: mqSize.height,
                       color: Colors.transparent,
                     ),
                   ),
@@ -237,7 +261,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             const SizedBox.shrink(),
                           ]),
                         );
-                      }),
+                      },),
                   // components label
                   ...components.mapIndexed(
                     (i, e) {
@@ -264,10 +288,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Listener(
                       onPointerDown: (event) => globalStateNotifier.update(
                           ref.read(globalStateProvider) +
-                              GlobalStates.leftClick),
+                              GlobalStates.leftClick,),
                       onPointerUp: (event) => globalStateNotifier.update(
                           ref.read(globalStateProvider) -
-                              GlobalStates.leftClick),
+                              GlobalStates.leftClick,),
                       child: MouseRegion(
                         cursor: switch ((
                           leftClick,
@@ -277,11 +301,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                           (true, true) => SystemMouseCursors.grabbing,
                           _
                               when globalStateData.containsAny(
-                                  {GlobalStates.resizingComponent}) =>
+                                  {GlobalStates.resizingComponent},) =>
                             SystemMouseCursors.precise,
                           _
                               when globalStateData.containsAny(
-                                  {GlobalStates.rotatingComponent}) =>
+                                  {GlobalStates.rotatingComponent},) =>
                             SystemMouseCursors.grabbing,
                           _ => MouseCursor.defer
                         },
@@ -317,7 +341,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     .containsAny({GlobalStates.panningCanvas}),
                             boundaryMargin:
                                 const EdgeInsets.all(double.infinity),
-                            builder: (context, viewport) => const SizedBox()),
+                            builder: (context, viewport) => const SizedBox(),),
                       ),
                     ),
                   ),
@@ -329,7 +353,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Container(
                   height: topbarHeight,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: colorScheme.surfaceVariant,
                     border: Border(
                       bottom: BorderSide(
                         color: Colors.grey.withOpacity(.375),
@@ -337,102 +361,96 @@ class _HomePageState extends ConsumerState<HomePage> {
                       ),
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  padding: EdgeInsets.only(
+                      left: 8 + (Platform.isMacOS ? 80 : 0), right: 8,),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            ...[
-                              (
-                                text: 'Move',
-                                shortcut: 'V',
-                                tool: ToolData.move,
-                                onTap: () {
-                                  toolNotifier.setMove();
-                                },
-                                icon: Transform.rotate(
-                                  angle: -pi / 5,
-                                  alignment: const Alignment(-0.2, 0),
-                                  child: const Icon(
-                                    Icons.navigation_outlined,
-                                    size: 18,
-                                  ),
-                                )
+                      ...[
+                        (
+                          text: 'Move',
+                          shortcut: 'V',
+                          tool: ToolData.move,
+                          onTap: () {
+                            toolNotifier.setMove();
+                          },
+                          icon: Transform.rotate(
+                            angle: -pi / 5,
+                            alignment: const Alignment(-0.2, 0.3),
+                            child: const Icon(
+                              Icons.navigation_outlined,
+                              size: 18,
+                            ),
+                          )
+                        ),
+                        (
+                          text: 'Rectangle',
+                          shortcut: 'R',
+                          tool: ToolData.create,
+                          onTap: () {
+                            toolNotifier.setCreate();
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.square,
+                            size: 18,
+                          )
+                        ),
+                        (
+                          text: 'Hand',
+                          shortcut: 'H',
+                          tool: ToolData.hand,
+                          onTap: () {
+                            toolNotifier.setHand();
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.hand_raised,
+                            size: 18,
+                          )
+                        ),
+                      ].map(
+                        (e) => Tooltip(
+                          richMessage: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${e.text} ',
                               ),
-                              (
-                                text: 'Rectangle',
-                                shortcut: 'R',
-                                tool: ToolData.create,
-                                onTap: () {
-                                  toolNotifier.setCreate();
-                                },
-                                icon: const Icon(
-                                  CupertinoIcons.square,
-                                  size: 18,
-                                )
+                              TextSpan(
+                                text: ' ${e.shortcut}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.grey.shade600,
+                                ),
                               ),
-                              (
-                                text: 'Hand',
-                                shortcut: 'H',
-                                tool: ToolData.hand,
-                                onTap: () {
-                                  toolNotifier.setHand();
-                                },
-                                icon: const Icon(
-                                  CupertinoIcons.hand_raised,
-                                  size: 18,
-                                )
-                              ),
-                            ].map((e) => Tooltip(
-                                  richMessage: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: '${e.text} ',
-                                      ),
-                                      TextSpan(
-                                        text: ' ${e.shortcut}',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  child: Card(
-                                    margin: EdgeInsets.zero,
-                                    color: tool == e.tool
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onInverseSurface
-                                        : Theme.of(context)
-                                            .colorScheme
-                                            .surfaceVariant,
-                                    elevation: 0,
-                                    clipBehavior: Clip.hardEdge,
-                                    child: InkWell(
-                                      onTap: e.onTap,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: e.icon,
-                                      ),
-                                    ),
-                                  ),
-                                )),
-                          ]),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          ValueListenableBuilder(
-                            valueListenable: transformationController,
-                            builder: (context, value, child) {
-                              return Text(
-                                  '${(value.getMaxScaleOnAxis() * 100).truncate()}%');
-                            },
+                            ],
                           ),
-                        ],
-                      )
+                          child: Card(
+                            margin: EdgeInsets.zero,
+                            color: tool == e.tool
+                                ? colorScheme.onInverseSurface
+                                : colorScheme.surfaceVariant,
+                            elevation: 0,
+                            clipBehavior: Clip.hardEdge,
+                            shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(4)),),
+                            child: InkWell(
+                              onTap: e.onTap,
+                              child: Padding(
+                                padding: const EdgeInsets.all(17.0),
+                                child: e.icon,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      ValueListenableBuilder(
+                        valueListenable: transformationController,
+                        builder: (context, value, child) {
+                          return Text(
+                              '${(value.getMaxScaleOnAxis() * 100).truncate()}%',);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -441,7 +459,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     children: [
                       Container(
                         width: sidebarWidth,
-                        color: Theme.of(context).colorScheme.surfaceVariant,
+                        color: colorScheme.surfaceVariant,
                         child: ListView(
                           children: components
                               .mapIndexed(
@@ -480,7 +498,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         children: [
                                           const Padding(
                                             padding: EdgeInsets.symmetric(
-                                                horizontal: 8.0),
+                                                horizontal: 8.0,),
                                             child: Icon(
                                               Icons.rectangle_outlined,
                                               size: 12,
@@ -514,12 +532,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                     constraints: BoxConstraints
                                                         .tight(Size(
                                                             e.locked ? 14 : 18,
-                                                            double.infinity)),
+                                                            double.infinity,)),
                                                     onPressed: () => ref
                                                         .read(componentsProvider
                                                             .notifier)
                                                         .replace(i,
-                                                            locked: !e.locked),
+                                                            locked: !e.locked,),
                                                     icon: Icon(
                                                       e.locked
                                                           ? CupertinoIcons
@@ -544,12 +562,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                             const Size(
                                                                 18,
                                                                 double
-                                                                    .infinity)),
+                                                                    .infinity,),),
                                                     onPressed: () => ref
                                                         .read(componentsProvider
                                                             .notifier)
                                                         .replace(i,
-                                                            hidden: !e.hidden),
+                                                            hidden: !e.hidden,),
                                                     icon: Icon(
                                                       e.hidden
                                                           ? CupertinoIcons
@@ -677,50 +695,58 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   ValueListenableBuilder<Matrix4> buildComponentLabel(
-      ComponentData e, Color backgroundColor) {
+      ComponentData e, Color backgroundColor,) {
     return ValueListenableBuilder(
         valueListenable: ref.watch(transformationControllerDataProvider),
         builder: (context, matrix, child) {
           final triangle = e.triangle;
+          final tWidth = triangle.size.width;
+          final tHeight = triangle.size.height;
 
           final edges = triangle.rotatedEdges;
+          final topLeft = edges.tl;
+          final topRight = edges.tr;
+          final bottomLeft = edges.bl;
+          final bottomRight = edges.br;
+
+
           var edge =
-              switch ((triangle.size.width < 0, triangle.size.height < 0)) {
+              switch ((tWidth < 0, tHeight < 0)) {
             (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => edges.bl,
-                < 135 => edges.tl,
-                < 225 => edges.tr,
-                < 315 => edges.br,
-                < 360 => edges.bl,
-                _ => edges.tl,
+                < 45 => bottomLeft,
+                < 135 => topLeft,
+                < 225 => topRight,
+                < 315 => bottomRight,
+                < 360 => bottomLeft,
+                _ => topLeft,
               },
             (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => edges.tl,
-                < 135 => edges.bl,
-                < 225 => edges.br,
-                < 315 => edges.tr,
-                < 360 => edges.tl,
-                _ => edges.tl,
+                < 45 => topLeft,
+                < 135 => bottomLeft,
+                < 225 => bottomRight,
+                < 315 => topRight,
+                < 360 => topLeft,
+                _ => topLeft,
               },
             (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => edges.br,
-                < 135 => edges.bl,
-                < 225 => edges.tl,
-                < 315 => edges.tr,
-                < 360 => edges.br,
-                _ => edges.tl,
+                < 45 => bottomRight,
+                < 135 => bottomLeft,
+                < 225 => topLeft,
+                < 315 => topRight,
+                < 360 => bottomRight,
+                _ => topLeft,
               },
             _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => edges.tr,
-                < 135 => edges.tl,
-                < 225 => edges.bl,
-                < 315 => edges.br,
-                < 360 => edges.tr,
-                _ => edges.tl,
+                < 45 => topRight,
+                < 135 => topLeft,
+                < 225 => bottomLeft,
+                < 315 => bottomRight,
+                < 360 => topRight,
+                _ => topLeft,
               }
           };
           final newAngle =
-              switch ((triangle.size.width < 0, triangle.size.height < 0)) {
+              switch ((tWidth < 0, tHeight < 0)) {
             (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
                 < 45 => pi / 2,
                 < 135 => 0,
@@ -748,6 +774,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           };
 
           edge = MatrixUtils.transformPoint(matrix, edge);
+
           return Positioned(
             left: edge.dx,
             top: edge.dy,
@@ -755,7 +782,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               angle: triangle.angle + newAngle,
               alignment: Alignment.topLeft,
               child: AnimatedSlide(
-                offset: Offset(triangle.size.width < 0 ? -1 : 0, -1),
+                offset: Offset(tWidth < 0 ? -1 : 0, -1),
                 duration: Duration.zero,
                 child: Text(
                   e.name,
@@ -768,17 +795,20 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
             ),
           );
-        });
+        },);
   }
 
   Widget buildComponentWidget(ComponentData e) {
     final triangle = e.triangle;
+    final tWidth = triangle.size.width;
+    final tHeight = triangle.size.height;
+
     final child = Container(
       width:
-          triangle.size.width < 0 ? -triangle.size.width : triangle.size.width,
-      height: triangle.size.height < 0
-          ? -triangle.size.height
-          : triangle.size.height,
+          tWidth < 0 ? -tWidth : tWidth,
+      height: tHeight < 0
+          ? -tHeight
+          : tHeight,
       decoration: BoxDecoration(
         borderRadius: e.borderRadius,
         border: e.border,
@@ -786,16 +816,17 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       child: const Text('testfasd fa sdf'),
     );
+
     return Positioned(
       left:
-          triangle.pos.dx + (triangle.size.width < 0 ? triangle.size.width : 0),
+          triangle.pos.dx + (tWidth < 0 ? tWidth : 0),
       top: triangle.pos.dy +
-          (triangle.size.height < 0 ? triangle.size.height : 0),
+          (tHeight < 0 ? tHeight : 0),
       child: Transform.rotate(
         angle: triangle.angle,
         child: Transform.flip(
-          flipX: triangle.size.width < 0,
-          flipY: triangle.size.height < 0,
+          flipX: tWidth < 0,
+          flipY: tHeight < 0,
           child: child,
         ),
       ),
@@ -819,6 +850,7 @@ class RightSidebar extends ConsumerWidget {
     ) = ref.watch(canvasStateProvider);
     final triangle = ref.watch(componentsProvider.select((value) =>
         selected.firstOrNull == null ? null : value[selected.first].triangle));
+    final textTheme = Theme.of(context).textTheme;
 
     final controls = triangle == null
         ? null
@@ -828,7 +860,7 @@ class RightSidebar extends ConsumerWidget {
                 (
                   prefix: Text(
                     'X',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
                   keyboardType: TextInputType.number,
@@ -839,7 +871,7 @@ class RightSidebar extends ConsumerWidget {
                 (
                   prefix: Text(
                     'Y',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
                   keyboardType: TextInputType.number,
@@ -854,7 +886,7 @@ class RightSidebar extends ConsumerWidget {
                 (
                   prefix: Text(
                     'W',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
                   keyboardType: TextInputType.number,
@@ -865,7 +897,7 @@ class RightSidebar extends ConsumerWidget {
                 (
                   prefix: Text(
                     'H',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: textTheme.bodySmall,
                     textAlign: TextAlign.center,
                   ),
                   keyboardType: TextInputType.number,
@@ -933,7 +965,7 @@ class RightSidebar extends ConsumerWidget {
                           .toUpperCase()
                           .substring(2),
                     ),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: textTheme.bodySmall,
                     decoration: const InputDecoration.collapsed(hintText: ''),
                   ),
                 ),
@@ -942,7 +974,7 @@ class RightSidebar extends ConsumerWidget {
           ),
           Text(
             '${(backgroundOpacity * 100).truncate()}%',
-            style: Theme.of(context).textTheme.bodySmall,
+            style: textTheme.bodySmall,
           ),
           Expanded(
             child: Row(
@@ -972,6 +1004,7 @@ class RightSidebar extends ConsumerWidget {
         ],
       ),
     );
+
     return Container(
       width: sidebarWidth,
       decoration: BoxDecoration(
@@ -983,7 +1016,7 @@ class RightSidebar extends ConsumerWidget {
             (
               title: Text(
                 'Background',
-                style: Theme.of(context).textTheme.labelMedium,
+                style: textTheme.labelMedium,
               ),
               contents: [backgroundControl]
             ),
@@ -1018,12 +1051,11 @@ class RightSidebar extends ConsumerWidget {
                                         Expanded(
                                           child: TextField(
                                             cursorHeight: 12,
-                                            style: Theme.of(context)
-                                                .textTheme
+                                            style: textTheme
                                                 .bodySmall,
                                             decoration:
                                                 const InputDecoration.collapsed(
-                                                    hintText: ''),
+                                                    hintText: '',),
                                             keyboardType: e.keyboardType,
                                             controller: e.controller,
                                           ),
@@ -1031,17 +1063,20 @@ class RightSidebar extends ConsumerWidget {
                                       ],
                                     ),
                                   ),
-                                )
+                                ),
                               ],
                             ),
                           ),
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ]
-              )
-          ].map((e) => Container(
+              ),
+          ].map((e) {
+            final title = e.title;
+
+            return Container(
                 padding:
                     const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                 decoration: BoxDecoration(
@@ -1055,11 +1090,12 @@ class RightSidebar extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (e.title != null) SizedBox(height: 32, child: e.title),
+                    if (title != null) SizedBox(height: 32, child: title),
                     ...e.contents.map((e) => e),
                   ],
                 ),
-              )),
+              );
+          }),
         ],
       ),
     );
