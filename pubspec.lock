@@ -507,6 +507,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.0"
+  plugin_platform_interface:
+    dependency: transitive
+    description:
+      name: plugin_platform_interface
+      sha256: "6a2128648c854906c53fa8e33986fc0247a1116122f9534dd20e3ab9e16a32bc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.4"
   pointycastle:
     dependency: transitive
     description:
@@ -704,6 +712,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.1"
+  touch_bar:
+    dependency: "direct main"
+    description:
+      name: touch_bar
+      sha256: "396d14ee66da4319c1623bb58bc852328cb9cfdcb243f818a81be45892d8ac8e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0-alpha.1"
+  touch_bar_macos:
+    dependency: transitive
+    description:
+      name: touch_bar_macos
+      sha256: "02da7411b5560989d9cf1834cac1754ddc8fa93076a47c705284b78b263c3cad"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0-alpha.1"
+  touch_bar_platform_interface:
+    dependency: transitive
+    description:
+      name: touch_bar_platform_interface
+      sha256: "9456dbca0544dbcbe4930b4385e5c580d4556ee5383718c74b6548a0b998f3f3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0-alpha.1"
   transparent_pointer:
     dependency: "direct main"
     description:
