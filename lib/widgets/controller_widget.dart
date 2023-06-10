@@ -11,10 +11,10 @@ class ControllerWidget extends ConsumerStatefulWidget {
   final int index;
 
   @override
-  ConsumerState<ControllerWidget> createState() => _NControllerWidgetState();
+  ConsumerState<ControllerWidget> createState() => _ControllerWidgetState();
 }
 
-class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
+class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
   int get index => widget.index;
 
   Offset toScene(Offset offset) => tControl().toScene(offset);
@@ -91,6 +91,7 @@ class _NControllerWidgetState extends ConsumerState<ControllerWidget> {
     final locked = component.locked;
 
     ref.listen(componentsProvider, (previous, next) {
+      if (next.length <= widget.index) return;
       if (next[widget.index].triangle != _triangle.value) {
         _visualTriangle.value = next[widget.index].triangle;
       }

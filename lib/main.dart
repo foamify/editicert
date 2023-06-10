@@ -41,33 +41,75 @@ class Main extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Editicert',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blueGrey,
-          brightness: Brightness.dark,
+    return PlatformMenuBar(
+      menus: const [
+        PlatformMenu(
+          label: 'Application',
+          menus: [
+            PlatformMenuItemGroup(members: [
+              PlatformMenuItem(label: 'About Editicert'),
+            ]),
+            PlatformMenuItemGroup(members: [
+              PlatformMenuItem(label: 'Preferences'),
+            ]),
+            PlatformMenuItemGroup(members: [
+              PlatformMenuItem(label: 'Quit Editicert'),
+            ]),
+          ],
         ),
-        useMaterial3: true,
+        PlatformMenu(
+          label: 'File',
+          menus: [
+            PlatformMenuItem(
+              label: 'New Project',
+            ),
+            PlatformMenuItem(
+              label: 'Open Project',
+            ),
+            PlatformMenuItem(
+              label: 'Save',
+            ),
+            PlatformMenuItem(
+              label: 'Save As',
+            ),
+            PlatformMenuItem(
+              label: 'Close Project',
+            ),
+          ],
+        ),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Editicert',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blueGrey,
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        home: const HomePage(),
+        shortcuts: {
+          LogicalKeySet(LogicalKeyboardKey.keyV):
+              const ActivateToolIntent(ToolData.move),
+          LogicalKeySet(LogicalKeyboardKey.keyR):
+              const ActivateToolIntent(ToolData.create),
+          LogicalKeySet(LogicalKeyboardKey.keyH):
+              const ActivateToolIntent(ToolData.hand),
+          LogicalKeySet(LogicalKeyboardKey.backspace):
+              ActivateShortcutIntent({LogicalKeyboardKey.backspace}),
+          LogicalKeySet(LogicalKeyboardKey.delete):
+              ActivateShortcutIntent({LogicalKeyboardKey.delete}),
+          LogicalKeySet(LogicalKeyboardKey.bracketLeft):
+              ActivateShortcutIntent({LogicalKeyboardKey.bracketLeft}),
+          LogicalKeySet(LogicalKeyboardKey.bracketRight):
+              ActivateShortcutIntent({LogicalKeyboardKey.bracketRight}),
+        },
+        actions: {
+          ActivateToolIntent: ActivateToolAction(ref),
+          ActivateShortcutIntent: ActivateShortcutAction(ref),
+        },
       ),
-      home: const HomePage(),
-      shortcuts: {
-        LogicalKeySet(LogicalKeyboardKey.keyV):
-            const ActivateToolIntent(ToolData.move),
-        LogicalKeySet(LogicalKeyboardKey.keyR):
-            const ActivateToolIntent(ToolData.create),
-        LogicalKeySet(LogicalKeyboardKey.keyH):
-            const ActivateToolIntent(ToolData.hand),
-        LogicalKeySet(LogicalKeyboardKey.bracketLeft):
-            ActivateShortcutIntent({LogicalKeyboardKey.bracketLeft}),
-        LogicalKeySet(LogicalKeyboardKey.bracketRight):
-            ActivateShortcutIntent({LogicalKeyboardKey.bracketRight}),
-      },
-      actions: {
-        ActivateToolIntent: ActivateToolAction(ref),
-        ActivateShortcutIntent: ActivateShortcutAction(ref),
-      },
     );
   }
 }
@@ -91,6 +133,10 @@ class ActivateShortcutAction extends Action<ActivateShortcutIntent> {
         handleGoBackward();
       case LogicalKeyboardKey.bracketRight:
         handleGoForward();
+      case LogicalKeyboardKey.backspace when Platform.isMacOS:
+        ref.read(componentsProvider.notifier).deleteSelected();
+      case LogicalKeyboardKey.delete when !Platform.isMacOS:
+        ref.read(componentsProvider.notifier).deleteSelected();
       case _:
     }
   }
@@ -246,22 +292,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                   // components
                   ValueListenableBuilder(
-                      valueListenable: transformationController,
-                      builder: (context, value, child) {
-                        return Transform(
-                          transform: value,
-                          child: Stack(clipBehavior: Clip.none, children: [
-                            ...components.mapIndexed(
-                              (i, e) {
-                                return e.hidden
-                                    ? const SizedBox.shrink()
-                                    : buildComponentWidget(e);
-                              },
-                            ),
-                            const SizedBox.shrink(),
-                          ]),
-                        );
-                      },),
+                    valueListenable: transformationController,
+                    builder: (context, value, child) {
+                      return Transform(
+                        transform: value,
+                        child: Stack(clipBehavior: Clip.none, children: [
+                          ...components.mapIndexed(
+                            (i, e) {
+                              return e.hidden
+                                  ? const SizedBox.shrink()
+                                  : buildComponentWidget(e);
+                            },
+                          ),
+                          const SizedBox.shrink(),
+                        ]),
+                      );
+                    },
+                  ),
                   // components label
                   ...components.mapIndexed(
                     (i, e) {
@@ -287,11 +334,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                     transparent: !isToolHand,
                     child: Listener(
                       onPointerDown: (event) => globalStateNotifier.update(
-                          ref.read(globalStateProvider) +
-                              GlobalStates.leftClick,),
+                        ref.read(globalStateProvider) + GlobalStates.leftClick,
+                      ),
                       onPointerUp: (event) => globalStateNotifier.update(
-                          ref.read(globalStateProvider) -
-                              GlobalStates.leftClick,),
+                        ref.read(globalStateProvider) - GlobalStates.leftClick,
+                      ),
                       child: MouseRegion(
                         cursor: switch ((
                           leftClick,
@@ -301,47 +348,49 @@ class _HomePageState extends ConsumerState<HomePage> {
                           (true, true) => SystemMouseCursors.grabbing,
                           _
                               when globalStateData.containsAny(
-                                  {GlobalStates.resizingComponent},) =>
+                                {GlobalStates.resizingComponent},
+                              ) =>
                             SystemMouseCursors.precise,
                           _
                               when globalStateData.containsAny(
-                                  {GlobalStates.rotatingComponent},) =>
+                                {GlobalStates.rotatingComponent},
+                              ) =>
                             SystemMouseCursors.grabbing,
                           _ => MouseCursor.defer
                         },
                         child: InteractiveViewer.builder(
-                            transformationController: transformationController,
-                            panEnabled: (isToolHand &&
-                                    (!isNotCanvasTooling || isCanvasTooling)) ||
-                                (isCanvasTooling && !leftClick && !isZooming),
-                            onInteractionStart: (details) {
-                              if (pressedMeta) {
-                                globalStateNotifier.update(globalStateData +
-                                    GlobalStates.zoomingCanvas);
-                              } else if (isToolHand) {
-                                globalStateNotifier.update(globalStateData +
-                                    GlobalStates.panningCanvas);
-                              }
-                            },
-                            onInteractionUpdate: (details) {
-                              if (details.scale == 1 && !pressedMeta) {
-                                globalStateNotifier.update(globalStateData +
-                                    GlobalStates.panningCanvas);
-                              }
-                            },
-                            onInteractionEnd: (details) =>
-                                globalStateNotifier.update(globalStateData -
-                                    GlobalStates.panningCanvas -
-                                    GlobalStates.zoomingCanvas),
-                            maxScale: 256,
-                            minScale: .01,
-                            trackpadScrollCausesScale: (pressedMeta ||
-                                    isZooming) &&
-                                !globalStateData
-                                    .containsAny({GlobalStates.panningCanvas}),
-                            boundaryMargin:
-                                const EdgeInsets.all(double.infinity),
-                            builder: (context, viewport) => const SizedBox(),),
+                          transformationController: transformationController,
+                          panEnabled: (isToolHand &&
+                                  (!isNotCanvasTooling || isCanvasTooling)) ||
+                              (isCanvasTooling && !leftClick && !isZooming),
+                          onInteractionStart: (details) {
+                            if (pressedMeta) {
+                              globalStateNotifier.update(
+                                  globalStateData + GlobalStates.zoomingCanvas);
+                            } else if (isToolHand) {
+                              globalStateNotifier.update(
+                                  globalStateData + GlobalStates.panningCanvas);
+                            }
+                          },
+                          onInteractionUpdate: (details) {
+                            if (details.scale == 1 && !pressedMeta) {
+                              globalStateNotifier.update(
+                                  globalStateData + GlobalStates.panningCanvas);
+                            }
+                          },
+                          onInteractionEnd: (details) =>
+                              globalStateNotifier.update(globalStateData -
+                                  GlobalStates.panningCanvas -
+                                  GlobalStates.zoomingCanvas),
+                          maxScale: 256,
+                          minScale: .01,
+                          trackpadScrollCausesScale: (pressedMeta ||
+                                  isZooming) &&
+                              !globalStateData
+                                  .containsAny({GlobalStates.panningCanvas}),
+                          boundaryMargin: const EdgeInsets.all(double.infinity),
+                          builder: (context, viewport) => const SizedBox(),
+                        ),
                       ),
                     ),
                   ),
@@ -362,7 +411,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                   padding: EdgeInsets.only(
-                      left: 8 + (Platform.isMacOS ? 80 : 0), right: 8,),
+                    left: 8 + (Platform.isMacOS ? 80 : 0),
+                    right: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -431,8 +482,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                             elevation: 0,
                             clipBehavior: Clip.hardEdge,
                             shape: const RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(4)),),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(4)),
+                            ),
                             child: InkWell(
                               onTap: e.onTap,
                               child: Padding(
@@ -448,7 +500,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                         valueListenable: transformationController,
                         builder: (context, value, child) {
                           return Text(
-                              '${(value.getMaxScaleOnAxis() * 100).truncate()}%',);
+                            '${(value.getMaxScaleOnAxis() * 100).truncate()}%',
+                          );
                         },
                       ),
                     ],
@@ -498,7 +551,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                                         children: [
                                           const Padding(
                                             padding: EdgeInsets.symmetric(
-                                                horizontal: 8.0,),
+                                              horizontal: 8.0,
+                                            ),
                                             child: Icon(
                                               Icons.rectangle_outlined,
                                               size: 12,
@@ -529,15 +583,20 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                     highlightColor:
                                                         Colors.transparent,
                                                     padding: EdgeInsets.zero,
-                                                    constraints: BoxConstraints
-                                                        .tight(Size(
-                                                            e.locked ? 14 : 18,
-                                                            double.infinity,)),
+                                                    constraints:
+                                                        BoxConstraints.tight(
+                                                      Size(
+                                                        e.locked ? 14 : 18,
+                                                        double.infinity,
+                                                      ),
+                                                    ),
                                                     onPressed: () => ref
                                                         .read(componentsProvider
                                                             .notifier)
-                                                        .replace(i,
-                                                            locked: !e.locked,),
+                                                        .replace(
+                                                          i,
+                                                          locked: !e.locked,
+                                                        ),
                                                     icon: Icon(
                                                       e.locked
                                                           ? CupertinoIcons
@@ -559,15 +618,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                     padding: EdgeInsets.zero,
                                                     constraints:
                                                         BoxConstraints.tight(
-                                                            const Size(
-                                                                18,
-                                                                double
-                                                                    .infinity,),),
+                                                      const Size(
+                                                        18,
+                                                        double.infinity,
+                                                      ),
+                                                    ),
                                                     onPressed: () => ref
                                                         .read(componentsProvider
                                                             .notifier)
-                                                        .replace(i,
-                                                            hidden: !e.hidden,),
+                                                        .replace(
+                                                          i,
+                                                          hidden: !e.hidden,
+                                                        ),
                                                     icon: Icon(
                                                       e.hidden
                                                           ? CupertinoIcons
@@ -695,107 +757,107 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   ValueListenableBuilder<Matrix4> buildComponentLabel(
-      ComponentData e, Color backgroundColor,) {
+    ComponentData e,
+    Color backgroundColor,
+  ) {
     return ValueListenableBuilder(
-        valueListenable: ref.watch(transformationControllerDataProvider),
-        builder: (context, matrix, child) {
-          final triangle = e.triangle;
-          final tWidth = triangle.size.width;
-          final tHeight = triangle.size.height;
+      valueListenable: ref.watch(transformationControllerDataProvider),
+      builder: (context, matrix, child) {
+        final triangle = e.triangle;
+        final tWidth = triangle.size.width;
+        final tHeight = triangle.size.height;
 
-          final edges = triangle.rotatedEdges;
-          final topLeft = edges.tl;
-          final topRight = edges.tr;
-          final bottomLeft = edges.bl;
-          final bottomRight = edges.br;
+        final edges = triangle.rotatedEdges;
+        final topLeft = edges.tl;
+        final topRight = edges.tr;
+        final bottomLeft = edges.bl;
+        final bottomRight = edges.br;
 
+        var edge = switch ((tWidth < 0, tHeight < 0)) {
+          (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => bottomLeft,
+              < 135 => topLeft,
+              < 225 => topRight,
+              < 315 => bottomRight,
+              < 360 => bottomLeft,
+              _ => topLeft,
+            },
+          (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => topLeft,
+              < 135 => bottomLeft,
+              < 225 => bottomRight,
+              < 315 => topRight,
+              < 360 => topLeft,
+              _ => topLeft,
+            },
+          (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => bottomRight,
+              < 135 => bottomLeft,
+              < 225 => topLeft,
+              < 315 => topRight,
+              < 360 => bottomRight,
+              _ => topLeft,
+            },
+          _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => topRight,
+              < 135 => topLeft,
+              < 225 => bottomLeft,
+              < 315 => bottomRight,
+              < 360 => topRight,
+              _ => topLeft,
+            }
+        };
+        final newAngle = switch ((tWidth < 0, tHeight < 0)) {
+          (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => pi / 2,
+              < 135 => 0,
+              < 225 => -pi / 2,
+              < 315 => pi,
+              < 360 => pi / 2,
+              _ => 0.0,
+            },
+          (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => pi / 2,
+              < 135 => 0,
+              < 225 => -pi / 2,
+              < 315 => pi,
+              < 360 => pi / 2,
+              _ => 0.0,
+            },
+          _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+              < 45 => pi / 2,
+              < 135 => 0,
+              < 225 => -pi / 2,
+              < 315 => pi,
+              < 360 => pi / 2,
+              _ => 0.0,
+            }
+        };
 
-          var edge =
-              switch ((tWidth < 0, tHeight < 0)) {
-            (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => bottomLeft,
-                < 135 => topLeft,
-                < 225 => topRight,
-                < 315 => bottomRight,
-                < 360 => bottomLeft,
-                _ => topLeft,
-              },
-            (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => topLeft,
-                < 135 => bottomLeft,
-                < 225 => bottomRight,
-                < 315 => topRight,
-                < 360 => topLeft,
-                _ => topLeft,
-              },
-            (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => bottomRight,
-                < 135 => bottomLeft,
-                < 225 => topLeft,
-                < 315 => topRight,
-                < 360 => bottomRight,
-                _ => topLeft,
-              },
-            _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => topRight,
-                < 135 => topLeft,
-                < 225 => bottomLeft,
-                < 315 => bottomRight,
-                < 360 => topRight,
-                _ => topLeft,
-              }
-          };
-          final newAngle =
-              switch ((tWidth < 0, tHeight < 0)) {
-            (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => pi / 2,
-                < 135 => 0,
-                < 225 => -pi / 2,
-                < 315 => pi,
-                < 360 => pi / 2,
-                _ => 0.0,
-              },
-            (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => pi / 2,
-                < 135 => 0,
-                < 225 => -pi / 2,
-                < 315 => pi,
-                < 360 => pi / 2,
-                _ => 0.0,
-              },
-            _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
-                < 45 => pi / 2,
-                < 135 => 0,
-                < 225 => -pi / 2,
-                < 315 => pi,
-                < 360 => pi / 2,
-                _ => 0.0,
-              }
-          };
+        edge = MatrixUtils.transformPoint(matrix, edge);
 
-          edge = MatrixUtils.transformPoint(matrix, edge);
-
-          return Positioned(
-            left: edge.dx,
-            top: edge.dy,
-            child: Transform.rotate(
-              angle: triangle.angle + newAngle,
-              alignment: Alignment.topLeft,
-              child: AnimatedSlide(
-                offset: Offset(tWidth < 0 ? -1 : 0, -1),
-                duration: Duration.zero,
-                child: Text(
-                  e.name,
-                  style: TextStyle(
-                    color: backgroundColor.computeLuminance() > 0.5
-                        ? Colors.black.withOpacity(.5)
-                        : Colors.white.withOpacity(.5),
-                  ),
+        return Positioned(
+          left: edge.dx,
+          top: edge.dy,
+          child: Transform.rotate(
+            angle: triangle.angle + newAngle,
+            alignment: Alignment.topLeft,
+            child: AnimatedSlide(
+              offset: Offset(tWidth < 0 ? -1 : 0, -1),
+              duration: Duration.zero,
+              child: Text(
+                e.name,
+                style: TextStyle(
+                  color: backgroundColor.computeLuminance() > 0.5
+                      ? Colors.black.withOpacity(.5)
+                      : Colors.white.withOpacity(.5),
                 ),
               ),
             ),
-          );
-        },);
+          ),
+        );
+      },
+    );
   }
 
   Widget buildComponentWidget(ComponentData e) {
@@ -804,11 +866,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     final tHeight = triangle.size.height;
 
     final child = Container(
-      width:
-          tWidth < 0 ? -tWidth : tWidth,
-      height: tHeight < 0
-          ? -tHeight
-          : tHeight,
+      width: tWidth < 0 ? -tWidth : tWidth,
+      height: tHeight < 0 ? -tHeight : tHeight,
       decoration: BoxDecoration(
         borderRadius: e.borderRadius,
         border: e.border,
@@ -818,10 +877,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
 
     return Positioned(
-      left:
-          triangle.pos.dx + (tWidth < 0 ? tWidth : 0),
-      top: triangle.pos.dy +
-          (tHeight < 0 ? tHeight : 0),
+      left: triangle.pos.dx + (tWidth < 0 ? tWidth : 0),
+      top: triangle.pos.dy + (tHeight < 0 ? tHeight : 0),
       child: Transform.rotate(
         angle: triangle.angle,
         child: Transform.flip(
@@ -1051,11 +1108,11 @@ class RightSidebar extends ConsumerWidget {
                                         Expanded(
                                           child: TextField(
                                             cursorHeight: 12,
-                                            style: textTheme
-                                                .bodySmall,
+                                            style: textTheme.bodySmall,
                                             decoration:
                                                 const InputDecoration.collapsed(
-                                                    hintText: '',),
+                                              hintText: '',
+                                            ),
                                             keyboardType: e.keyboardType,
                                             controller: e.controller,
                                           ),
@@ -1077,24 +1134,23 @@ class RightSidebar extends ConsumerWidget {
             final title = e.title;
 
             return Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.grey.withOpacity(.5),
-                      width: 1,
-                    ),
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey.withOpacity(.5),
+                    width: 1,
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (title != null) SizedBox(height: 32, child: title),
-                    ...e.contents.map((e) => e),
-                  ],
-                ),
-              );
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (title != null) SizedBox(height: 32, child: title),
+                  ...e.contents.map((e) => e),
+                ],
+              ),
+            );
           }),
         ],
       ),

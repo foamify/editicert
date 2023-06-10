@@ -43,6 +43,7 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
     final tController = ref.read(transformationControllerDataProvider);
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
+    oTriangle.value = Triangle(oPosition.value, Size.zero, 0);
     final index = ref.read(componentsProvider).length;
     ref.read(componentsProvider.notifier).add(ComponentData(
           triangle: oTriangle.value,
@@ -66,8 +67,10 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
     final deltaX = (oPosition.value.dx - pos.dx) > 0;
     final deltaY = (oPosition.value.dy - pos.dy) > 0;
 
-    final longestSide = max((oPosition.value.dx - pos.dx).abs(),
-        (oPosition.value.dy - pos.dy).abs(),);
+    final longestSide = max(
+      (oPosition.value.dx - pos.dx).abs(),
+      (oPosition.value.dy - pos.dy).abs(),
+    );
 
     final xScale = (deltaX ? -1 : 1);
     final yScale = (deltaY ? -1 : 1);
@@ -106,9 +109,18 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
     final index = components.length - 1;
     final triangle = components[index].triangle;
     if (triangle.size.width == 0 || triangle.size.height == 0) {
-      ref.read(componentsProvider.notifier).removeAt(index);
-      ref.read(selectedProvider.notifier).remove(index);
+      ref.read(componentsProvider.notifier).replace(
+            index,
+            triangle: Triangle(
+              oPosition.value - const Offset(50, 50),
+              const Size(100, 100),
+              0,
+            ),
+          );
     }
     ref.read(toolProvider.notifier).setMove();
+    ref.read(selectedProvider.notifier)
+      ..clear()
+      ..add(index);
   }
 }

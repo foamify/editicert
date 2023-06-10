@@ -1,9 +1,12 @@
+import 'package:collection/collection.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'components.g.dart';
+
+// TODO(damywise): refactor everything to ValueNotifier with get_it_mixin
 
 @riverpod
 class Components extends _$Components {
@@ -14,18 +17,20 @@ class Components extends _$Components {
 
   void add(ComponentData component) => state.add(component);
 
-  void removeAt(int index) => state.removeAt(index);
-
-  void reorder(int oldIndex, int newIndex) {
+  void reorder(
+    int oldIndex,
+    int newIndex, {
+    bool selected = true,
+  }) {
     ref.read(hoveredProvider.notifier).clear();
     ref.read(selectedProvider.notifier).clear();
 
     final component = state[oldIndex];
-    final newState = [...state];
-    newState.removeAt(oldIndex);
-    newState.insert(newIndex, component);
+    final newState = [...state]
+      ..removeAt(oldIndex)
+      ..insert(newIndex, component);
 
-    ref.read(selectedProvider.notifier).add(newIndex);
+    if (selected) ref.read(selectedProvider.notifier).add(newIndex);
 
     state = [...newState];
   }
@@ -60,6 +65,17 @@ class Components extends _$Components {
       ),
     );
     state = [...newState];
+  }
+
+  void deleteSelected() {
+    final selectedIndex = ref.read(selectedProvider).firstOrNull;
+    if (selectedIndex != null) {
+      // For some reason, clearing selectedProvider causes bug where
+      // controllerwidgets get jumbled up. Maybe it's a bug where it's not
+      // updating? Idk.
+      // Anyway, that is why it's the only line for now.
+      state.removeAt(selectedIndex);
+    }
   }
 }
 
