@@ -2,15 +2,16 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:editicert/providers/components.dart';
+import 'package:collection/collection.dart';
+import 'package:editicert/logic/services.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
-import 'package:collection/collection.dart';
 import 'package:editicert/widgets/creator_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it/get_it.dart';
+import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
@@ -30,50 +31,135 @@ void main() async {
 
   await windowManager.waitUntilReadyToShow();
 
-  runApp(const ProviderScope(child: Main()));
+  setup();
+  runApp(Main());
 
   unawaited(windowManager.show());
   unawaited(windowManager.focus());
 }
 
-class Main extends ConsumerWidget {
-  const Main({super.key});
+void setup() {
+  final register = GetIt.I.registerSingleton;
+
+  register<Components>(Components());
+  register<TransformationControllerData>(TransformationControllerData());
+  register<Tool>(Tool());
+  register<Keys>(Keys());
+  register<Selected>(Selected());
+  register<Hovered>(Hovered());
+  register<GlobalState>(GlobalState());
+  register<CanvasState>(CanvasState());
+}
+
+class Main extends StatelessWidget with GetItMixin {
+  Main({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final selectedProvider = watchX((Selected selected) => selected.state);
+
+    final selected = selectedProvider.isEmpty;
+
     return PlatformMenuBar(
-      menus: const [
-        PlatformMenu(
+      menus: [
+        const PlatformMenu(
           label: 'Application',
           menus: [
             PlatformMenuItemGroup(members: [
-              PlatformMenuItem(label: 'About Editicert'),
+              PlatformProvidedMenuItem(
+                type: PlatformProvidedMenuItemType.about,
+              ),
             ]),
             PlatformMenuItemGroup(members: [
               PlatformMenuItem(label: 'Preferences'),
             ]),
             PlatformMenuItemGroup(members: [
-              PlatformMenuItem(label: 'Quit Editicert'),
+              PlatformProvidedMenuItem(
+                type: PlatformProvidedMenuItemType.minimizeWindow,
+              ),
+              PlatformProvidedMenuItem(
+                type: PlatformProvidedMenuItemType.zoomWindow,
+              ),
+              PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.hide),
+              PlatformProvidedMenuItem(
+                type: PlatformProvidedMenuItemType.hideOtherApplications,
+              ),
+              PlatformProvidedMenuItem(
+                type: PlatformProvidedMenuItemType.toggleFullScreen,
+              ),
+              PlatformProvidedMenuItem(type: PlatformProvidedMenuItemType.quit),
             ]),
           ],
         ),
-        PlatformMenu(
+        const PlatformMenu(
           label: 'File',
           menus: [
             PlatformMenuItem(
               label: 'New Project',
+              shortcut: SingleActivator(LogicalKeyboardKey.keyN, meta: true),
             ),
             PlatformMenuItem(
               label: 'Open Project',
+              shortcut: SingleActivator(LogicalKeyboardKey.keyO, meta: true),
             ),
             PlatformMenuItem(
               label: 'Save',
+              shortcut: SingleActivator(LogicalKeyboardKey.keyS, meta: true),
             ),
             PlatformMenuItem(
               label: 'Save As',
+              shortcut: SingleActivator(
+                LogicalKeyboardKey.keyS,
+                meta: true,
+                shift: true,
+              ),
             ),
             PlatformMenuItem(
               label: 'Close Project',
+              shortcut: SingleActivator(LogicalKeyboardKey.keyW, meta: true),
+            ),
+          ],
+        ),
+        PlatformMenu(
+          label: 'Tools',
+          menus: [
+            PlatformMenuItem(
+              label: 'Move',
+              shortcut: const SingleActivator(LogicalKeyboardKey.keyV),
+              onSelected: () => toolNotifier.setMove(),
+            ),
+            PlatformMenuItem(
+              label: 'Rectangle',
+              shortcut: const SingleActivator(LogicalKeyboardKey.keyR),
+              onSelected: () => toolNotifier.setRectangle(),
+            ),
+            PlatformMenuItem(
+              label: 'Hand',
+              shortcut: const SingleActivator(LogicalKeyboardKey.keyH),
+              onSelected: () => toolNotifier.setHand(),
+            ),
+          ],
+        ),
+        PlatformMenu(
+          label: 'Shortcuts',
+          menus: [
+            PlatformMenuItem(
+              label: 'Remove Selected',
+              shortcut: Platform.isMacOS
+                  ? const SingleActivator(LogicalKeyboardKey.backspace)
+                  : const SingleActivator(LogicalKeyboardKey.delete),
+              onSelected:
+                  selected ? null : () => componentsNotifier.removeSelected(),
+            ),
+            PlatformMenuItem(
+              label: 'Bring Backward',
+              shortcut: const SingleActivator(LogicalKeyboardKey.bracketLeft),
+              onSelected: selected ? null : () => handleGoBackward(),
+            ),
+            PlatformMenuItem(
+              label: 'Bring Forward',
+              shortcut: const SingleActivator(LogicalKeyboardKey.bracketRight),
+              onSelected: selected ? null : () => handleGoForward(),
             ),
           ],
         ),
@@ -88,114 +174,36 @@ class Main extends ConsumerWidget {
           ),
           useMaterial3: true,
         ),
-        home: const HomePage(),
-        shortcuts: {
-          LogicalKeySet(LogicalKeyboardKey.keyV):
-              const ActivateToolIntent(ToolData.move),
-          LogicalKeySet(LogicalKeyboardKey.keyR):
-              const ActivateToolIntent(ToolData.create),
-          LogicalKeySet(LogicalKeyboardKey.keyH):
-              const ActivateToolIntent(ToolData.hand),
-          LogicalKeySet(LogicalKeyboardKey.backspace):
-              ActivateShortcutIntent({LogicalKeyboardKey.backspace}),
-          LogicalKeySet(LogicalKeyboardKey.delete):
-              ActivateShortcutIntent({LogicalKeyboardKey.delete}),
-          LogicalKeySet(LogicalKeyboardKey.bracketLeft):
-              ActivateShortcutIntent({LogicalKeyboardKey.bracketLeft}),
-          LogicalKeySet(LogicalKeyboardKey.bracketRight):
-              ActivateShortcutIntent({LogicalKeyboardKey.bracketRight}),
-        },
-        actions: {
-          ActivateToolIntent: ActivateToolAction(ref),
-          ActivateShortcutIntent: ActivateShortcutAction(ref),
-        },
+        home: HomePage(),
       ),
     );
   }
 }
 
-class ActivateShortcutIntent extends Intent {
-  const ActivateShortcutIntent(this.shortcuts);
-
-  final Set<LogicalKeyboardKey> shortcuts;
+void handleGoBackward() {
+  final index = selectedNotifier.state.value.singleOrNull;
+  if (index == null || index == 0) return;
+  componentsNotifier.reorder(index, index - 1);
 }
 
-class ActivateShortcutAction extends Action<ActivateShortcutIntent> {
-  ActivateShortcutAction(this.ref);
-
-  final WidgetRef ref;
-
-  @override
-  void invoke(ActivateShortcutIntent intent) {
-    final singleKey = intent.shortcuts.singleOrNull;
-    switch (singleKey) {
-      case LogicalKeyboardKey.bracketLeft:
-        handleGoBackward();
-      case LogicalKeyboardKey.bracketRight:
-        handleGoForward();
-      case LogicalKeyboardKey.backspace when Platform.isMacOS:
-        ref.read(componentsProvider.notifier).deleteSelected();
-      case LogicalKeyboardKey.delete when !Platform.isMacOS:
-        ref.read(componentsProvider.notifier).deleteSelected();
-      case _:
-    }
+void handleGoForward() {
+  final index = selectedNotifier.state.value.singleOrNull;
+  if (index == null || index == componentsNotifier.state.value.length - 1) {
+    return;
   }
-
-  void handleGoBackward() {
-    final index = ref.read(selectedProvider).singleOrNull;
-    if (index == null || index == 0) return;
-    ref.read(componentsProvider.notifier).reorder(index, index - 1);
-  }
-
-  void handleGoForward() {
-    final index = ref.read(selectedProvider).singleOrNull;
-    if (index == null || index == ref.read(componentsProvider).length - 1) {
-      return;
-    }
-    ref.read(componentsProvider.notifier).reorder(index, index + 1);
-  }
+  componentsNotifier.reorder(index, index + 1);
 }
 
-class ActivateToolIntent extends Intent {
-  const ActivateToolIntent(this.tool);
-
-  final ToolData tool;
-}
-
-class ActivateToolAction extends Action<ActivateToolIntent> {
-  ActivateToolAction(this.ref);
-
-  final WidgetRef ref;
-
-  @override
-  void invoke(ActivateToolIntent intent) {
-    final notifier = ref.read(toolProvider.notifier);
-    switch (intent.tool) {
-      case ToolData.move:
-        notifier.setMove();
-      case ToolData.create:
-        notifier.setCreate();
-      case ToolData.hand:
-        notifier.setHand();
-    }
-  }
-}
-
-class HomePage extends ConsumerStatefulWidget {
-  const HomePage({
+class HomePage extends StatefulWidget with GetItStatefulWidgetMixin {
+  HomePage({
     super.key,
   });
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
+class _HomePageState extends State<HomePage> with GetItStateMixin {
   final oMatrix = ValueNotifier(Matrix4.identity());
 
   @override
@@ -205,48 +213,49 @@ class _HomePageState extends ConsumerState<HomePage> {
       :backgroundColor,
       backgroundHidden: _,
       backgroundOpacity: _,
-    ) = ref.watch(canvasStateProvider);
+    ) = watchX((CanvasState canvasState) => canvasState.state);
 
     //
-    final globalStateData = ref.watch(globalStateProvider);
-    final globalStateNotifier = ref.watch(globalStateProvider.notifier);
-    final leftClick = ref.watch(globalStateProvider
-        .select((value) => value.states.contains(GlobalStates.leftClick)));
-    final isCreateTooling =
-        ref.watch(globalStateProvider.select((value) => value.containsAny({
-              GlobalStates.creating,
-            })));
-    final isComponentTooling =
-        ref.watch(globalStateProvider.select((value) => value.containsAny({
-              GlobalStates.draggingComponent,
-              GlobalStates.resizingComponent,
-              GlobalStates.rotatingComponent,
-            })));
+    final globalStateProvider =
+        watchX((GlobalState globalState) => globalState.state);
+
+    final leftClick =
+        globalStateProvider.states.contains(GlobalStates.leftClick);
+    final isCreateTooling = globalStateProvider.containsAny({
+      GlobalStates.creating,
+    });
+    final isComponentTooling = globalStateProvider.containsAny({
+      GlobalStates.draggingComponent,
+      GlobalStates.resizingComponent,
+      GlobalStates.rotatingComponent,
+    });
     final isNotCanvasTooling = isComponentTooling || isCreateTooling;
-    final isCanvasTooling =
-        ref.watch(globalStateProvider.select((value) => value.containsAny({
-              GlobalStates.panningCanvas,
-              GlobalStates.zoomingCanvas,
-            })));
-    final isZooming = ref.watch(globalStateProvider
-        .select((value) => value.containsAny({GlobalStates.zoomingCanvas})));
+    final isCanvasTooling = globalStateProvider.containsAny({
+      GlobalStates.panningCanvas,
+      GlobalStates.zoomingCanvas,
+    });
+    final isZooming = globalStateProvider.containsAny(
+      {GlobalStates.zoomingCanvas},
+    );
 
-    final transformationController =
-        ref.watch(transformationControllerDataProvider);
+    final transformationController = watchX((
+      TransformationControllerData data,
+    ) =>
+        data.state);
     //
-    final tool = ref.watch(toolProvider);
+    final tool = watchX((Tool tool) => tool.tool);
     final isToolHand = tool == ToolData.hand;
-    final toolNotifier = ref.watch(toolProvider.notifier);
+    tool;
     //
-    final components = ref.watch(componentsProvider);
-    final selected = ref.watch(selectedProvider);
-    final hovered = ref.watch(hoveredProvider);
+    final components = watchX((Components components) => components.state);
+    final selected = watchX((Selected selected) => selected.state);
+    final hovered = watchX((Hovered hovered) => hovered.state);
     //
-    final keys = ref.watch(keysProvider);
-    final keysNotifier = ref.watch(keysProvider.notifier);
-    final pressedMeta = keys.contains(LogicalKeyboardKey.metaLeft) ||
-        keys.contains(LogicalKeyboardKey.metaRight) ||
-        keys.contains(LogicalKeyboardKey.meta);
+    final keysProvider = watchX((Keys keys) => keys.state);
+    keysProvider;
+    final pressedMeta = keysProvider.contains(LogicalKeyboardKey.metaLeft) ||
+        keysProvider.contains(LogicalKeyboardKey.metaRight) ||
+        keysProvider.contains(LogicalKeyboardKey.meta);
 
     final mqSize = MediaQuery.of(context).size;
     final colorScheme = Theme.of(context).colorScheme;
@@ -281,8 +290,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   // unselect all
                   GestureDetector(
                     onTap: () {
-                      ref.read(selectedProvider.notifier).clear();
-                      ref.read(hoveredProvider.notifier).clear();
+                      selected.clear();
+                      hovered.clear();
                     },
                     child: Container(
                       width: mqSize.width,
@@ -316,28 +325,29 @@ class _HomePageState extends ConsumerState<HomePage> {
                     },
                   ),
                   // controller for selections
-                  ...components.mapIndexed((i, e) {
-                    return ControllerWidget(i);
-                  }),
+                  ValueListenableBuilder(
+                    valueListenable: componentsNotifier.state,
+                    builder: (context, components, child) => Stack(
+                      children: components
+                          .mapIndexed((i, e) => ControllerWidget(i))
+                          .toList(),
+                    ),
+                  ),
                   // selected controller (at the front of every controllers)
-                  ...components.mapIndexed((i, e) {
-                    return !selected.contains(i)
-                        ? const SizedBox.shrink()
-                        : ControllerWidget(i);
-                  }),
+                  ...selected.map((e) => ControllerWidget(e)),
                   //
                   if (tool == ToolData.create || isCreateTooling)
-                    const CreatorWidget(),
+                    CreatorWidget(),
 
                   // camera (kinda). workaround
                   TransparentPointer(
                     transparent: !isToolHand,
                     child: Listener(
                       onPointerDown: (event) => globalStateNotifier.update(
-                        ref.read(globalStateProvider) + GlobalStates.leftClick,
+                        globalStateProvider + GlobalStates.leftClick,
                       ),
                       onPointerUp: (event) => globalStateNotifier.update(
-                        ref.read(globalStateProvider) - GlobalStates.leftClick,
+                        globalStateProvider - GlobalStates.leftClick,
                       ),
                       child: MouseRegion(
                         cursor: switch ((
@@ -347,12 +357,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                           (false, true) => SystemMouseCursors.grab,
                           (true, true) => SystemMouseCursors.grabbing,
                           _
-                              when globalStateData.containsAny(
+                              when globalStateProvider.containsAny(
                                 {GlobalStates.resizingComponent},
                               ) =>
                             SystemMouseCursors.precise,
                           _
-                              when globalStateData.containsAny(
+                              when globalStateProvider.containsAny(
                                 {GlobalStates.rotatingComponent},
                               ) =>
                             SystemMouseCursors.grabbing,
@@ -366,27 +376,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                           onInteractionStart: (details) {
                             if (pressedMeta) {
                               globalStateNotifier.update(
-                                  globalStateData + GlobalStates.zoomingCanvas);
+                                globalStateProvider +
+                                    GlobalStates.zoomingCanvas,
+                              );
                             } else if (isToolHand) {
                               globalStateNotifier.update(
-                                  globalStateData + GlobalStates.panningCanvas);
+                                globalStateProvider +
+                                    GlobalStates.panningCanvas,
+                              );
                             }
                           },
                           onInteractionUpdate: (details) {
                             if (details.scale == 1 && !pressedMeta) {
                               globalStateNotifier.update(
-                                  globalStateData + GlobalStates.panningCanvas);
+                                globalStateProvider +
+                                    GlobalStates.panningCanvas,
+                              );
                             }
                           },
                           onInteractionEnd: (details) =>
-                              globalStateNotifier.update(globalStateData -
+                              globalStateNotifier.update(globalStateProvider -
                                   GlobalStates.panningCanvas -
                                   GlobalStates.zoomingCanvas),
                           maxScale: 256,
                           minScale: .01,
                           trackpadScrollCausesScale: (pressedMeta ||
                                   isZooming) &&
-                              !globalStateData
+                              !globalStateProvider
                                   .containsAny({GlobalStates.panningCanvas}),
                           boundaryMargin: const EdgeInsets.all(double.infinity),
                           builder: (context, viewport) => const SizedBox(),
@@ -439,7 +455,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                           shortcut: 'R',
                           tool: ToolData.create,
                           onTap: () {
-                            toolNotifier.setCreate();
+                            toolNotifier.setRectangle();
                           },
                           icon: const Icon(
                             CupertinoIcons.square,
@@ -510,6 +526,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Expanded(
                   child: Row(
                     children: [
+                      /// Left Sidebar
                       Container(
                         width: sidebarWidth,
                         color: colorScheme.surfaceVariant,
@@ -535,15 +552,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                   ),
                                   // color: Colors.transparent,
                                   child: MouseRegion(
-                                    onEnter: (event) => ref
-                                        .read(hoveredProvider.notifier)
-                                        .add(i),
-                                    onExit: (event) => ref
-                                        .read(hoveredProvider.notifier)
-                                        .remove(i),
+                                    onEnter: (event) => hoveredNotifier.add(i),
+                                    onExit: (event) =>
+                                        hoveredNotifier.remove(i),
                                     child: InkWell(
                                       onTap: () {
-                                        ref.read(selectedProvider.notifier)
+                                        selectedNotifier
                                           ..clear()
                                           ..add(i);
                                       },
@@ -590,13 +604,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                         double.infinity,
                                                       ),
                                                     ),
-                                                    onPressed: () => ref
-                                                        .read(componentsProvider
-                                                            .notifier)
-                                                        .replace(
-                                                          i,
-                                                          locked: !e.locked,
-                                                        ),
+                                                    onPressed: () =>
+                                                        componentsNotifier
+                                                            .replace(
+                                                      i,
+                                                      locked: !e.locked,
+                                                    ),
                                                     icon: Icon(
                                                       e.locked
                                                           ? CupertinoIcons
@@ -623,13 +636,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                                         double.infinity,
                                                       ),
                                                     ),
-                                                    onPressed: () => ref
-                                                        .read(componentsProvider
-                                                            .notifier)
-                                                        .replace(
-                                                          i,
-                                                          hidden: !e.hidden,
-                                                        ),
+                                                    onPressed: () =>
+                                                        componentsNotifier
+                                                            .replace(
+                                                      i,
+                                                      hidden: !e.hidden,
+                                                    ),
                                                     icon: Icon(
                                                       e.hidden
                                                           ? CupertinoIcons
@@ -648,7 +660,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     //   textColor: e.hidden ? Colors.grey : null,
                                     //   iconColor: e.hidden ? Colors.grey : null,
                                     //   onTap: () {
-                                    //     ref.read(selectedProvider.notifier)
+                                    // selected
                                     //       ..clear()
                                     //       ..add(i);
                                     //   },
@@ -687,7 +699,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     //                     .tight(Size(
                                     //                         e.locked ? 14 : 18,
                                     //                         double.infinity)),
-                                    //                 onPressed: () => ref
+                                    //                 onPressed: () =>
                                     //                     .read(componentsProvider
                                     //                         .notifier)
                                     //                     .replace(i,
@@ -717,7 +729,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                     //                             18,
                                     //                             double
                                     //                                 .infinity)),
-                                    //                 onPressed: () => ref
+                                    //                 onPressed: () =>
                                     //                     .read(componentsProvider
                                     //                         .notifier)
                                     //                     .replace(i,
@@ -744,7 +756,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       const Expanded(
                         child: SizedBox.shrink(),
                       ),
-                      const RightSidebar(),
+                      RightSidebar(),
                     ],
                   ),
                 ),
@@ -756,12 +768,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  ValueListenableBuilder<Matrix4> buildComponentLabel(
+  Widget buildComponentLabel(
     ComponentData e,
     Color backgroundColor,
   ) {
     return ValueListenableBuilder(
-      valueListenable: ref.watch(transformationControllerDataProvider),
+      valueListenable: canvasTransform.state.value,
       builder: (context, matrix, child) {
         final triangle = e.triangle;
         final tWidth = triangle.size.width;
@@ -891,22 +903,23 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-class RightSidebar extends ConsumerWidget {
-  const RightSidebar({
+class RightSidebar extends StatelessWidget with GetItMixin {
+  RightSidebar({
     super.key,
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selected = ref.watch(selectedProvider);
+  Widget build(BuildContext context) {
+    final selected = watchX((Selected selected) => selected.state);
     final (
       transform: _,
       :backgroundColor,
       :backgroundOpacity,
       :backgroundHidden,
-    ) = ref.watch(canvasStateProvider);
-    final triangle = ref.watch(componentsProvider.select((value) =>
-        selected.firstOrNull == null ? null : value[selected.first].triangle));
+    ) = watchX((CanvasState canvasState) => canvasState.state);
+    final triangle = selected.firstOrNull == null
+        ? null
+        : componentsNotifier.state.value[selected.first].triangle;
     final textTheme = Theme.of(context).textTheme;
 
     final controls = triangle == null
@@ -1045,9 +1058,9 @@ class RightSidebar extends ConsumerWidget {
                   padding: EdgeInsets.zero,
                   constraints:
                       BoxConstraints.tight(const Size(18, double.infinity)),
-                  onPressed: () => ref
-                      .read(canvasStateProvider.notifier)
-                      .update(backgroundHidden: !backgroundHidden),
+                  onPressed: () => canvasStateNotifier.update(
+                    backgroundHidden: !backgroundHidden,
+                  ),
                   icon: Icon(
                     backgroundHidden
                         ? CupertinoIcons.eye_slash

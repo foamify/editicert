@@ -1,32 +1,28 @@
 import 'dart:math';
 
-import 'package:editicert/providers/components.dart';
+import 'package:editicert/logic/services.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:get_it_mixin/get_it_mixin.dart';
 
-class ControllerWidget extends ConsumerStatefulWidget {
-  const ControllerWidget(this.index, {super.key});
+class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
+  ControllerWidget(this.index, {super.key});
 
   final int index;
 
   @override
-  ConsumerState<ControllerWidget> createState() => _ControllerWidgetState();
+  State<ControllerWidget> createState() => _ControllerWidgetState();
 }
 
-class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
-  int get index => widget.index;
-
+class _ControllerWidgetState extends State<ControllerWidget>
+    with GetItStateMixin {
   Offset toScene(Offset offset) => tControl().toScene(offset);
 
-  TransformationController tControl() =>
-      ref.read(transformationControllerDataProvider);
+  TransformationController tControl() => (canvasTransform.state.value);
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) getRotatedEdges() {
-    final ({Offset bl, Offset br, Offset tl, Offset tr}) edge = ref
-        .read(componentsProvider.select((value) => value[widget.index]))
-        .triangle
-        .rotatedEdges;
+    final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
+        (componentsNotifier.state.value[widget.index]).triangle.rotatedEdges;
 
     final transform = tControl().value;
 
@@ -39,10 +35,8 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
   }
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) getEdges() {
-    final ({Offset bl, Offset br, Offset tl, Offset tr}) edge = ref
-        .read(componentsProvider.select((value) => value[widget.index]))
-        .triangle
-        .edges;
+    final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
+        (componentsNotifier.state.value[widget.index]).triangle.edges;
 
     final transform = tControl().value;
 
@@ -58,21 +52,19 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   final _originalTriangle =
       ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+
   final _triangle = ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+
   final _visualTriangle =
       ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
 
   @override
   void initState() {
-    final triangle = ref
-        .read(componentsProvider.select((value) => value[widget.index]))
-        .triangle;
+    final triangle = (componentsNotifier.state.value[widget.index]).triangle;
     _triangle.value = triangle;
     _visualTriangle.value = triangle;
     _triangle.addListener(() {
-      ref
-          .read(componentsProvider.notifier)
-          .replace(widget.index, triangle: _triangle.value);
+      (componentsNotifier).replace(widget.index, triangle: _triangle.value);
       _visualTriangle.value = _triangle.value;
     });
 
@@ -81,156 +73,156 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final selected = ref.watch(
-        selectedProvider.select((value) => value.contains(widget.index)),);
-    final hovered = ref
-        .watch(hoveredProvider.select((value) => value.contains(widget.index)));
-    final component =
-        ref.watch(componentsProvider.select((value) => value[widget.index]));
+    final selected = (selectedNotifier.state.value.contains(widget.index));
+    final hovered = (hoveredNotifier.state.value.contains(widget.index));
+    final component = (componentsNotifier.state.value[widget.index]);
     final hidden = component.hidden;
     final locked = component.locked;
 
-    ref.listen(componentsProvider, (previous, next) {
-      if (next.length <= widget.index) return;
-      if (next[widget.index].triangle != _triangle.value) {
-        _visualTriangle.value = next[widget.index].triangle;
-      }
-    });
+    registerHandler(
+      (Components components) => components.state,
+      (context, next, _) {
+        if (next.length <= widget.index) return;
+        if (next[widget.index].triangle != _triangle.value) {
+          _visualTriangle.value = next[widget.index].triangle;
+        }
+      },
+    );
 
-    final moving = ref
-        .watch(globalStateProvider)
+    final moving = (globalStateNotifier.state.value)
         .states
         .contains(GlobalStates.draggingComponent);
 
     return AnimatedBuilder(
-        animation: Listenable.merge([
-          _visualTriangle,
-          ref.watch(transformationControllerDataProvider),
-        ]),
-        builder: (context, child) {
-          final pos = getPos();
-          final tSize = getSize();
-          final tAngle = _visualTriangle.value.angle;
-          final selectedValue = selected && !moving;
-          final borderWidth = selectedValue ? 1.0 : 2.0;
+      animation: Listenable.merge([
+        _visualTriangle,
+        (canvasTransform.state.value),
+      ]),
+      builder: (context, child) {
+        final pos = getPos();
+        final tSize = getSize();
+        final tAngle = _visualTriangle.value.angle;
+        final selectedValue = selected && !moving;
+        final borderWidth = selectedValue ? 1.0 : 2.0;
 
-          return Stack(
-            children: [
-              // movement control
-              Positioned(
-                left: pos.dx + (tSize.width < 0 ? tSize.width : 0),
-                top: pos.dy + (tSize.height < 0 ? tSize.height : 0),
-                child: IgnorePointer(
-                  ignoring: hidden,
-                  child: Transform.rotate(
-                    angle: tAngle,
-                    child: Transform.flip(
-                      flipX: tSize.width < 0,
-                      flipY: tSize.height < 0,
-                      child: Listener(
-                        onPointerDown: (event) {
-                          ref.read(selectedProvider.notifier)
-                            ..clear()
-                            ..add(widget.index);
+        return Stack(
+          children: [
+            // movement control
+            Positioned(
+              left: pos.dx + (tSize.width < 0 ? tSize.width : 0),
+              top: pos.dy + (tSize.height < 0 ? tSize.height : 0),
+              child: IgnorePointer(
+                ignoring: hidden,
+                child: Transform.rotate(
+                  angle: tAngle,
+                  child: Transform.flip(
+                    flipX: tSize.width < 0,
+                    flipY: tSize.height < 0,
+                    child: Listener(
+                      onPointerDown: (event) {
+                        (selectedNotifier)
+                          ..clear()
+                          ..add(widget.index);
 
-                          ref.read(globalStateProvider.notifier).update(
-                              ref.read(globalStateProvider) +
-                                  GlobalStates.draggingComponent,);
-                          handlePointerDownGlobal(event);
-                        },
-                        onPointerMove: locked ? null : handleMove,
-                        onPointerUp: handlePointerUp,
-                        child: MouseRegion(
-                          onEnter: (_) => ref
-                              .read(hoveredProvider.notifier)
-                              .add(widget.index),
-                          onExit: (_) => ref
-                              .read(hoveredProvider.notifier)
-                              .remove(widget.index),
-                          child: Container(
-                            width: tSize.width < 0 ? -tSize.width : tSize.width,
-                            height:
-                                tSize.height < 0 ? -tSize.height : tSize.height,
-                            decoration: (hovered || selected) && !moving
-                                ? BoxDecoration(
-                                    border: Border.all(
+                        (globalStateNotifier).update(
+                          (globalStateNotifier.state.value) +
+                              GlobalStates.draggingComponent,
+                        );
+                        handlePointerDownGlobal(event);
+                      },
+                      onPointerMove: locked ? null : handleMove,
+                      onPointerUp: handlePointerUp,
+                      child: MouseRegion(
+                        onEnter: (_) => (hoveredNotifier).add(widget.index),
+                        onExit: (_) => (hoveredNotifier).remove(widget.index),
+                        child: Container(
+                          width: tSize.width < 0 ? -tSize.width : tSize.width,
+                          height:
+                              tSize.height < 0 ? -tSize.height : tSize.height,
+                          decoration: (hovered || selected) && !moving
+                              ? BoxDecoration(
+                                  border: Border.all(
                                     strokeAlign: .5,
                                     width: borderWidth,
                                     color: Colors.blueAccent,
-                                  ),)
-                                : const BoxDecoration(),
-                          ),
+                                  ),
+                                )
+                              : const BoxDecoration(),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
+            ),
 
-              IgnorePointer(
-                ignoring: locked,
-                child: Stack(
-                  children: [
-                    // rotation controls
-                    if (selectedValue)
-                      ...[
-                        Alignment.topLeft,
-                        Alignment.topRight,
-                        Alignment.bottomLeft,
-                        Alignment.bottomRight,
-                      ].map(
-                          (e) => _buildEdgeControl(alignment: e, rotate: true),),
-                    // side resize controls
-                    if (selectedValue)
-                      ...[
-                        Alignment.topCenter,
-                        Alignment.bottomCenter,
-                        Alignment.centerLeft,
-                        Alignment.centerRight,
-                      ].map((e) => _buildResizer(
-                            alignment: e,
-                          )),
-                    // edge resize controls
-                    if (selectedValue)
-                      ...[
-                        Alignment.topLeft,
-                        Alignment.topRight,
-                        Alignment.bottomLeft,
-                        Alignment.bottomRight,
-                      ].map(
-                          (e) => _buildEdgeControl(alignment: e, resize: true),),
-                  ],
-                ),
+            IgnorePointer(
+              ignoring: locked,
+              child: Stack(
+                children: [
+                  // rotation controls
+                  if (selectedValue)
+                    ...[
+                      Alignment.topLeft,
+                      Alignment.topRight,
+                      Alignment.bottomLeft,
+                      Alignment.bottomRight,
+                    ].map(
+                      (e) => _buildEdgeControl(alignment: e, rotate: true),
+                    ),
+                  // side resize controls
+                  if (selectedValue)
+                    ...[
+                      Alignment.topCenter,
+                      Alignment.bottomCenter,
+                      Alignment.centerLeft,
+                      Alignment.centerRight,
+                    ].map((e) => _buildResizer(
+                          alignment: e,
+                        )),
+                  // edge resize controls
+                  if (selectedValue)
+                    ...[
+                      Alignment.topLeft,
+                      Alignment.topRight,
+                      Alignment.bottomLeft,
+                      Alignment.bottomRight,
+                    ].map(
+                      (e) => _buildEdgeControl(alignment: e, resize: true),
+                    ),
+                ],
               ),
-            ],
-          );
-        },);
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Offset getPos() {
     return MatrixUtils.transformPoint(
-        tControl().value, _visualTriangle.value.pos,);
+      tControl().value,
+      _visualTriangle.value.pos,
+    );
   }
 
   /// handles the pointer down event for rotation
   void handlePointerDownGlobal(PointerDownEvent event) {
-    _triangle.value = ref.read(
-        componentsProvider.select((value) => value[widget.index].triangle),);
+    _triangle.value = (componentsNotifier.state.value[widget.index].triangle);
     _originalPosition.value = event.position;
     _originalTriangle.value = _triangle.value;
   }
 
   /// basically save data
   void handlePointerUp(PointerUpEvent _) {
-    ref.read(globalStateProvider.notifier).update(
-        ref.read(globalStateProvider) -
-            GlobalStates.draggingComponent -
-            GlobalStates.resizingComponent -
-            GlobalStates.rotatingComponent,);
+    (globalStateNotifier).update(
+      (globalStateNotifier.state.value) -
+          GlobalStates.draggingComponent -
+          GlobalStates.resizingComponent -
+          GlobalStates.rotatingComponent,
+    );
     _triangle.value = _visualTriangle.value;
   }
-
-  //------------------------------build functions------------------------------
 
   /// Builds the edge resize and rotate control
   Widget _buildEdgeControl({
@@ -277,11 +269,12 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
             offset: Offset.zero,
             child: Listener(
               onPointerDown: (event) {
-                ref.read(globalStateProvider.notifier).update(
-                    ref.read(globalStateProvider) +
-                        (rotate
-                            ? GlobalStates.rotatingComponent
-                            : GlobalStates.resizingComponent),);
+                (globalStateNotifier).update(
+                  (globalStateNotifier.state.value) +
+                      (rotate
+                          ? GlobalStates.rotatingComponent
+                          : GlobalStates.resizingComponent),
+                );
                 handlePointerDownGlobal(event);
               },
               onPointerMove: (event) {
@@ -307,7 +300,8 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
                       : BoxDecoration(
                           color: Colors.white,
                           border:
-                              Border.all(width: 1, color: Colors.blueAccent),),
+                              Border.all(width: 1, color: Colors.blueAccent),
+                        ),
                 ),
               ),
             ),
@@ -322,7 +316,7 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
     required Alignment alignment,
   }) {
     final tValue = _visualTriangle.value;
-    // final scale = ref.read(canvasTransformProvider).getMaxScaleOnAxis();
+    // final scale = (canvasTransformNotifier.state.value).getMaxScaleOnAxis();
     const margin = 5.0;
 
     final edges = tValue.edges;
@@ -374,41 +368,41 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
     };
 
     return Positioned(
-        // this is for the whole widget
-        left: rTopLeft.dx,
-        top: rTopLeft.dy,
-        child: Transform.rotate(
-          angle: tValue.angle,
-          origin: -Offset(width + margin * 2, height + margin * 2) / 2,
-          child: Transform.translate(
-            offset: offset,
-            child: Listener(
-              onPointerDown: (event) {
-                handlePointerDownGlobal(event);
+      // this is for the whole widget
+      left: rTopLeft.dx,
+      top: rTopLeft.dy,
+      child: Transform.rotate(
+        angle: tValue.angle,
+        origin: -Offset(width + margin * 2, height + margin * 2) / 2,
+        child: Transform.translate(
+          offset: offset,
+          child: Listener(
+            onPointerDown: (event) {
+              handlePointerDownGlobal(event);
 
-                ref.read(globalStateProvider.notifier).update(
-                    ref.read(globalStateProvider) +
-                        GlobalStates.resizingComponent,);
-              },
-              onPointerMove: (event) {
-                handleResizeSide(event, alignment, selectedSide);
-              },
-              onPointerUp: handlePointerUp,
-              child: MouseRegion(
-                cursor: SystemMouseCursors.grab,
-                child: Container(
-                  margin: const EdgeInsets.all(margin),
-                  width: max(width, 0),
-                  height: max(height, 0),
-                  // color: Colors.redAccent,
-                ),
+              (globalStateNotifier).update(
+                (globalStateNotifier.state.value) +
+                    GlobalStates.resizingComponent,
+              );
+            },
+            onPointerMove: (event) {
+              handleResizeSide(event, alignment, selectedSide);
+            },
+            onPointerUp: handlePointerUp,
+            child: MouseRegion(
+              cursor: SystemMouseCursors.grab,
+              child: Container(
+                margin: const EdgeInsets.all(margin),
+                width: max(width, 0),
+                height: max(height, 0),
+                // color: Colors.redAccent,
               ),
             ),
           ),
-        ),);
+        ),
+      ),
+    );
   }
-
-  //------------------------------handle controls------------------------------
 
   /// Handles movement
   void handleMove(
@@ -423,12 +417,17 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
   /// Handles rotation from the center of the widget to the pointer
   void handleRotate(PointerMoveEvent event) {
     final center = MatrixUtils.transformPoint(
-        ref.read(canvasTransformProvider), _originalTriangle.value.rect.center,);
+      (canvasTransform.state.value.value),
+      _originalTriangle.value.rect.center,
+    );
     final originalAngle = atan2(
-        _originalPosition.value.dx - sidebarWidth - center.dx,
-        _originalPosition.value.dy - topbarHeight - center.dy,);
-    final newAngle = atan2(event.position.dx - sidebarWidth - center.dx,
-        event.position.dy - topbarHeight - center.dy,);
+      _originalPosition.value.dx - sidebarWidth - center.dx,
+      _originalPosition.value.dy - topbarHeight - center.dy,
+    );
+    final newAngle = atan2(
+      event.position.dx - sidebarWidth - center.dx,
+      event.position.dy - topbarHeight - center.dy,
+    );
     final deltaAngle = newAngle - originalAngle;
 
     _triangle.value = _originalTriangle.value
@@ -437,7 +436,10 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   /// Handles resizing from the sides
   void handleResizeSide(
-      PointerMoveEvent event, Alignment alignment, Offset selectedSide,) {
+    PointerMoveEvent event,
+    Alignment alignment,
+    Offset selectedSide,
+  ) {
     final tValue = _originalTriangle.value;
 
     final rOriginalPoint = rotatePoint(
@@ -485,19 +487,21 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
     );
     final newRect = rectFromEdges(newEdges);
     final newEdgesR = rotateRect(
-        newRect,
-        tValue.angle,
-        tValue.pos.translate(
-            switch (alignment) {
-              Alignment.centerLeft => rDelta.dx / 2,
-              Alignment.centerRight => -rDelta.dx / 2,
-              _ => 0,
-            },
-            switch (alignment) {
-              Alignment.topCenter => rDelta.dy / 2,
-              Alignment.bottomCenter => -rDelta.dy / 2,
-              _ => 0,
-            },),);
+      newRect,
+      tValue.angle,
+      tValue.pos.translate(
+        switch (alignment) {
+          Alignment.centerLeft => rDelta.dx / 2,
+          Alignment.centerRight => -rDelta.dx / 2,
+          _ => 0,
+        },
+        switch (alignment) {
+          Alignment.topCenter => rDelta.dy / 2,
+          Alignment.bottomCenter => -rDelta.dy / 2,
+          _ => 0,
+        },
+      ),
+    );
 
     _triangle.value = Triangle.fromEdges(
       newEdgesR,
@@ -508,7 +512,10 @@ class _ControllerWidgetState extends ConsumerState<ControllerWidget> {
 
   /// Handles resizing from the edges
   void handleResizeEdges(
-      PointerMoveEvent event, Alignment alignment, Offset selectedEdge,) {
+    PointerMoveEvent event,
+    Alignment alignment,
+    Offset selectedEdge,
+  ) {
     final tSize = getSize();
     final tValue = _originalTriangle.value;
 
@@ -601,9 +608,10 @@ class Triangle {
     final angle = atan2(edges.tr.dy - topLeft.dy, edges.tr.dx - topLeft.dx);
 
     final newEdges = rotateRect(
-        Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height),
-        0,
-        Offset.zero,);
+      Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height),
+      0,
+      Offset.zero,
+    );
 
     final newTriangle = Triangle(
       newEdges.tl,

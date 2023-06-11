@@ -1,20 +1,19 @@
 import 'dart:math';
 
-import 'package:editicert/providers/components.dart';
+import 'package:editicert/logic/services.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CreatorWidget extends ConsumerStatefulWidget {
-  const CreatorWidget({super.key});
+class CreatorWidget extends StatefulWidget {
+  CreatorWidget({super.key});
 
   @override
-  ConsumerState<CreatorWidget> createState() => _CreatorWidgetState();
+  State<CreatorWidget> createState() => _CreatorWidgetState();
 }
 
-class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
+class _CreatorWidgetState extends State<CreatorWidget> {
   final oTriangle = ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
 
   final oPosition = ValueNotifier(Offset.zero);
@@ -37,28 +36,27 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
   }
 
   void handlePointerDown(PointerDownEvent event) {
-    ref
-        .read(globalStateProvider.notifier)
-        .update(ref.read(globalStateProvider) + GlobalStates.creating);
-    final tController = ref.read(transformationControllerDataProvider);
+    globalStateNotifier
+        .update(globalStateNotifier.state.value + GlobalStates.creating);
+    final tController = canvasTransform.state.value;
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
     oTriangle.value = Triangle(oPosition.value, Size.zero, 0);
-    final index = ref.read(componentsProvider).length;
-    ref.read(componentsProvider.notifier).add(ComponentData(
-          triangle: oTriangle.value,
-          name: 'Rectangle ${index + 1}',
-        ));
+    final index = componentsNotifier.state.value.length;
+    componentsNotifier.add(ComponentData(
+      triangle: oTriangle.value,
+      name: 'Rectangle ${index + 1}',
+    ));
   }
 
   void handlePointerMove(PointerMoveEvent event) {
-    final tController = ref.read(transformationControllerDataProvider);
-    final keys = ref.read(keysProvider);
+    final tController = canvasTransform.state.value;
+    final keys = keysNotifier.state.value;
     final shift = pressedShift(keys);
 
-    final index = ref.read(componentsProvider).length - 1;
-    ref.read(hoveredProvider.notifier).clear();
-    ref.read(selectedProvider.notifier)
+    final index = componentsNotifier.state.value.length - 1;
+    hoveredNotifier.clear();
+    selectedNotifier
       ..clear()
       ..add(index);
 
@@ -92,7 +90,7 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
       pos: newRect.topLeft,
       size: newRect.size,
     );
-    ref.read(componentsProvider.notifier).replace(index, triangle: newTriangle);
+    componentsNotifier.replace(index, triangle: newTriangle);
   }
 
   bool pressedShift(Set<LogicalKeyboardKey> keys) {
@@ -101,25 +99,24 @@ class _CreatorWidgetState extends ConsumerState<CreatorWidget> {
   }
 
   void handlePointerUp(PointerUpEvent _) {
-    ref
-        .read(globalStateProvider.notifier)
-        .update(ref.read(globalStateProvider) - GlobalStates.creating);
+    globalStateNotifier
+        .update(globalStateNotifier.state.value - GlobalStates.creating);
 
-    final components = ref.read(componentsProvider);
+    final components = componentsNotifier.state.value;
     final index = components.length - 1;
     final triangle = components[index].triangle;
     if (triangle.size.width == 0 || triangle.size.height == 0) {
-      ref.read(componentsProvider.notifier).replace(
-            index,
-            triangle: Triangle(
-              oPosition.value - const Offset(50, 50),
-              const Size(100, 100),
-              0,
-            ),
-          );
+      componentsNotifier.replace(
+        index,
+        triangle: Triangle(
+          oTriangle.value.pos - const Offset(50, 50),
+          const Size(100, 100),
+          0,
+        ),
+      );
     }
-    ref.read(toolProvider.notifier).setMove();
-    ref.read(selectedProvider.notifier)
+    toolNotifier.setMove();
+    selectedNotifier
       ..clear()
       ..add(index);
   }

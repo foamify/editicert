@@ -2,41 +2,57 @@ import 'package:collection/collection.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:get_it/get_it.dart';
 
-part 'components.g.dart';
+class Services {}
 
-// TODO(damywise): refactor everything to ValueNotifier with get_it_mixin
+final _get = GetIt.I.get;
 
-@riverpod
-class Components extends _$Components {
-  @override
-  List<ComponentData> build() {
-    return [];
-  }
+TransformationControllerData get canvasTransform =>
+    _get<TransformationControllerData>();
 
-  void add(ComponentData component) => state.add(component);
+Components get componentsNotifier => _get<Components>();
 
-  void reorder(
-    int oldIndex,
-    int newIndex, {
-    bool selected = true,
-  }) {
-    ref.read(hoveredProvider.notifier).clear();
-    ref.read(selectedProvider.notifier).clear();
+Tool get toolNotifier => _get<Tool>();
 
-    final component = state[oldIndex];
-    final newState = [...state]
+Keys get keysNotifier => _get<Keys>();
+
+Selected get selectedNotifier => _get<Selected>();
+
+Hovered get hoveredNotifier => _get<Hovered>();
+
+GlobalState get globalStateNotifier => _get<GlobalState>();
+
+CanvasState get canvasStateNotifier => _get<CanvasState>();
+
+class Components {
+  final ValueNotifier<List<ComponentData>> state = ValueNotifier([]);
+
+  List<ComponentData> get _state => state.value;
+
+  set _state(List<ComponentData> value) => state.value = value;
+
+  void add(ComponentData component) => _state.add(component);
+
+  void reorder(int oldIndex,
+      int newIndex, {
+        bool selected = true,
+      }) {
+    final getIt = GetIt.I;
+    getIt.get<Selected>().clear();
+    getIt.get<Hovered>().clear();
+
+    final component = _state[oldIndex];
+
+    final newState = [..._state]
       ..removeAt(oldIndex)
       ..insert(newIndex, component);
 
-    if (selected) ref.read(selectedProvider.notifier).add(newIndex);
-
-    state = [...newState];
+    _state = newState;
+    if (selected) getIt.get<Selected>().add(newIndex);
   }
 
-  void replace(
-    int index, {
+  void replace(int index, {
     String? name,
     Triangle? triangle,
     Color? color,
@@ -47,8 +63,8 @@ class Components extends _$Components {
     bool? hidden,
     bool? locked,
   }) {
-    final component = state[index];
-    final newState = [...state];
+    final component = _state[index];
+    final newState = [..._state];
     newState.removeAt(index);
     newState.insert(
       index,
@@ -64,17 +80,21 @@ class Components extends _$Components {
         locked: locked,
       ),
     );
-    state = [...newState];
+    _state = [...newState];
   }
 
-  void deleteSelected() {
-    final selectedIndex = ref.read(selectedProvider).firstOrNull;
+  void removeSelected() {
+    final selectedIndex = GetIt.I
+        .get<Selected>()
+        .state
+        .value
+        .firstOrNull;
     if (selectedIndex != null) {
-      // For some reason, clearing selectedProvider causes bug where
-      // controllerwidgets get jumbled up. Maybe it's a bug where it's not
-      // updating? Idk.
-      // Anyway, that is why it's the only line for now.
-      state.removeAt(selectedIndex);
+      final newState = [..._state];
+      selectedNotifier.clear();
+      hoveredNotifier.clear();
+      _state = [];
+      _state = [...newState..removeAt(selectedIndex)];
     }
   }
 }
@@ -127,70 +147,50 @@ class ComponentData {
       );
 }
 
-@riverpod
-class Keys extends _$Keys {
-  @override
-  Set<LogicalKeyboardKey> build() {
-    return {};
-  }
+class Keys {
+  final state = ValueNotifier<Set<LogicalKeyboardKey>>({});
 
-  Set<LogicalKeyboardKey> get keys => state;
+  Set<LogicalKeyboardKey> get keys => state.value;
 
-  set keys(Set<LogicalKeyboardKey> value) => state = value;
+  set keys(Set<LogicalKeyboardKey> value) => state.value = value;
 
   void add(LogicalKeyboardKey key) {
-    if (!state.contains(key)) state = {...state..add(key)};
+    if (!keys.contains(key)) state.value = {...state.value..add(key)};
   }
 
   void remove(LogicalKeyboardKey key) {
-    if (state.contains(key)) {
-      state = {...state..remove(key)};
+    if (keys.contains(key)) {
+      state.value = {...state.value..remove(key)};
     }
   }
 }
 
-@riverpod
-class Selected extends _$Selected {
-  @override
-  Set<int> build() {
-    return {};
-  }
+base class ComponentsIndex {
+  final state = ValueNotifier<Set<int>>({});
 
-  void add(int index) => state = {...state..add(index)};
+  void add(int index) => state.value = {...state.value..add(index)};
 
-  void remove(int index) => state = {...state..remove(index)};
+  void remove(int index) => state.value = {...state.value..remove(index)};
 
-  bool contains(int index) => state.contains(index);
+  void clear() => state.value = {};
 
-  void clear() => state = {...state..clear()};
+  bool contains(int index) => state.value.contains(index);
 }
 
-@riverpod
-class Hovered extends _$Hovered {
-  @override
-  Set<int> build() {
-    return {};
-  }
+final class Selected extends ComponentsIndex {}
 
-  void add(int index) => state = {...state..add(index)};
+final class Hovered extends ComponentsIndex {}
 
-  void remove(int index) => state = {...state..remove(index)};
+class Tool {
+  final tool = ValueNotifier(ToolData.move);
 
-  bool contains(int index) => state.contains(index);
+  ToolData get state => tool.value;
 
-  void clear() => state = {...state..clear()};
-}
-
-@riverpod
-class Tool extends _$Tool {
-  @override
-  ToolData build() {
-    return ToolData.move;
-  }
+  set state(ToolData value) => tool.value = value;
 
   void setMove() => state = ToolData.move;
 
-  void setCreate() => state = ToolData.create;
+  void setRectangle() => state = ToolData.create;
 
   void setHand() => state = ToolData.hand;
 }
@@ -201,33 +201,20 @@ enum ToolData {
   hand,
 }
 
-@riverpod
-Matrix4 canvasTransform(CanvasTransformRef ref) {
-  return ref.watch(transformationControllerDataProvider).value;
+class TransformationControllerData {
+  final state = ValueNotifier(TransformationController());
+
+  void change(TransformationController value) => state.value = value;
+
+  void update(Matrix4 value) => state.value = TransformationController(value);
 }
 
-@riverpod
-class TransformationControllerData extends _$TransformationControllerData {
-  @override
-  TransformationController build() {
-    return TransformationController();
-  }
+class GlobalState {
+  final state = ValueNotifier(GlobalStateData({}));
 
-  void change(TransformationController value) => state = value;
+  void update(GlobalStateData value) => state.value = value;
 
-  void update(Matrix4 value) => state = TransformationController(value);
-}
-
-@riverpod
-class GlobalState extends _$GlobalState {
-  @override
-  GlobalStateData build() {
-    return GlobalStateData({});
-  }
-
-  void update(GlobalStateData value) => state = value;
-
-  void clear() => state = GlobalStateData({});
+  void clear() => state.value = GlobalStateData({});
 }
 
 class GlobalStateData {
@@ -265,17 +252,13 @@ enum GlobalStates {
   creating,
 }
 
-@riverpod
-class CanvasState extends _$CanvasState {
-  @override
-  CanvasData build() {
-    return (
-      transform: Matrix4.identity(),
-      backgroundColor: const Color(0xFFF5F5F5),
-      backgroundHidden: true,
-      backgroundOpacity: 1,
-    );
-  }
+class CanvasState {
+  final state = ValueNotifier<CanvasData>((
+  transform: Matrix4.identity(),
+  backgroundColor: const Color(0xFFF5F5F5),
+  backgroundHidden: true,
+  backgroundOpacity: 1,
+  ));
 
   void update({
     Matrix4? transform,
@@ -283,7 +266,7 @@ class CanvasState extends _$CanvasState {
     bool? backgroundHidden,
     double? backgroundOpacity,
   }) {
-    state = state.copyWith(
+    state.value = state.value.copyWith(
       transform: transform,
       backgroundColor: backgroundColor,
       backgroundHidden: backgroundHidden,
@@ -293,10 +276,10 @@ class CanvasState extends _$CanvasState {
 }
 
 typedef CanvasData = ({
-  Matrix4 transform,
-  Color backgroundColor,
-  bool backgroundHidden,
-  double backgroundOpacity,
+Matrix4 transform,
+Color backgroundColor,
+bool backgroundHidden,
+double backgroundOpacity,
 });
 
 extension CDataEx on CanvasData {
@@ -307,10 +290,10 @@ extension CDataEx on CanvasData {
     double? backgroundOpacity,
   }) {
     return (
-      transform: transform ?? this.transform,
-      backgroundColor: backgroundColor ?? this.backgroundColor,
-      backgroundHidden: backgroundHidden ?? this.backgroundHidden,
-      backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
+    transform: transform ?? this.transform,
+    backgroundColor: backgroundColor ?? this.backgroundColor,
+    backgroundHidden: backgroundHidden ?? this.backgroundHidden,
+    backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
     );
   }
 }
