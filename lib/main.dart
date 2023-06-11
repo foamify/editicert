@@ -325,19 +325,28 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     },
                   ),
                   // controller for selections
-                  ValueListenableBuilder(
-                    valueListenable: componentsNotifier.state,
-                    builder: (context, components, child) => Stack(
-                      children: components
+                  AnimatedBuilder(
+                    animation: Listenable.merge([componentsNotifier.state, selectedNotifier.state,]),
+                    builder: (context, child) => Stack(
+                      children: componentsNotifier.state.value
                           .mapIndexed((i, e) => ControllerWidget(i))
                           .toList(),
                     ),
                   ),
+
                   // selected controller (at the front of every controllers)
-                  ...selected.map((e) => ControllerWidget(e)),
+                  AnimatedBuilder(
+                    animation: Listenable.merge([componentsNotifier.state, selectedNotifier.state,]),
+                    builder: (context, child) => Stack(
+                      children: selectedNotifier.state.value
+                          .mapIndexed((i, e) => ControllerWidget(i))
+                          .toList(),
+                    ),
+                  ),
                   //
+
                   if (tool == ToolData.create || isCreateTooling)
-                    CreatorWidget(),
+                    const CreatorWidget(),
 
                   // camera (kinda). workaround
                   TransparentPointer(

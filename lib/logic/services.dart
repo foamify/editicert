@@ -34,25 +34,25 @@ class Components {
 
   void add(ComponentData component) => _state.add(component);
 
-  void reorder(int oldIndex,
-      int newIndex, {
-        bool selected = true,
-      }) {
-    final getIt = GetIt.I;
-    getIt.get<Selected>().clear();
-    getIt.get<Hovered>().clear();
+  void reorder(
+    int oldIndex,
+    int newIndex,
+  ) {
+    selectedNotifier.clear();
+    hoveredNotifier.clear();
 
     final component = _state[oldIndex];
 
-    final newState = [..._state]
-      ..removeAt(oldIndex)
-      ..insert(newIndex, component);
-
-    _state = newState;
-    if (selected) getIt.get<Selected>().add(newIndex);
+    _state = [
+      ..._state
+        ..removeAt(oldIndex)
+        ..insert(newIndex, component),
+    ];
+    selectedNotifier.add(newIndex);
   }
 
-  void replace(int index, {
+  void replace(
+    int index, {
     String? name,
     Triangle? triangle,
     Color? color,
@@ -64,39 +64,35 @@ class Components {
     bool? locked,
   }) {
     final component = _state[index];
-    final newState = [..._state];
-    newState.removeAt(index);
-    newState.insert(
-      index,
-      component.copyWith(
-        name: name,
-        triangle: triangle,
-        color: color,
-        borderRadius: borderRadius,
-        border: border,
-        shadow: shadow,
-        content: content,
-        hidden: hidden,
-        locked: locked,
-      ),
-    );
-    _state = [...newState];
+    _state = [
+      ..._state
+        ..removeAt(index)
+        ..insert(
+          index,
+          component.copyWith(
+            name: name,
+            triangle: triangle,
+            color: color,
+            borderRadius: borderRadius,
+            border: border,
+            shadow: shadow,
+            content: content,
+            hidden: hidden,
+            locked: locked,
+          ),
+        ),
+    ];
   }
 
   void removeSelected() {
-    final selectedIndex = GetIt.I
-        .get<Selected>()
-        .state
-        .value
-        .firstOrNull;
+    final selectedIndex = GetIt.I.get<Selected>().state.value.firstOrNull;
     if (selectedIndex != null) {
-      final newState = [..._state];
       selectedNotifier.clear();
       hoveredNotifier.clear();
-      _state = [];
-      _state = [...newState..removeAt(selectedIndex)];
+      _state = [..._state..removeAt(selectedIndex)];
     }
   }
+
 }
 
 @immutable
@@ -254,10 +250,10 @@ enum GlobalStates {
 
 class CanvasState {
   final state = ValueNotifier<CanvasData>((
-  transform: Matrix4.identity(),
-  backgroundColor: const Color(0xFFF5F5F5),
-  backgroundHidden: true,
-  backgroundOpacity: 1,
+    transform: Matrix4.identity(),
+    backgroundColor: const Color(0xFFF5F5F5),
+    backgroundHidden: true,
+    backgroundOpacity: 1,
   ));
 
   void update({
@@ -276,10 +272,10 @@ class CanvasState {
 }
 
 typedef CanvasData = ({
-Matrix4 transform,
-Color backgroundColor,
-bool backgroundHidden,
-double backgroundOpacity,
+  Matrix4 transform,
+  Color backgroundColor,
+  bool backgroundHidden,
+  double backgroundOpacity,
 });
 
 extension CDataEx on CanvasData {
@@ -290,10 +286,10 @@ extension CDataEx on CanvasData {
     double? backgroundOpacity,
   }) {
     return (
-    transform: transform ?? this.transform,
-    backgroundColor: backgroundColor ?? this.backgroundColor,
-    backgroundHidden: backgroundHidden ?? this.backgroundHidden,
-    backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
+      transform: transform ?? this.transform,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      backgroundHidden: backgroundHidden ?? this.backgroundHidden,
+      backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
     );
   }
 }

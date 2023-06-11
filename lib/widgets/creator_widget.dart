@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class CreatorWidget extends StatefulWidget {
-  CreatorWidget({super.key});
+  const CreatorWidget({super.key});
 
   @override
   State<CreatorWidget> createState() => _CreatorWidgetState();
