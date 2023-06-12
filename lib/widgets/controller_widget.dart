@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:editicert/logic/services.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 
 class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
@@ -245,7 +246,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _ => Offset.zero,
     };
 
-    final selectedEdge = switch (alignment) {
+    final selected = switch (alignment) {
       Alignment.topLeft => edges.tl,
       Alignment.topRight => edges.tr,
       Alignment.bottomLeft => edges.bl,
@@ -279,7 +280,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
               },
               onPointerMove: (event) {
                 if (resize && alignment != null) {
-                  handleResizeEdges(event, alignment, selectedEdge);
+                  handleResize(event, alignment, selected);
                 } else if (rotate) {
                   handleRotate(event);
                 }
@@ -386,7 +387,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
               );
             },
             onPointerMove: (event) {
-              handleResizeSide(event, alignment, selectedSide);
+              handleResize(event, alignment, selectedSide);
             },
             onPointerUp: handlePointerUp,
             child: MouseRegion(
@@ -434,23 +435,28 @@ class _ControllerWidgetState extends State<ControllerWidget>
         .copyWith(angle: _originalTriangle.value.angle - deltaAngle);
   }
 
-  /// Handles resizing from the sides
-  void handleResizeSide(
+  /// Handles resizing from all edges/sides
+  void handleResize(
     PointerMoveEvent event,
     Alignment alignment,
-    Offset selectedSide,
+    Offset selected,
   ) {
     final tValue = _originalTriangle.value;
 
+    final keys = keysNotifier.state.value;
+    final pressedMeta = keys.contains(LogicalKeyboardKey.meta) ||
+        keys.contains(LogicalKeyboardKey.metaLeft) ||
+        keys.contains(LogicalKeyboardKey.metaRight);
+
     final rOriginalPoint = rotatePoint(
       _originalPosition.value,
-      selectedSide + Offset(tValue.size.width, tValue.size.height) / 2,
+      selected + Offset(tValue.size.width, tValue.size.height) / 2,
       -tValue.angle,
     );
 
     final rPosition = rotatePoint(
       event.position,
-      selectedSide + Offset(tValue.size.width, tValue.size.height) / 2,
+      selected + Offset(tValue.size.width, tValue.size.height) / 2,
       -tValue.angle,
     );
 
@@ -458,32 +464,46 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final oEdges = rotateRect(rect, 0, tValue.pos);
 
     final rDelta = (rPosition - rOriginalPoint) * getScale();
+    final rDeltaInvert =
+    pressedMeta ? Offset(-rDelta.dx, -rDelta.dy) : Offset.zero;
 
     final deltaTop = switch (alignment) {
+      Alignment.topLeft || Alignment.topRight => Offset(0, rDelta.dy),
+      Alignment.bottomLeft || Alignment.bottomRight => Offset(0, rDeltaInvert.dy),
       Alignment.topCenter => Offset(0, rDelta.dy),
+      Alignment.bottomCenter => Offset(0, rDeltaInvert.dy),
       _ => Offset.zero,
     };
 
     final deltaBottom = switch (alignment) {
+      Alignment.topLeft || Alignment.topRight => Offset(0, rDeltaInvert.dy),
+      Alignment.bottomLeft || Alignment.bottomRight => Offset(0, rDelta.dy),
+      Alignment.topCenter => Offset(0, rDeltaInvert.dy),
       Alignment.bottomCenter => Offset(0, rDelta.dy),
       _ => Offset.zero,
     };
 
     final deltaLeft = switch (alignment) {
+      Alignment.topLeft || Alignment.bottomLeft => Offset(rDelta.dx, 0),
+      Alignment.topRight || Alignment.bottomRight => Offset(rDeltaInvert.dx, 0),
       Alignment.centerLeft => Offset(rDelta.dx, 0),
+      Alignment.centerRight => Offset(rDeltaInvert.dx, 0),
       _ => Offset.zero,
     };
 
     final deltaRight = switch (alignment) {
+      Alignment.topLeft || Alignment.bottomLeft => Offset(rDeltaInvert.dx, 0),
+      Alignment.topRight || Alignment.bottomRight => Offset(rDelta.dx, 0),
+      Alignment.centerLeft => Offset(rDeltaInvert.dx, 0),
       Alignment.centerRight => Offset(rDelta.dx, 0),
       _ => Offset.zero,
     };
 
     var newEdges = (
-      tl: oEdges.tl + deltaTop + deltaLeft,
-      tr: oEdges.tr + deltaTop + deltaRight,
-      bl: oEdges.bl + deltaBottom + deltaLeft,
-      br: Offset.zero
+    tl: oEdges.tl + deltaTop + deltaLeft,
+    tr: oEdges.tr + deltaTop + deltaRight,
+    bl: oEdges.bl + deltaBottom + deltaLeft,
+    br: Offset.zero
     );
     final newRect = rectFromEdges(newEdges);
     final newEdgesR = rotateRect(
@@ -491,13 +511,17 @@ class _ControllerWidgetState extends State<ControllerWidget>
       tValue.angle,
       tValue.pos.translate(
         switch (alignment) {
-          Alignment.centerLeft => rDelta.dx / 2,
-          Alignment.centerRight => -rDelta.dx / 2,
+          Alignment.topLeft || Alignment.bottomLeft => (rDelta.dx - rDeltaInvert.dx) / 2,
+          Alignment.topRight || Alignment.bottomRight => (-rDelta.dx + rDeltaInvert.dx) / 2,
+          Alignment.centerLeft => (rDelta.dx - rDeltaInvert.dx) / 2,
+          Alignment.centerRight => (-rDelta.dx + rDeltaInvert.dx) / 2,
           _ => 0,
         },
         switch (alignment) {
-          Alignment.topCenter => rDelta.dy / 2,
-          Alignment.bottomCenter => -rDelta.dy / 2,
+          Alignment.topLeft || Alignment.topRight => (rDelta.dy - rDeltaInvert.dy) / 2,
+          Alignment.bottomLeft || Alignment.bottomRight => (-rDelta.dy + rDeltaInvert.dy) / 2,
+          Alignment.topCenter => (rDelta.dy - rDeltaInvert.dy) / 2,
+          Alignment.bottomCenter => (-rDelta.dy + rDeltaInvert.dy) / 2,
           _ => 0,
         },
       ),
@@ -507,64 +531,6 @@ class _ControllerWidgetState extends State<ControllerWidget>
       newEdgesR,
       flipX: newRect.size.width < 0,
       flipY: newRect.size.height > 0,
-    );
-  }
-
-  /// Handles resizing from the edges
-  void handleResizeEdges(
-    PointerMoveEvent event,
-    Alignment alignment,
-    Offset selectedEdge,
-  ) {
-    final tSize = getSize();
-    final tValue = _originalTriangle.value;
-
-    final position = event.position;
-    final oPosition = _originalPosition.value;
-
-    final rOriginalPoint = rotatePoint(
-      oPosition,
-      selectedEdge + Offset(tSize.width, tSize.height) / 2,
-      -tValue.angle,
-    );
-
-    final rPosition = rotatePoint(
-      position,
-      selectedEdge + Offset(tSize.width, tSize.height) / 2,
-      -tValue.angle,
-    );
-
-    final scale = getScale();
-    final delta = (position - oPosition) * scale;
-    final rDelta = (rPosition - rOriginalPoint) * scale;
-
-    _triangle.value = tValue.copyWith(
-      pos: switch (alignment) {
-        Alignment.topLeft => tValue.pos + delta / 2 + rDelta / 2,
-        Alignment.topRight =>
-          tValue.pos + Offset(delta.dx - rDelta.dx, delta.dy + rDelta.dy) / 2,
-        Alignment.bottomLeft =>
-          tValue.pos + Offset(delta.dx + rDelta.dx, delta.dy - rDelta.dy) / 2,
-        Alignment.bottomRight => tValue.pos + delta / 2 - rDelta / 2,
-        // never called
-        _ => Offset.zero,
-      },
-      size: switch (alignment) {
-        Alignment.topLeft => tValue.size + -rDelta,
-        Alignment.topRight => tValue.size +
-            Offset(
-              rDelta.dx,
-              -rDelta.dy,
-            ),
-        Alignment.bottomLeft => tValue.size +
-            Offset(
-              -rDelta.dx,
-              rDelta.dy,
-            ),
-        Alignment.bottomRight => tValue.size + rDelta,
-        // never called
-        _ => Size.zero,
-      },
     );
   }
 

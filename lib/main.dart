@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
+import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -302,9 +303,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                   // components
                   ValueListenableBuilder(
                     valueListenable: transformationController,
-                    builder: (context, value, child) {
+                    builder: (context, transform, child) {
                       return Transform(
-                        transform: value,
+                        transform: transform,
                         child: Stack(clipBehavior: Clip.none, children: [
                           ...components.mapIndexed(
                             (i, e) {

@@ -20,6 +20,7 @@ dependencies:
   touch_bar: ^0.3.0-alpha.1
   get_it: ^7.6.0
   get_it_mixin: ^4.2.0
+  super_drag_and_drop: ^0.4.0
 
 dev_dependencies:
   flutter_test:

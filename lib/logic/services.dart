@@ -1,7 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:editicert/widgets/controller_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 
 class Services {}
@@ -146,16 +146,16 @@ class ComponentData {
 class Keys {
   final state = ValueNotifier<Set<LogicalKeyboardKey>>({});
 
-  Set<LogicalKeyboardKey> get keys => state.value;
+  Set<LogicalKeyboardKey> get _keys => state.value;
 
-  set keys(Set<LogicalKeyboardKey> value) => state.value = value;
+  set _keys(Set<LogicalKeyboardKey> value) => state.value = value;
 
   void add(LogicalKeyboardKey key) {
-    if (!keys.contains(key)) state.value = {...state.value..add(key)};
+    if (!_keys.contains(key)) state.value = {...state.value..add(key)};
   }
 
   void remove(LogicalKeyboardKey key) {
-    if (keys.contains(key)) {
+    if (_keys.contains(key)) {
       state.value = {...state.value..remove(key)};
     }
   }
@@ -246,6 +246,7 @@ enum GlobalStates {
   resizingComponent,
   rotatingComponent,
   creating,
+  draggingSidebarComponent,
 }
 
 class CanvasState {
@@ -294,18 +295,3 @@ extension CDataEx on CanvasData {
   }
 }
 
-// class CanvasData {
-//   CanvasData({
-//     Matrix4? transform,
-//     this.backgroundColor = const Color(0xFFF5F5F5),
-//     this.backgroundHidden = true,
-//     this.backgroundOpacity = 1,
-//   }) {
-//     this.transform = transform ?? Matrix4.identity();
-//   }
-//
-//   late final Matrix4 transform;
-//   final Color backgroundColor;
-//   final bool backgroundHidden;
-//   final double backgroundOpacity;
-// }
