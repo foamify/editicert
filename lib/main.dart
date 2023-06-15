@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
+import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
@@ -20,23 +21,55 @@ import 'package:window_manager/window_manager.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
-  await WindowManipulator.initialize();
 
-  await WindowManipulator.makeTitlebarTransparent();
-  await WindowManipulator.enableFullSizeContentView();
-  await WindowManipulator.hideTitle();
-  await WindowManipulator.addToolbar();
-  await WindowManipulator.setToolbarStyle(
-    toolbarStyle: NSWindowToolbarStyle.unified,
-  );
+  if (Platform.isMacOS) {
+    await WindowManipulator.initialize(enableWindowDelegate: true);
+    setup();
+    final delegate = _MyDelegate();
+    WindowManipulator.addNSWindowDelegate(
+      delegate,
+    );
+    final options = NSAppPresentationOptions.from({
+      NSAppPresentationOption.fullScreen,
+      NSAppPresentationOption.autoHideToolbar,
+      NSAppPresentationOption.autoHideMenuBar,
+      NSAppPresentationOption.autoHideDock,
+    });
 
-  await windowManager.waitUntilReadyToShow();
+    options.applyAsFullScreenPresentationOptions();
 
-  setup();
+    await Future.wait([
+      WindowManipulator.makeTitlebarTransparent(),
+      WindowManipulator.enableFullSizeContentView(),
+      WindowManipulator.hideTitle(),
+      WindowManipulator.addToolbar(),
+      WindowManipulator.setToolbarStyle(
+        toolbarStyle: NSWindowToolbarStyle.unified,
+      ),
+    ]);
+  }
+
   runApp(Main());
+  await windowManager.waitUntilReadyToShow();
 
   unawaited(windowManager.show());
   unawaited(windowManager.focus());
+}
+
+class _MyDelegate extends NSWindowDelegate {
+  @override
+  void windowWillEnterFullScreen() {
+    globalStateNotifier.add(GlobalStates.fullscreen);
+    WindowManipulator.removeToolbar();
+    super.windowDidEnterFullScreen();
+  }
+
+  @override
+  void windowWillExitFullScreen() {
+    globalStateNotifier.remove(GlobalStates.fullscreen);
+    WindowManipulator.addToolbar();
+    super.windowWillExitFullScreen();
+  }
 }
 
 void setup() {
@@ -327,7 +360,10 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                   ),
                   // controller for selections
                   AnimatedBuilder(
-                    animation: Listenable.merge([componentsNotifier.state, selectedNotifier.state,]),
+                    animation: Listenable.merge([
+                      componentsNotifier.state,
+                      selectedNotifier.state,
+                    ]),
                     builder: (context, child) => Stack(
                       children: componentsNotifier.state.value
                           .mapIndexed((i, e) => ControllerWidget(i))
@@ -337,7 +373,10 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
                   // selected controller (at the front of every controllers)
                   AnimatedBuilder(
-                    animation: Listenable.merge([componentsNotifier.state, selectedNotifier.state,]),
+                    animation: Listenable.merge([
+                      componentsNotifier.state,
+                      selectedNotifier.state,
+                    ]),
                     builder: (context, child) => Stack(
                       children: selectedNotifier.state.value
                           .mapIndexed((i, e) => ControllerWidget(i))
@@ -425,6 +464,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             ),
             Column(
               children: [
+                /// Top bar
                 Container(
                   height: topbarHeight,
                   decoration: BoxDecoration(
@@ -437,7 +477,12 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     ),
                   ),
                   padding: EdgeInsets.only(
-                    left: 8 + (Platform.isMacOS ? 80 : 0),
+                    left: 8 +
+                        (Platform.isMacOS &&
+                                !globalStateNotifier.state.value.states
+                                    .contains(GlobalStates.fullscreen)
+                            ? 80
+                            : 0),
                     right: 8,
                   ),
                   child: Row(

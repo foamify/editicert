@@ -210,6 +210,10 @@ class GlobalState {
 
   void update(GlobalStateData value) => state.value = value;
 
+  void add(GlobalStates value) => state.value = state.value + value;
+
+  void remove(GlobalStates value) => state.value = state.value - value;
+
   void clear() => state.value = GlobalStateData({});
 }
 
@@ -247,6 +251,7 @@ enum GlobalStates {
   rotatingComponent,
   creating,
   draggingSidebarComponent,
+  fullscreen,
 }
 
 class CanvasState {
