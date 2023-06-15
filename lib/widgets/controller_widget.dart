@@ -444,9 +444,14 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final tValue = _originalTriangle.value;
 
     final keys = keysNotifier.state.value;
-    final pressedMeta = keys.contains(LogicalKeyboardKey.meta) ||
-        keys.contains(LogicalKeyboardKey.metaLeft) ||
-        keys.contains(LogicalKeyboardKey.metaRight);
+    // this is for mirrored resize
+    final pressedAlt = keys.contains(LogicalKeyboardKey.alt) ||
+        keys.contains(LogicalKeyboardKey.altLeft) ||
+        keys.contains(LogicalKeyboardKey.altRight);
+    // this is for rectangle resize
+    final pressedShift = keys.contains(LogicalKeyboardKey.shift) ||
+        keys.contains(LogicalKeyboardKey.shiftLeft) ||
+        keys.contains(LogicalKeyboardKey.shiftRight);
 
     final rOriginalPoint = rotatePoint(
       _originalPosition.value,
@@ -460,16 +465,99 @@ class _ControllerWidgetState extends State<ControllerWidget>
       -tValue.angle,
     );
 
-    final rect = tValue.rect;
-    final oEdges = rotateRect(rect, 0, tValue.pos);
+    final oRect = tValue.rect;
+    final oEdges = rotateRect(oRect, 0, tValue.pos);
 
-    final rDelta = (rPosition - rOriginalPoint) * getScale();
+    final scale = getScale();
+
+    final nDelta = (rPosition - rOriginalPoint) * scale;
+    var rDelta = (rPosition - rOriginalPoint) * scale;
+
+    if (pressedShift) {
+      final width = pressedAlt ? oRect.width / 2 : oRect.width;
+      final height = pressedAlt ? oRect.height / 2 : oRect.height;
+
+      final flipWidth = switch (alignment) {
+        Alignment.topLeft ||
+        Alignment.bottomLeft =>
+          width > 0 ? nDelta.dx > width : nDelta.dx < width,
+        Alignment.topRight ||
+        Alignment.bottomRight =>
+          width > 0 ? -nDelta.dx > width : -nDelta.dx < width,
+        _ => false,
+      };
+      final flipHeight = switch (alignment) {
+        Alignment.topLeft ||
+        Alignment.topRight =>
+          height > 0 ? nDelta.dy > height : nDelta.dy < height,
+        Alignment.bottomLeft ||
+        Alignment.bottomRight =>
+          height > 0 ? -nDelta.dy > height : -nDelta.dy < height,
+        _ => false,
+      };
+
+      final kFlipWidth = width < 0 ? -1 : 1;
+      final kFlipHeight = height < 0 ? -1 : 1;
+
+      var offsetX = 0.0;
+      var offsetY = 0.0;
+
+      switch (alignment) {
+        case Alignment.topLeft || Alignment.bottomLeft when flipWidth:
+          offsetX = width * 2;
+        case Alignment.topRight || Alignment.bottomRight when flipWidth:
+          offsetX = -width * 2;
+      }
+      switch (alignment) {
+        case Alignment.topLeft || Alignment.topRight when flipHeight:
+          offsetY = height * 2;
+        case Alignment.bottomLeft || Alignment.bottomRight when flipHeight:
+          offsetY = -height * 2;
+      }
+
+      if (flipWidth) rDelta = rDelta.scale(-1, 1) + Offset(offsetX, 0);
+      if (flipHeight) rDelta = rDelta.scale(1, -1) + Offset(0, offsetY);
+
+      rDelta = switch (alignment) {
+        Alignment.topLeft => rDelta.dx * kFlipWidth < rDelta.dy * kFlipHeight
+            ? Offset(rDelta.dx * kFlipHeight, rDelta.dx * kFlipWidth)
+            : Offset(rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
+        Alignment.topRight => -rDelta.dx * kFlipWidth < rDelta.dy * kFlipHeight
+            ? Offset(rDelta.dx * kFlipHeight, -rDelta.dx * kFlipWidth)
+            : Offset(-rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
+        Alignment.bottomLeft =>
+          rDelta.dx * kFlipWidth < -rDelta.dy * kFlipHeight
+              ? Offset(rDelta.dx * kFlipHeight, -rDelta.dx * kFlipWidth)
+              : Offset(-rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
+        Alignment.bottomRight =>
+          -rDelta.dx * kFlipWidth < -rDelta.dy * kFlipHeight
+              ? Offset(rDelta.dx * kFlipHeight, rDelta.dx * kFlipWidth)
+              : Offset(rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
+        _ => rDelta,
+      };
+
+      if (flipWidth) {
+        rDelta = Offset(
+          width > 0 ? offsetX - rDelta.dx : -rDelta.dx + offsetX,
+          rDelta.dy,
+        );
+      }
+      if (flipHeight) {
+        rDelta = Offset(
+          rDelta.dx,
+          height > 0 ? offsetY - rDelta.dy : -rDelta.dy + offsetY,
+        );
+      }
+    }
+
     final rDeltaInvert =
-    pressedMeta ? Offset(-rDelta.dx, -rDelta.dy) : Offset.zero;
+        pressedAlt ? Offset(-rDelta.dx, -rDelta.dy) : Offset.zero;
 
     final deltaTop = switch (alignment) {
       Alignment.topLeft || Alignment.topRight => Offset(0, rDelta.dy),
-      Alignment.bottomLeft || Alignment.bottomRight => Offset(0, rDeltaInvert.dy),
+      Alignment.bottomLeft ||
+      Alignment.bottomRight =>
+        Offset(0, rDeltaInvert.dy),
       Alignment.topCenter => Offset(0, rDelta.dy),
       Alignment.bottomCenter => Offset(0, rDeltaInvert.dy),
       _ => Offset.zero,
@@ -500,10 +588,10 @@ class _ControllerWidgetState extends State<ControllerWidget>
     };
 
     var newEdges = (
-    tl: oEdges.tl + deltaTop + deltaLeft,
-    tr: oEdges.tr + deltaTop + deltaRight,
-    bl: oEdges.bl + deltaBottom + deltaLeft,
-    br: Offset.zero
+      tl: oEdges.tl + deltaTop + deltaLeft,
+      tr: oEdges.tr + deltaTop + deltaRight,
+      bl: oEdges.bl + deltaBottom + deltaLeft,
+      br: Offset.zero
     );
     final newRect = rectFromEdges(newEdges);
     final newEdgesR = rotateRect(
@@ -511,15 +599,23 @@ class _ControllerWidgetState extends State<ControllerWidget>
       tValue.angle,
       tValue.pos.translate(
         switch (alignment) {
-          Alignment.topLeft || Alignment.bottomLeft => (rDelta.dx - rDeltaInvert.dx) / 2,
-          Alignment.topRight || Alignment.bottomRight => (-rDelta.dx + rDeltaInvert.dx) / 2,
+          Alignment.topLeft ||
+          Alignment.bottomLeft =>
+            (rDelta.dx - rDeltaInvert.dx) / 2,
+          Alignment.topRight ||
+          Alignment.bottomRight =>
+            (-rDelta.dx + rDeltaInvert.dx) / 2,
           Alignment.centerLeft => (rDelta.dx - rDeltaInvert.dx) / 2,
           Alignment.centerRight => (-rDelta.dx + rDeltaInvert.dx) / 2,
           _ => 0,
         },
         switch (alignment) {
-          Alignment.topLeft || Alignment.topRight => (rDelta.dy - rDeltaInvert.dy) / 2,
-          Alignment.bottomLeft || Alignment.bottomRight => (-rDelta.dy + rDeltaInvert.dy) / 2,
+          Alignment.topLeft ||
+          Alignment.topRight =>
+            (rDelta.dy - rDeltaInvert.dy) / 2,
+          Alignment.bottomLeft ||
+          Alignment.bottomRight =>
+            (-rDelta.dy + rDeltaInvert.dy) / 2,
           Alignment.topCenter => (rDelta.dy - rDeltaInvert.dy) / 2,
           Alignment.bottomCenter => (-rDelta.dy + rDeltaInvert.dy) / 2,
           _ => 0,
