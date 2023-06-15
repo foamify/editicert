@@ -52,7 +52,10 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   void handlePointerMove(PointerMoveEvent event) {
     final tController = canvasTransform.state.value;
     final keys = keysNotifier.state.value;
-    final shift = pressedShift(keys);
+    final shift = keys.contains(LogicalKeyboardKey.shiftLeft) ||
+        keys.contains(LogicalKeyboardKey.shiftRight);
+    final alt = keys.contains(LogicalKeyboardKey.altLeft) ||
+        keys.contains(LogicalKeyboardKey.altRight);
 
     final index = componentsNotifier.state.value.length - 1;
     hoveredNotifier.clear();
@@ -70,8 +73,16 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       (oPosition.value.dy - pos.dy).abs(),
     );
 
-    final xScale = (deltaX ? -1 : 1);
-    final yScale = (deltaY ? -1 : 1);
+    final xScale = alt
+        ? 1
+        : deltaX
+            ? -1
+            : 1;
+    final yScale = alt
+        ? 1
+        : deltaY
+            ? -1
+            : 1;
 
     final newRect = Rect.fromPoints(
       oPosition.value,
@@ -87,15 +98,19 @@ class _CreatorWidgetState extends State<CreatorWidget> {
             ),
     );
     final newTriangle = oTriangle.value.copyWith(
-      pos: newRect.topLeft,
-      size: newRect.size,
+      pos: (alt
+          ? newRect.topLeft -
+              switch ((deltaX, deltaY)) {
+                _ when shift => newRect.size.bottomRight(Offset.zero),
+                (false, false) => newRect.size.bottomRight(Offset.zero),
+                (true, false) => newRect.size.bottomLeft(Offset.zero),
+                (false, true) => newRect.size.topRight(Offset.zero),
+                (true, true) => newRect.size.topLeft(Offset.zero),
+              }
+          : newRect.topLeft),
+      size: (alt ? newRect.size * 2 : newRect.size),
     );
     componentsNotifier.replace(index, triangle: newTriangle);
-  }
-
-  bool pressedShift(Set<LogicalKeyboardKey> keys) {
-    return keys.contains(LogicalKeyboardKey.shiftLeft) ||
-        keys.contains(LogicalKeyboardKey.shiftRight);
   }
 
   void handlePointerUp(PointerUpEvent _) {

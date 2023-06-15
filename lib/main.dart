@@ -358,6 +358,20 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       return buildComponentLabel(e, backgroundColor);
                     },
                   ),
+                  // selected controller(s) (should be at the front of every
+                  // controllers)
+                  AnimatedBuilder(
+                    animation: Listenable.merge([
+                      componentsNotifier.state,
+                      selectedNotifier.state,
+                    ]),
+                    builder: (context, child) => Stack(
+                      children: selectedNotifier.state.value
+                          .mapIndexed((i, e) => ControllerWidget(i))
+                          .toList(),
+                    ),
+                  ),
+
                   // controller for selections
                   AnimatedBuilder(
                     animation: Listenable.merge([
@@ -371,24 +385,12 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     ),
                   ),
 
-                  // selected controller (at the front of every controllers)
-                  AnimatedBuilder(
-                    animation: Listenable.merge([
-                      componentsNotifier.state,
-                      selectedNotifier.state,
-                    ]),
-                    builder: (context, child) => Stack(
-                      children: selectedNotifier.state.value
-                          .mapIndexed((i, e) => ControllerWidget(i))
-                          .toList(),
-                    ),
-                  ),
                   //
 
                   if (tool == ToolData.create || isCreateTooling)
                     const CreatorWidget(),
 
-                  // camera (kinda). workaround
+                  // camera (kinda)
                   TransparentPointer(
                     transparent: !isToolHand,
                     child: Listener(
