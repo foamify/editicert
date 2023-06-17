@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +10,7 @@ class Services {}
 
 final _get = GetIt.I.get;
 
-TransformationControllerData get canvasTransform =>
-    _get<TransformationControllerData>();
+TransformationControllerData get canvasTransform => _get<TransformationControllerData>();
 
 Components get componentsNotifier => _get<Components>();
 
@@ -26,6 +27,10 @@ GlobalState get globalStateNotifier => _get<GlobalState>();
 CanvasState get canvasStateNotifier => _get<CanvasState>();
 
 class Components {
+  // Components() {
+  //   _state = List.filled(200, ComponentData());
+  // }
+
   final ValueNotifier<List<ComponentData>> state = ValueNotifier([]);
 
   List<ComponentData> get _state => state.value;
@@ -92,14 +97,13 @@ class Components {
       _state = [..._state..removeAt(selectedIndex)];
     }
   }
-
 }
 
 @immutable
 class ComponentData {
   const ComponentData({
     this.name = 'Component',
-    this.triangle = const Triangle(Offset.zero, Size(200, 100), 0),
+    this.triangle = const Triangle(Offset.zero, Size(100, 100), 0),
     this.color = const Color(0xFF9E9E9E),
     this.borderRadius = BorderRadius.zero,
     this.border = const Border(),
@@ -208,7 +212,9 @@ class TransformationControllerData {
 class GlobalState {
   final state = ValueNotifier(GlobalStateData({}));
 
-  void update(GlobalStateData value) => state.value = value;
+  void update(GlobalStateData value) {
+    if (state.value.states != value.states) state.value = value;
+  }
 
   void add(GlobalStates value) => state.value = state.value + value;
 
@@ -256,20 +262,17 @@ enum GlobalStates {
 
 class CanvasState {
   final state = ValueNotifier<CanvasData>((
-    transform: Matrix4.identity(),
     backgroundColor: const Color(0xFFF5F5F5),
     backgroundHidden: true,
     backgroundOpacity: 1,
   ));
 
   void update({
-    Matrix4? transform,
     Color? backgroundColor,
     bool? backgroundHidden,
     double? backgroundOpacity,
   }) {
     state.value = state.value.copyWith(
-      transform: transform,
       backgroundColor: backgroundColor,
       backgroundHidden: backgroundHidden,
       backgroundOpacity: backgroundOpacity,
@@ -278,7 +281,6 @@ class CanvasState {
 }
 
 typedef CanvasData = ({
-  Matrix4 transform,
   Color backgroundColor,
   bool backgroundHidden,
   double backgroundOpacity,
@@ -286,17 +288,14 @@ typedef CanvasData = ({
 
 extension CDataEx on CanvasData {
   CanvasData copyWith({
-    Matrix4? transform,
     Color? backgroundColor,
     bool? backgroundHidden,
     double? backgroundOpacity,
   }) {
     return (
-      transform: transform ?? this.transform,
       backgroundColor: backgroundColor ?? this.backgroundColor,
       backgroundHidden: backgroundHidden ?? this.backgroundHidden,
       backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
     );
   }
 }
-

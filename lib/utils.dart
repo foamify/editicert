@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 
 const sidebarWidth = 240.0;
 const topbarHeight = 52.0;
-const gestureSize = 10.0;
+const gestureSize = 8.0;
 const textFieldWidth = 96.0;
 
 ({Offset bl, Offset br, Offset tl, Offset tr}) rotateRect(

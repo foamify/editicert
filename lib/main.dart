@@ -154,6 +154,11 @@ class Main extends StatelessWidget with GetItMixin {
             ),
           ],
         ),
+        const PlatformMenu(label: 'Assets', menus: [
+          PlatformMenu(label: 'Import', menus: [
+            PlatformMenuItem(label: 'File'),
+          ]),
+        ]),
         PlatformMenu(
           label: 'Tools',
           menus: [
@@ -243,7 +248,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
   @override
   Widget build(BuildContext context) {
     final (
-      transform: _,
       :backgroundColor,
       backgroundHidden: _,
       backgroundOpacity: _,
@@ -319,6 +323,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: sidebarWidth)
                   .copyWith(top: topbarHeight),
+              // Canvas
               child: Stack(
                 children: [
                   // unselect all
@@ -438,6 +443,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             }
                           },
                           onInteractionUpdate: (details) {
+                            canvasTransform.update(transformationController.value);
                             if (details.scale == 1 && !pressedMeta) {
                               globalStateNotifier.update(
                                 globalStateProvider +
@@ -470,7 +476,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 Container(
                   height: topbarHeight,
                   decoration: BoxDecoration(
-                    color: colorScheme.surfaceVariant,
+                    color: colorScheme.surface,
                     border: Border(
                       bottom: BorderSide(
                         color: Colors.grey.withOpacity(.375),
@@ -515,6 +521,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             toolNotifier.setRectangle();
                           },
                           icon: const Icon(
+                            // CupertinoIcons.grid,
                             CupertinoIcons.square,
                             size: 18,
                           )
@@ -550,8 +557,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                           child: Card(
                             margin: EdgeInsets.zero,
                             color: tool == e.tool
-                                ? colorScheme.onInverseSurface
-                                : colorScheme.surfaceVariant,
+                                ? colorScheme.onSurface.withOpacity(.125)
+                                : colorScheme.surface,
                             elevation: 0,
                             clipBehavior: Clip.hardEdge,
                             shape: const RoundedRectangleBorder(
@@ -586,7 +593,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       /// Left Sidebar
                       Container(
                         width: sidebarWidth,
-                        color: colorScheme.surfaceVariant,
+                        color: colorScheme.surface,
                         child: ListView(
                           children: components
                               .mapIndexed(
@@ -594,17 +601,15 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                                   padding: const EdgeInsets.only(right: 8),
                                   height: 32,
                                   decoration: BoxDecoration(
+                                    color: selected.contains(i)
+                                        ? colorScheme.surfaceVariant
+                                        : null,
                                     border: Border.all(
                                       strokeAlign: BorderSide.strokeAlignInside,
-                                      color: switch ((
-                                        selected.contains(i),
-                                        hovered.contains(i),
-                                      )) {
-                                        (false, false) => Colors.transparent,
-                                        (false, true) =>
-                                          Colors.blueAccent.withOpacity(.5),
-                                        (true, _) => Colors.blueAccent
-                                      },
+                                      color: !hovered.contains(i) ||
+                                              selected.contains(i)
+                                          ? Colors.transparent
+                                          : Colors.blueAccent.withOpacity(.5),
                                     ),
                                   ),
                                   // color: Colors.transparent,
@@ -905,6 +910,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
         edge = MatrixUtils.transformPoint(matrix, edge);
 
+        final scale = matrix.getMaxScaleOnAxis();
+
         return Positioned(
           left: edge.dx,
           top: edge.dy,
@@ -914,12 +921,17 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             child: AnimatedSlide(
               offset: Offset(tWidth < 0 ? -1 : 0, -1),
               duration: Duration.zero,
-              child: Text(
-                e.name,
-                style: TextStyle(
-                  color: backgroundColor.computeLuminance() > 0.5
-                      ? Colors.black.withOpacity(.5)
-                      : Colors.white.withOpacity(.5),
+              child: SizedBox(
+                width: tWidth * scale,
+                height: 24,
+                child: Text(
+                  e.name,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: backgroundColor.computeLuminance() > 0.5
+                        ? Colors.black.withOpacity(.5)
+                        : Colors.white.withOpacity(.5),
+                  ),
                 ),
               ),
             ),
@@ -942,7 +954,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
         border: e.border,
         color: e.color,
       ),
-      child: const Text('testfasd fa sdf'),
     );
 
     return Positioned(
@@ -969,7 +980,6 @@ class RightSidebar extends StatelessWidget with GetItMixin {
   Widget build(BuildContext context) {
     final selected = watchX((Selected selected) => selected.state);
     final (
-      transform: _,
       :backgroundColor,
       :backgroundOpacity,
       :backgroundHidden,
@@ -1135,7 +1145,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
     return Container(
       width: sidebarWidth,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surface,
       ),
       child: ListView(
         children: [

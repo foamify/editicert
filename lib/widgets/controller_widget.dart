@@ -74,11 +74,22 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   @override
   Widget build(BuildContext context) {
-    final selected = (selectedNotifier.state.value.contains(widget.index));
-    final hovered = (hoveredNotifier.state.value.contains(widget.index));
-    final component = (componentsNotifier.state.value[widget.index]);
+    final hovereds = watchX(
+      (Hovered hovered) => hovered.state,
+    );
+    final components = watchX(
+      (Components components) => components.state,
+    );
+    //
+    final hovered = hovereds.contains(widget.index);
+    final component = components[widget.index];
+    //
     final hidden = component.hidden;
     final locked = component.locked;
+    //
+    final moving = (globalStateNotifier.state.value)
+        .states
+        .contains(GlobalStates.draggingComponent);
 
     registerHandler(
       (Components components) => components.state,
@@ -90,19 +101,17 @@ class _ControllerWidgetState extends State<ControllerWidget>
       },
     );
 
-    final moving = (globalStateNotifier.state.value)
-        .states
-        .contains(GlobalStates.draggingComponent);
-
     return AnimatedBuilder(
       animation: Listenable.merge([
         _visualTriangle,
         (canvasTransform.state.value),
+        selectedNotifier.state,
       ]),
       builder: (context, child) {
         final pos = getPos();
         final tSize = getSize();
         final tAngle = _visualTriangle.value.angle;
+        final selected = selectedNotifier.state.value.contains(widget.index);
         final selectedValue = selected && !moving;
         final borderWidth = selectedValue ? 1.0 : 2.0;
 
@@ -121,18 +130,17 @@ class _ControllerWidgetState extends State<ControllerWidget>
                     flipY: tSize.height < 0,
                     child: Listener(
                       onPointerDown: (event) {
-                        (selectedNotifier)
+                        selectedNotifier.clear();
+                        hoveredNotifier
                           ..clear()
                           ..add(widget.index);
-
-                        (globalStateNotifier).update(
-                          (globalStateNotifier.state.value) +
-                              GlobalStates.draggingComponent,
-                        );
                         handlePointerDownGlobal(event);
                       },
                       onPointerMove: locked ? null : handleMove,
-                      onPointerUp: handlePointerUp,
+                      onPointerUp: (event) {
+                        selectedNotifier.add(widget.index);
+                        handlePointerUp(event);
+                      },
                       child: MouseRegion(
                         onEnter: (_) => (hoveredNotifier).add(widget.index),
                         onExit: (_) => (hoveredNotifier).remove(widget.index),
@@ -409,6 +417,9 @@ class _ControllerWidgetState extends State<ControllerWidget>
   void handleMove(
     PointerMoveEvent event,
   ) {
+    (globalStateNotifier).update(
+      (globalStateNotifier.state.value) + GlobalStates.draggingComponent,
+    );
     final delta = event.position - _originalPosition.value;
     _triangle.value = _originalTriangle.value.copyWith(
       pos: _originalTriangle.value.pos + delta * getScale(),
