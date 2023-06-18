@@ -14,7 +14,7 @@ class CreatorWidget extends StatefulWidget {
 }
 
 class _CreatorWidgetState extends State<CreatorWidget> {
-  final oTriangle = ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+  final oComponent = ValueNotifier(const Component(Offset.zero, Size.zero, 0));
 
   final oPosition = ValueNotifier(Offset.zero);
 
@@ -37,14 +37,14 @@ class _CreatorWidgetState extends State<CreatorWidget> {
 
   void handlePointerDown(PointerDownEvent event) {
     globalStateNotifier
-        .update(globalStateNotifier.state.value + GlobalStates.creating);
+        .update(globalStateNotifier.state.value + GlobalStates.creatingRectangle);
     final tController = canvasTransform.state.value;
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
-    oTriangle.value = Triangle(oPosition.value, Size.zero, 0);
+    oComponent.value = Component(oPosition.value, Size.zero, 0);
     final index = componentsNotifier.state.value.length;
     componentsNotifier.add(ComponentData(
-      triangle: oTriangle.value,
+      component: oComponent.value,
       name: 'Rectangle ${index + 1}',
     ));
   }
@@ -97,7 +97,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
               pos.dy,
             ),
     );
-    final newTriangle = oTriangle.value.copyWith(
+    final newComponent = oComponent.value.copyWith(
       pos: (alt
           ? newRect.topLeft -
               switch ((deltaX, deltaY)) {
@@ -110,21 +110,21 @@ class _CreatorWidgetState extends State<CreatorWidget> {
           : newRect.topLeft),
       size: (alt ? newRect.size * 2 : newRect.size),
     );
-    componentsNotifier.replace(index, triangle: newTriangle);
+    componentsNotifier.replace(index, transform: newComponent);
   }
 
   void handlePointerUp(PointerUpEvent _) {
     globalStateNotifier
-        .update(globalStateNotifier.state.value - GlobalStates.creating);
+        .update(globalStateNotifier.state.value - GlobalStates.creatingRectangle);
 
     final components = componentsNotifier.state.value;
     final index = components.length - 1;
-    final triangle = components[index].triangle;
-    if (triangle.size.width == 0 || triangle.size.height == 0) {
+    final component = components[index].component;
+    if (component.size.width == 0 || component.size.height == 0) {
       componentsNotifier.replace(
         index,
-        triangle: Triangle(
-          oTriangle.value.pos - const Offset(50, 50),
+        transform: Component(
+          oComponent.value.pos - const Offset(50, 50),
           const Size(100, 100),
           0,
         ),

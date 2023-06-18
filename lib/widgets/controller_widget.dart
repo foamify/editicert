@@ -23,7 +23,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) getRotatedEdges() {
     final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
-        (componentsNotifier.state.value[widget.index]).triangle.rotatedEdges;
+        (componentsNotifier.state.value[widget.index]).component.rotatedEdges;
 
     final transform = tControl().value;
 
@@ -37,7 +37,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) getEdges() {
     final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
-        (componentsNotifier.state.value[widget.index]).triangle.edges;
+        (componentsNotifier.state.value[widget.index]).component.edges;
 
     final transform = tControl().value;
 
@@ -51,22 +51,22 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   final _originalPosition = ValueNotifier(Offset.zero);
 
-  final _originalTriangle =
-      ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+  final _originalComponent =
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0));
 
-  final _triangle = ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+  final _component = ValueNotifier(const Component(Offset.zero, Size.zero, 0));
 
-  final _visualTriangle =
-      ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+  final _visualComponent =
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0));
 
   @override
   void initState() {
-    final triangle = (componentsNotifier.state.value[widget.index]).triangle;
-    _triangle.value = triangle;
-    _visualTriangle.value = triangle;
-    _triangle.addListener(() {
-      (componentsNotifier).replace(widget.index, triangle: _triangle.value);
-      _visualTriangle.value = _triangle.value;
+    final component = (componentsNotifier.state.value[widget.index]).component;
+    _component.value = component;
+    _visualComponent.value = component;
+    _component.addListener(() {
+      (componentsNotifier).replace(widget.index, transform: _component.value);
+      _visualComponent.value = _component.value;
     });
 
     super.initState();
@@ -95,22 +95,22 @@ class _ControllerWidgetState extends State<ControllerWidget>
       (Components components) => components.state,
       (context, next, _) {
         if (next.length <= widget.index) return;
-        if (next[widget.index].triangle != _triangle.value) {
-          _visualTriangle.value = next[widget.index].triangle;
+        if (next[widget.index].component != _component.value) {
+          _visualComponent.value = next[widget.index].component;
         }
       },
     );
 
     return AnimatedBuilder(
       animation: Listenable.merge([
-        _visualTriangle,
+        _visualComponent,
         (canvasTransform.state.value),
         selectedNotifier.state,
       ]),
       builder: (context, child) {
         final pos = getPos();
         final tSize = getSize();
-        final tAngle = _visualTriangle.value.angle;
+        final tAngle = _visualComponent.value.angle;
         final selected = selectedNotifier.state.value.contains(widget.index);
         final selectedValue = selected && !moving;
         final borderWidth = selectedValue ? 1.0 : 2.0;
@@ -211,15 +211,15 @@ class _ControllerWidgetState extends State<ControllerWidget>
   Offset getPos() {
     return MatrixUtils.transformPoint(
       tControl().value,
-      _visualTriangle.value.pos,
+      _visualComponent.value.pos,
     );
   }
 
   /// handles the pointer down event for rotation
   void handlePointerDownGlobal(PointerDownEvent event) {
-    _triangle.value = (componentsNotifier.state.value[widget.index].triangle);
+    _component.value = (componentsNotifier.state.value[widget.index].component);
     _originalPosition.value = event.position;
-    _originalTriangle.value = _triangle.value;
+    _originalComponent.value = _component.value;
   }
 
   /// basically save data
@@ -230,7 +230,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
           GlobalStates.resizingComponent -
           GlobalStates.rotatingComponent,
     );
-    _triangle.value = _visualTriangle.value;
+    _component.value = _visualComponent.value;
   }
 
   /// Builds the edge resize and rotate control
@@ -239,7 +239,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     bool rotate = false,
     bool resize = false,
   }) {
-    final triangle = _visualTriangle.value;
+    final component = _visualComponent.value;
     final edges = getEdges();
     final rotatedEdges = getRotatedEdges();
     final topRight = rotatedEdges.tl;
@@ -273,7 +273,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
         // this is for the widget inside the widget
         offset: -const Offset(gestureSize, gestureSize) / (rotate ? 1 : 2),
         child: Transform.rotate(
-          angle: triangle.angle,
+          angle: component.angle,
           child: Transform.translate(
             offset: Offset.zero,
             child: Listener(
@@ -301,7 +301,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
                 child: Container(
                   width: alignment == Alignment.topCenter ||
                           alignment == Alignment.bottomCenter
-                      ? triangle.size.width
+                      ? component.size.width
                       : gestureSize * edgeScale,
                   height: gestureSize * edgeScale,
                   decoration: rotate
@@ -324,7 +324,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   Widget _buildResizer({
     required Alignment alignment,
   }) {
-    final tValue = _visualTriangle.value;
+    final tValue = _visualComponent.value;
     // final scale = (canvasTransformNotifier.state.value).getMaxScaleOnAxis();
     const margin = 5.0;
 
@@ -421,8 +421,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
       (globalStateNotifier.state.value) + GlobalStates.draggingComponent,
     );
     final delta = event.position - _originalPosition.value;
-    _triangle.value = _originalTriangle.value.copyWith(
-      pos: _originalTriangle.value.pos + delta * getScale(),
+    _component.value = _originalComponent.value.copyWith(
+      pos: _originalComponent.value.pos + delta * getScale(),
     );
   }
 
@@ -430,7 +430,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   void handleRotate(PointerMoveEvent event) {
     final center = MatrixUtils.transformPoint(
       (canvasTransform.state.value.value),
-      _originalTriangle.value.rect.center,
+      _originalComponent.value.rect.center,
     );
     final originalAngle = atan2(
       _originalPosition.value.dx - sidebarWidth - center.dx,
@@ -442,8 +442,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
     );
     final deltaAngle = newAngle - originalAngle;
 
-    _triangle.value = _originalTriangle.value
-        .copyWith(angle: _originalTriangle.value.angle - deltaAngle);
+    _component.value = _originalComponent.value
+        .copyWith(angle: _originalComponent.value.angle - deltaAngle);
   }
 
   /// Handles resizing from all edges/sides
@@ -452,7 +452,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     Alignment alignment,
     Offset selected,
   ) {
-    final tValue = _originalTriangle.value;
+    final tValue = _originalComponent.value;
 
     final keys = keysNotifier.state.value;
     // this is for mirrored resize
@@ -634,24 +634,24 @@ class _ControllerWidgetState extends State<ControllerWidget>
       ),
     );
 
-    _triangle.value = Triangle.fromEdges(
+    _component.value = Component.fromEdges(
       newEdgesR,
       flipX: newRect.size.width < 0,
       flipY: newRect.size.height > 0,
     );
   }
 
-  Size getSize() => _visualTriangle.value.size / getScale();
+  Size getSize() => _visualComponent.value.size / getScale();
 
   double getScale() => toScene(const Offset(1, 0)).dx - toScene(Offset.zero).dx;
 }
 
-class Triangle {
+class Component {
   final Offset pos;
   final Size size;
   final double angle;
 
-  const Triangle(this.pos, this.size, this.angle);
+  const Component(this.pos, this.size, this.angle);
 
   Rect get rect => Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height);
 
@@ -686,28 +686,28 @@ class Triangle {
       Offset.zero,
     );
 
-    final newTriangle = Triangle(
+    final newComponent = Component(
       newEdges.tl,
       size,
       angle + (flipX ? pi : 0),
     );
 
-    return newTriangle;
+    return newComponent;
   }
 
   copyWith({Offset? pos, Size? size, double? angle}) {
-    return Triangle(pos ?? this.pos, size ?? this.size, angle ?? this.angle);
+    return Component(pos ?? this.pos, size ?? this.size, angle ?? this.angle);
   }
 
   @override
   String toString() {
-    return 'Triangle{pos: $pos, size: $size, angle: $angle}';
+    return 'Component{pos: $pos, size: $size, angle: $angle}';
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Triangle &&
+      other is Component &&
           runtimeType == other.runtimeType &&
           pos == other.pos &&
           size == other.size &&

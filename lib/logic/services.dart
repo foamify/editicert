@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:editicert/widgets/controller_widget.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
@@ -10,7 +11,8 @@ class Services {}
 
 final _get = GetIt.I.get;
 
-TransformationControllerData get canvasTransform => _get<TransformationControllerData>();
+TransformationControllerData get canvasTransform =>
+    _get<TransformationControllerData>();
 
 Components get componentsNotifier => _get<Components>();
 
@@ -59,7 +61,7 @@ class Components {
   void replace(
     int index, {
     String? name,
-    Triangle? triangle,
+    Component? transform,
     Color? color,
     BorderRadius? borderRadius,
     Border? border,
@@ -67,6 +69,7 @@ class Components {
     Widget? content,
     bool? hidden,
     bool? locked,
+    ComponentType? type,
   }) {
     final component = _state[index];
     _state = [
@@ -76,7 +79,7 @@ class Components {
           index,
           component.copyWith(
             name: name,
-            triangle: triangle,
+            component: transform,
             color: color,
             borderRadius: borderRadius,
             border: border,
@@ -84,6 +87,7 @@ class Components {
             content: content,
             hidden: hidden,
             locked: locked,
+            type: type,
           ),
         ),
     ];
@@ -103,7 +107,7 @@ class Components {
 class ComponentData {
   const ComponentData({
     this.name = 'Component',
-    this.triangle = const Triangle(Offset.zero, Size(100, 100), 0),
+    this.component = const Component(Offset.zero, Size(100, 100), 0),
     this.color = const Color(0xFF9E9E9E),
     this.borderRadius = BorderRadius.zero,
     this.border = const Border(),
@@ -111,10 +115,11 @@ class ComponentData {
     this.content = const SizedBox.shrink(),
     this.hidden = false,
     this.locked = false,
+    this.type = ComponentType.frame,
   });
 
   final String name;
-  final Triangle triangle;
+  final Component component;
   final Color color;
   final BorderRadius borderRadius;
   final Border border;
@@ -122,10 +127,11 @@ class ComponentData {
   final Widget content;
   final bool hidden;
   final bool locked;
+  final ComponentType type;
 
   ComponentData copyWith({
     required String? name,
-    required Triangle? triangle,
+    required Component? component,
     required Color? color,
     required BorderRadius? borderRadius,
     required Border? border,
@@ -133,10 +139,11 @@ class ComponentData {
     required Widget? content,
     required bool? hidden,
     required bool? locked,
+    required ComponentType? type,
   }) =>
       ComponentData(
         name: name ?? this.name,
-        triangle: triangle ?? this.triangle,
+        component: component ?? this.component,
         color: color ?? this.color,
         borderRadius: borderRadius ?? this.borderRadius,
         border: border ?? this.border,
@@ -144,7 +151,15 @@ class ComponentData {
         content: content ?? this.content,
         hidden: hidden ?? this.hidden,
         locked: locked ?? this.locked,
+        type: type ?? this.type,
       );
+}
+
+enum ComponentType {
+  frame,
+  text,
+  image,
+  rectangle,
 }
 
 class Keys {
@@ -155,12 +170,12 @@ class Keys {
   set _keys(Set<LogicalKeyboardKey> value) => state.value = value;
 
   void add(LogicalKeyboardKey key) {
-    if (!_keys.contains(key)) state.value = {...state.value..add(key)};
+    if (!_keys.contains(key)) _keys = {..._keys..add(key)};
   }
 
   void remove(LogicalKeyboardKey key) {
     if (_keys.contains(key)) {
-      state.value = {...state.value..remove(key)};
+      _keys = {..._keys..remove(key)};
     }
   }
 }
@@ -193,12 +208,15 @@ class Tool {
   void setRectangle() => state = ToolData.create;
 
   void setHand() => state = ToolData.hand;
+
+  void setFrame() => state = ToolData.frame;
 }
 
 enum ToolData {
   move,
   create,
   hand,
+  frame,
 }
 
 class TransformationControllerData {
@@ -247,24 +265,30 @@ class GlobalStateData {
 }
 
 enum GlobalStates {
+  //
   leftClick,
   rightClick,
   middleClick,
   panningCanvas,
   zoomingCanvas,
+  //
   draggingComponent,
   resizingComponent,
   rotatingComponent,
-  creating,
+  //
+  creatingRectangle,
+  creatingFrame,
+  //
   draggingSidebarComponent,
   fullscreen,
 }
 
 class CanvasState {
-  final state = ValueNotifier<CanvasData>((
-    backgroundColor: const Color(0xFFF5F5F5),
-    backgroundHidden: true,
-    backgroundOpacity: 1,
+  final state = ValueNotifier(CanvasData(
+    color: Colors.white,
+    hidden: true,
+    opacity: 1,
+    size: const Size(1920, 1080),
   ));
 
   void update({
@@ -273,29 +297,37 @@ class CanvasState {
     double? backgroundOpacity,
   }) {
     state.value = state.value.copyWith(
-      backgroundColor: backgroundColor,
-      backgroundHidden: backgroundHidden,
-      backgroundOpacity: backgroundOpacity,
+      color: backgroundColor,
+      hidden: backgroundHidden,
+      opacity: backgroundOpacity,
     );
   }
 }
 
-typedef CanvasData = ({
-  Color backgroundColor,
-  bool backgroundHidden,
-  double backgroundOpacity,
-});
+class CanvasData {
+  CanvasData({
+    required this.color,
+    required this.hidden,
+    required this.opacity,
+    required this.size,
+  });
 
-extension CDataEx on CanvasData {
+  Color color;
+  bool hidden;
+  double opacity;
+  Size size;
+
   CanvasData copyWith({
-    Color? backgroundColor,
-    bool? backgroundHidden,
-    double? backgroundOpacity,
+    Color? color,
+    bool? hidden,
+    double? opacity,
+    Size? size,
   }) {
-    return (
-      backgroundColor: backgroundColor ?? this.backgroundColor,
-      backgroundHidden: backgroundHidden ?? this.backgroundHidden,
-      backgroundOpacity: backgroundOpacity ?? this.backgroundOpacity,
+    return CanvasData(
+      color: color ?? this.color,
+      hidden: hidden ?? this.hidden,
+      opacity: opacity ?? this.opacity,
+      size: size ?? this.size,
     );
   }
 }

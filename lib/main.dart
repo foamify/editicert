@@ -168,6 +168,11 @@ class Main extends StatelessWidget with GetItMixin {
               onSelected: () => toolNotifier.setMove(),
             ),
             PlatformMenuItem(
+              label: 'Frame',
+              shortcut: const SingleActivator(LogicalKeyboardKey.keyF),
+              onSelected: () => toolNotifier.setFrame(),
+            ),
+            PlatformMenuItem(
               label: 'Rectangle',
               shortcut: const SingleActivator(LogicalKeyboardKey.keyR),
               onSelected: () => toolNotifier.setRectangle(),
@@ -247,11 +252,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final (
-      :backgroundColor,
-      backgroundHidden: _,
-      backgroundOpacity: _,
-    ) = watchX((CanvasState canvasState) => canvasState.state);
+    final canvasStateProvider =
+        watchX((CanvasState canvasState) => canvasState.state);
 
     //
     final globalStateProvider =
@@ -260,7 +262,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     final leftClick =
         globalStateProvider.states.contains(GlobalStates.leftClick);
     final isCreateTooling = globalStateProvider.containsAny({
-      GlobalStates.creating,
+      GlobalStates.creatingRectangle,
+      GlobalStates.creatingFrame,
     });
     final isComponentTooling = globalStateProvider.containsAny({
       GlobalStates.draggingComponent,
@@ -316,7 +319,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
         // }
       },
       child: Scaffold(
-        backgroundColor: backgroundColor,
+        backgroundColor: const Color(0xFF333333),
         body: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -329,8 +332,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                   // unselect all
                   GestureDetector(
                     onTap: () {
-                      selected.clear();
-                      hovered.clear();
+                      selectedNotifier.clear();
+                      hoveredNotifier.clear();
                     },
                     child: Container(
                       width: mqSize.width,
@@ -338,61 +341,116 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       color: Colors.transparent,
                     ),
                   ),
-                  // components
-                  ValueListenableBuilder(
-                    valueListenable: transformationController,
-                    builder: (context, transform, child) {
-                      return Transform(
+                  // Background/canvas
+                  ClipRect(
+                    clipBehavior: Clip.hardEdge,
+                    child: ValueListenableBuilder(
+                      valueListenable: transformationController,
+                      builder: (context, transform, child) => Transform(
                         transform: transform,
-                        child: Stack(clipBehavior: Clip.none, children: [
-                          ...components.mapIndexed(
-                            (i, e) {
-                              return e.hidden
-                                  ? const SizedBox.shrink()
-                                  : buildComponentWidget(e);
-                            },
-                          ),
-                          const SizedBox.shrink(),
-                        ]),
-                      );
-                    },
-                  ),
-                  // components label
-                  ...components.mapIndexed(
-                    (i, e) {
-                      return buildComponentLabel(e, backgroundColor);
-                    },
-                  ),
-                  // selected controller(s) (should be at the front of every
-                  // controllers)
-                  AnimatedBuilder(
-                    animation: Listenable.merge([
-                      componentsNotifier.state,
-                      selectedNotifier.state,
-                    ]),
-                    builder: (context, child) => Stack(
-                      children: selectedNotifier.state.value
-                          .mapIndexed((i, e) => ControllerWidget(i))
-                          .toList(),
-                    ),
-                  ),
+                        child: Opacity(
+                          opacity: canvasStateProvider.opacity,
+                          child: Container(
+                            width: canvasStateProvider.size.width,
+                            height: canvasStateProvider.size.height,
+                            decoration: BoxDecoration(
+                              color: canvasStateProvider.color,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black45,
+                                  blurRadius: 24,
+                                  blurStyle: BlurStyle.outer,
+                                ),
+                              ],
+                            ),
+                            child: Transform(
+                              transform: Matrix4.inverted(transform),
+                              child: Stack(
+                                clipBehavior: Clip.hardEdge,
+                                children: [
+                                  // unselect all
+                                  GestureDetector(
+                                    onTap: () {
+                                      selectedNotifier.clear();
+                                      hoveredNotifier.clear();
+                                    },
+                                    child: Container(
+                                      width: mqSize.width,
+                                      height: mqSize.height,
+                                      color: Colors.transparent,
+                                    ),
+                                  ),
+                                  // components
+                                  ValueListenableBuilder(
+                                    valueListenable: transformationController,
+                                    builder: (context, transform, child) =>
+                                        Transform(
+                                      transform: transform,
+                                      child: Stack(
+                                          clipBehavior: Clip.none,
+                                          children: [
+                                            ...components.mapIndexed(
+                                              (i, e) {
+                                                return e.hidden
+                                                    ? const SizedBox.shrink()
+                                                    : buildComponentWidget(e);
+                                              },
+                                            ),
+                                            const SizedBox.shrink(),
+                                          ]),
+                                    ),
+                                  ),
+                                  // components label
+                                  ...components.mapIndexed(
+                                    (i, e) {
+                                      return buildComponentLabel(
+                                        e,
+                                        canvasStateProvider.color,
+                                      );
+                                    },
+                                  ),
+                                  // selected controller(s) (should be at the front of every
+                                  // controllers)
+                                  AnimatedBuilder(
+                                    animation: Listenable.merge([
+                                      componentsNotifier.state,
+                                      selectedNotifier.state,
+                                    ]),
+                                    builder: (context, child) => Stack(
+                                      children: selectedNotifier.state.value
+                                          .mapIndexed(
+                                              (i, e) => ControllerWidget(i))
+                                          .toList(),
+                                    ),
+                                  ),
 
-                  // controller for selections
-                  AnimatedBuilder(
-                    animation: Listenable.merge([
-                      componentsNotifier.state,
-                      selectedNotifier.state,
-                    ]),
-                    builder: (context, child) => Stack(
-                      children: componentsNotifier.state.value
-                          .mapIndexed((i, e) => ControllerWidget(i))
-                          .toList(),
+                                  // controller for selections
+                                  AnimatedBuilder(
+                                    animation: Listenable.merge([
+                                      componentsNotifier.state,
+                                      selectedNotifier.state,
+                                    ]),
+                                    builder: (context, child) => Stack(
+                                      children: componentsNotifier.state.value
+                                          .mapIndexed(
+                                              (i, e) => ControllerWidget(i))
+                                          .toList(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
 
                   //
 
-                  if (tool == ToolData.create || isCreateTooling)
+                  if (tool == ToolData.create ||
+                      isCreateTooling ||
+                      tool == ToolData.frame)
                     const CreatorWidget(),
 
                   // camera (kinda)
@@ -443,7 +501,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             }
                           },
                           onInteractionUpdate: (details) {
-                            canvasTransform.update(transformationController.value);
+                            canvasTransform
+                                .update(transformationController.value);
                             if (details.scale == 1 && !pressedMeta) {
                               globalStateNotifier.update(
                                 globalStateProvider +
@@ -514,6 +573,18 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                           )
                         ),
                         (
+                          text: 'Frame',
+                          shortcut: 'F',
+                          tool: ToolData.frame,
+                          onTap: () {
+                            toolNotifier.setFrame();
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.grid,
+                            size: 18,
+                          )
+                        ),
+                        (
                           text: 'Rectangle',
                           shortcut: 'R',
                           tool: ToolData.create,
@@ -521,7 +592,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             toolNotifier.setRectangle();
                           },
                           icon: const Icon(
-                            // CupertinoIcons.grid,
                             CupertinoIcons.square,
                             size: 18,
                           )
@@ -837,18 +907,18 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     return ValueListenableBuilder(
       valueListenable: canvasTransform.state.value,
       builder: (context, matrix, child) {
-        final triangle = e.triangle;
-        final tWidth = triangle.size.width;
-        final tHeight = triangle.size.height;
+        final component = e.component;
+        final tWidth = component.size.width;
+        final tHeight = component.size.height;
 
-        final edges = triangle.rotatedEdges;
+        final edges = component.rotatedEdges;
         final topLeft = edges.tl;
         final topRight = edges.tr;
         final bottomLeft = edges.bl;
         final bottomRight = edges.br;
 
         var edge = switch ((tWidth < 0, tHeight < 0)) {
-          (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          (true, false) => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => bottomLeft,
               < 135 => topLeft,
               < 225 => topRight,
@@ -856,7 +926,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               < 360 => bottomLeft,
               _ => topLeft,
             },
-          (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          (true, true) => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => topLeft,
               < 135 => bottomLeft,
               < 225 => bottomRight,
@@ -864,7 +934,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               < 360 => topLeft,
               _ => topLeft,
             },
-          (false, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          (false, true) => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => bottomRight,
               < 135 => bottomLeft,
               < 225 => topLeft,
@@ -872,7 +942,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               < 360 => bottomRight,
               _ => topLeft,
             },
-          _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          _ => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => topRight,
               < 135 => topLeft,
               < 225 => bottomLeft,
@@ -882,7 +952,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             }
         };
         final newAngle = switch ((tWidth < 0, tHeight < 0)) {
-          (true, false) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          (true, false) => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => pi / 2,
               < 135 => 0,
               < 225 => -pi / 2,
@@ -890,7 +960,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               < 360 => pi / 2,
               _ => 0.0,
             },
-          (true, true) => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          (true, true) => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => pi / 2,
               < 135 => 0,
               < 225 => -pi / 2,
@@ -898,7 +968,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               < 360 => pi / 2,
               _ => 0.0,
             },
-          _ => switch ((triangle.angle / pi * 180 + 90) % 360) {
+          _ => switch ((component.angle / pi * 180 + 90) % 360) {
               < 45 => pi / 2,
               < 135 => 0,
               < 225 => -pi / 2,
@@ -916,7 +986,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
           left: edge.dx,
           top: edge.dy,
           child: Transform.rotate(
-            angle: triangle.angle + newAngle,
+            angle: component.angle + newAngle,
             alignment: Alignment.topLeft,
             child: AnimatedSlide(
               offset: Offset(tWidth < 0 ? -1 : 0, -1),
@@ -942,9 +1012,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
   }
 
   Widget buildComponentWidget(ComponentData e) {
-    final triangle = e.triangle;
-    final tWidth = triangle.size.width;
-    final tHeight = triangle.size.height;
+    final component = e.component;
+    final tWidth = component.size.width;
+    final tHeight = component.size.height;
 
     final child = Container(
       width: tWidth < 0 ? -tWidth : tWidth,
@@ -957,10 +1027,10 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     );
 
     return Positioned(
-      left: triangle.pos.dx + (tWidth < 0 ? tWidth : 0),
-      top: triangle.pos.dy + (tHeight < 0 ? tHeight : 0),
+      left: component.pos.dx + (tWidth < 0 ? tWidth : 0),
+      top: component.pos.dy + (tHeight < 0 ? tHeight : 0),
       child: Transform.rotate(
-        angle: triangle.angle,
+        angle: component.angle,
         child: Transform.flip(
           flipX: tWidth < 0,
           flipY: tHeight < 0,
@@ -979,17 +1049,14 @@ class RightSidebar extends StatelessWidget with GetItMixin {
   @override
   Widget build(BuildContext context) {
     final selected = watchX((Selected selected) => selected.state);
-    final (
-      :backgroundColor,
-      :backgroundOpacity,
-      :backgroundHidden,
-    ) = watchX((CanvasState canvasState) => canvasState.state);
-    final triangle = selected.firstOrNull == null
+    final canvasStateProvider =
+        watchX((CanvasState canvasState) => canvasState.state);
+    final component = selected.firstOrNull == null
         ? null
-        : componentsNotifier.state.value[selected.first].triangle;
+        : componentsNotifier.state.value[selected.first].component;
     final textTheme = Theme.of(context).textTheme;
 
-    final controls = triangle == null
+    final controls = component == null
         ? null
         : [
             (
@@ -1002,7 +1069,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   ),
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(
-                    text: triangle.pos.dx.toStringAsFixed(1),
+                    text: component.pos.dx.toStringAsFixed(1),
                   ),
                 ),
                 (
@@ -1013,7 +1080,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   ),
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(
-                    text: triangle.pos.dy.toStringAsFixed(1),
+                    text: component.pos.dy.toStringAsFixed(1),
                   ),
                 ),
               ]
@@ -1028,7 +1095,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   ),
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(
-                    text: triangle.size.width.toStringAsFixed(1),
+                    text: component.size.width.toStringAsFixed(1),
                   ),
                 ),
                 (
@@ -1039,7 +1106,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   ),
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(
-                    text: triangle.size.height.toStringAsFixed(1),
+                    text: component.size.height.toStringAsFixed(1),
                   ),
                 ),
               ]
@@ -1057,7 +1124,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(
                     text:
-                        '${((triangle.angle % (pi * 2)) / pi * 180).toStringAsFixed(1)}°',
+                        '${((component.angle % (pi * 2)) / pi * 180).toStringAsFixed(1)}°',
                   ),
                 ),
                 (
@@ -1091,13 +1158,13 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(1),
-                    color: backgroundColor,
+                    color: canvasStateProvider.color,
                   ),
                 ),
                 Expanded(
                   child: TextField(
                     controller: TextEditingController(
-                      text: backgroundColor.value
+                      text: canvasStateProvider.color.value
                           .toRadixString(16)
                           .toUpperCase()
                           .substring(2),
@@ -1109,9 +1176,12 @@ class RightSidebar extends StatelessWidget with GetItMixin {
               ],
             ),
           ),
-          Text(
-            '${(backgroundOpacity * 100).truncate()}%',
-            style: textTheme.bodySmall,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Text(
+              '${(canvasStateProvider.opacity * 100).truncate()}%',
+              style: textTheme.bodySmall,
+            ),
           ),
           Expanded(
             child: Row(
@@ -1126,10 +1196,10 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   constraints:
                       BoxConstraints.tight(const Size(18, double.infinity)),
                   onPressed: () => canvasStateNotifier.update(
-                    backgroundHidden: !backgroundHidden,
+                    backgroundHidden: !canvasStateProvider.hidden,
                   ),
                   icon: Icon(
-                    backgroundHidden
+                    canvasStateProvider.hidden
                         ? CupertinoIcons.eye_slash
                         : CupertinoIcons.eye,
                     size: 14,
@@ -1139,6 +1209,71 @@ class RightSidebar extends StatelessWidget with GetItMixin {
             ),
           ),
         ],
+      ),
+    );
+
+    final canvasSizeControl = [
+      (
+        children: [
+          (
+            prefix: Text(
+              'W',
+              style: textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            keyboardType: TextInputType.number,
+            controller: TextEditingController(
+              text: canvasStateProvider.size.width.toString(),
+            ),
+          ),
+          (
+            prefix: Text(
+              'H',
+              style: textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            keyboardType: TextInputType.number,
+            controller: TextEditingController(
+              text: canvasStateProvider.size.height.toString(),
+            ),
+          ),
+        ]
+      ),
+    ].map(
+      (e) => SizedBox(
+        height: 32,
+        child: Row(
+          children: [
+            ...e.children.map(
+              (e) => SizedBox(
+                width: textFieldWidth,
+                child: Row(
+                  children: [
+                    // w: 24
+                    Container(
+                      width: 16,
+                      height: 16,
+                      margin: const EdgeInsets.only(right: 6),
+                      child: e.prefix,
+                    ),
+                    // w: 72
+                    Expanded(
+                      child: TextField(
+                        cursorHeight: 12,
+                        style: textTheme.bodySmall,
+                        decoration: const InputDecoration.collapsed(
+                          hintText: '',
+                        ),
+                        keyboardType: e.keyboardType,
+                        controller: e.controller,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -1155,9 +1290,15 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                 'Background',
                 style: textTheme.labelMedium,
               ),
-              contents: [backgroundControl]
+              contents: [
+                backgroundControl,
+                const SizedBox(
+                  height: 8,
+                ),
+                ...canvasSizeControl,
+              ]
             ),
-            if (triangle != null)
+            if (component != null)
               (
                 title: null,
                 contents: [
