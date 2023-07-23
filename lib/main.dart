@@ -3,10 +3,16 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:editicert/logic/canvas_service.dart';
+import 'package:editicert/logic/component_index_service.dart';
+import 'package:editicert/logic/component_service.dart';
+import 'package:editicert/logic/global_state_service.dart';
 import 'package:editicert/logic/services.dart';
+import 'package:editicert/logic/tool_service.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:editicert/widgets/creator_widget.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,7 +20,6 @@ import 'package:get_it/get_it.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
-import 'package:super_drag_and_drop/super_drag_and_drop.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -83,6 +88,7 @@ void setup() {
   register<Hovered>(Hovered());
   register<GlobalState>(GlobalState());
   register<CanvasState>(CanvasState());
+  register<Services>(Services());
 }
 
 class Main extends StatelessWidget with GetItMixin {
@@ -182,6 +188,11 @@ class Main extends StatelessWidget with GetItMixin {
               shortcut: const SingleActivator(LogicalKeyboardKey.keyH),
               onSelected: () => toolNotifier.setHand(),
             ),
+            PlatformMenuItem(
+              label: 'Text',
+              shortcut: const SingleActivator(LogicalKeyboardKey.keyT),
+              onSelected: () => toolNotifier.setText(),
+            ),
           ],
         ),
         PlatformMenu(
@@ -264,6 +275,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     final isCreateTooling = globalStateProvider.containsAny({
       GlobalStates.creatingRectangle,
       GlobalStates.creatingFrame,
+      GlobalStates.creatingText,
     });
     final isComponentTooling = globalStateProvider.containsAny({
       GlobalStates.draggingComponent,
@@ -285,7 +297,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
         data.state);
     //
     final tool = watchX((Tool tool) => tool.tool);
-    final isToolHand = tool == ToolData.hand;
+    final isToolHand = tool == ToolType.hand;
     tool;
     //
     final components = watchX((Components components) => components.state);
@@ -323,6 +335,48 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
         body: Stack(
           clipBehavior: Clip.none,
           children: [
+            ValueListenableBuilder(
+                valueListenable: transformationController,
+                builder: (context, transform, child) {
+                  return Positioned(
+                    left: transform.getTranslation().x + sidebarWidth,
+                    top: transform.getTranslation().y + topbarHeight,
+                    child: Container(
+                      width: canvasStateProvider.size.width *
+                          transform.getMaxScaleOnAxis(),
+                      height: canvasStateProvider.size.height *
+                          transform.getMaxScaleOnAxis(),
+                      foregroundDecoration: BoxDecoration(
+                        border: !canvasStateProvider.hidden
+                            ? null
+                            : Border.all(
+                                color: Colors.grey,
+                                strokeAlign: BorderSide.strokeAlignOutside,
+                                width: 2,
+                              ),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                      decoration: BoxDecoration(
+                        color: canvasStateProvider.hidden
+                            ? null
+                            : canvasStateProvider.color,
+                        border: !canvasStateProvider.hidden
+                            ? null
+                            : Border.all(
+                                color: Colors.grey,
+                                strokeAlign: BorderSide.strokeAlignOutside,
+                                width: 1),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black45,
+                            blurRadius: 24,
+                            blurStyle: BlurStyle.outer,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: sidebarWidth)
                   .copyWith(top: topbarHeight),
@@ -342,115 +396,121 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     ),
                   ),
                   // Background/canvas
-                  ClipRect(
-                    clipBehavior: Clip.hardEdge,
-                    child: ValueListenableBuilder(
-                      valueListenable: transformationController,
-                      builder: (context, transform, child) => Transform(
-                        transform: transform,
-                        child: Opacity(
-                          opacity: canvasStateProvider.opacity,
+                  ValueListenableBuilder(
+                    valueListenable: transformationController,
+                    builder: (context, transform, child) => Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        // unselect all
+                        GestureDetector(
+                          onTap: () {
+                            selectedNotifier.clear();
+                            hoveredNotifier.clear();
+                          },
                           child: Container(
-                            width: canvasStateProvider.size.width,
-                            height: canvasStateProvider.size.height,
-                            decoration: BoxDecoration(
-                              color: canvasStateProvider.color,
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black45,
-                                  blurRadius: 24,
-                                  blurStyle: BlurStyle.outer,
+                            width: mqSize.width,
+                            height: mqSize.height,
+                            color: Colors.transparent,
+                          ),
+                        ),
+                        // components label
+                        ...components
+                            .where((element) =>
+                                element.type == ComponentType.frame)
+                            .map(
+                          (e) {
+                            return buildComponentLabel(
+                              e,
+                              canvasStateProvider.color,
+                            );
+                          },
+                        ),
+
+                        // components
+                        ValueListenableBuilder(
+                          valueListenable: transformationController,
+                          builder: (context, transform, child) => Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              ...components.mapIndexed(
+                                (i, component) {
+                                  return component.hidden ||
+                                          (component.type ==
+                                                  ComponentType.text &&
+                                              selected.contains(i) &&
+                                              globalStateProvider.containsAny(
+                                                  {GlobalStates.editingText}))
+                                      ? const SizedBox.shrink()
+                                      : buildComponentWidget(
+                                          i, component, transform);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // controller for selections
+                        AnimatedBuilder(
+                          animation: Listenable.merge([
+                            componentsNotifier.state,
+                            selectedNotifier.state,
+                          ]),
+                          builder: (context, child) => Stack(
+                            children: componentsNotifier.state.value
+                                .mapIndexed((i, e) => ControllerWidget(i))
+                                .toList(),
+                          ),
+                        ),
+
+                        // selected controller(s) (should be at the front of every
+                        // controllers)
+                        AnimatedBuilder(
+                          animation: Listenable.merge([
+                            componentsNotifier.state,
+                            selectedNotifier.state,
+                          ]),
+                          builder: (context, child) => Stack(
+                            children: selectedNotifier.state.value
+                                .mapIndexed((i, e) => ControllerWidget(e))
+                                .toList(),
+                          ),
+                        ),
+                        // components
+                        if (globalStateProvider
+                            .containsAny({GlobalStates.editingText}))
+                          ValueListenableBuilder(
+                            valueListenable: transformationController,
+                            builder: (context, transform, child) => Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                ...selectedNotifier.state.value
+                                    .where((e) =>
+                                        components[e].type ==
+                                        ComponentType.text)
+                                    .mapIndexed(
+                                  (i, e) {
+                                    final component = components[e];
+
+                                    return component.hidden
+                                        ? const SizedBox.shrink()
+                                        : buildComponentWidget(
+                                            e, component, transform,
+                                            editText: true);
+                                  },
                                 ),
                               ],
                             ),
-                            child: Transform(
-                              transform: Matrix4.inverted(transform),
-                              child: Stack(
-                                clipBehavior: Clip.hardEdge,
-                                children: [
-                                  // unselect all
-                                  GestureDetector(
-                                    onTap: () {
-                                      selectedNotifier.clear();
-                                      hoveredNotifier.clear();
-                                    },
-                                    child: Container(
-                                      width: mqSize.width,
-                                      height: mqSize.height,
-                                      color: Colors.transparent,
-                                    ),
-                                  ),
-                                  // components
-                                  ValueListenableBuilder(
-                                    valueListenable: transformationController,
-                                    builder: (context, transform, child) =>
-                                        Transform(
-                                      transform: transform,
-                                      child: Stack(
-                                          clipBehavior: Clip.none,
-                                          children: [
-                                            ...components.mapIndexed(
-                                              (i, e) {
-                                                return e.hidden
-                                                    ? const SizedBox.shrink()
-                                                    : buildComponentWidget(e);
-                                              },
-                                            ),
-                                            const SizedBox.shrink(),
-                                          ]),
-                                    ),
-                                  ),
-                                  // components label
-                                  ...components.mapIndexed(
-                                    (i, e) {
-                                      return buildComponentLabel(
-                                        e,
-                                        canvasStateProvider.color,
-                                      );
-                                    },
-                                  ),
-                                  // selected controller(s) (should be at the front of every
-                                  // controllers)
-                                  AnimatedBuilder(
-                                    animation: Listenable.merge([
-                                      componentsNotifier.state,
-                                      selectedNotifier.state,
-                                    ]),
-                                    builder: (context, child) => Stack(
-                                      children: selectedNotifier.state.value
-                                          .mapIndexed(
-                                              (i, e) => ControllerWidget(i))
-                                          .toList(),
-                                    ),
-                                  ),
-
-                                  // controller for selections
-                                  AnimatedBuilder(
-                                    animation: Listenable.merge([
-                                      componentsNotifier.state,
-                                      selectedNotifier.state,
-                                    ]),
-                                    builder: (context, child) => Stack(
-                                      children: componentsNotifier.state.value
-                                          .mapIndexed(
-                                              (i, e) => ControllerWidget(i))
-                                          .toList(),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
                           ),
-                        ),
-                      ),
+                      ],
                     ),
                   ),
 
                   //
 
-                  if (tool == ToolData.create ||
+                  if (tool == ToolType.rectangle ||
                       isCreateTooling ||
-                      tool == ToolData.frame)
+                      tool == ToolType.frame ||
+                      tool == ToolType.text)
                     const CreatorWidget(),
 
                   // camera (kinda)
@@ -465,21 +525,12 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       ),
                       child: MouseRegion(
                         cursor: switch ((
-                          leftClick,
+                          globalStateNotifier.state.value.states
+                              .contains(GlobalStates.leftClick),
                           isToolHand && (!isNotCanvasTooling || isCanvasTooling)
                         )) {
                           (false, true) => SystemMouseCursors.grab,
                           (true, true) => SystemMouseCursors.grabbing,
-                          _
-                              when globalStateProvider.containsAny(
-                                {GlobalStates.resizingComponent},
-                              ) =>
-                            SystemMouseCursors.precise,
-                          _
-                              when globalStateProvider.containsAny(
-                                {GlobalStates.rotatingComponent},
-                              ) =>
-                            SystemMouseCursors.grabbing,
                           _ => MouseCursor.defer
                         },
                         child: InteractiveViewer.builder(
@@ -501,6 +552,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             }
                           },
                           onInteractionUpdate: (details) {
+                            services.mousePosition.value = details.focalPoint;
                             canvasTransform
                                 .update(transformationController.value);
                             if (details.scale == 1 && !pressedMeta) {
@@ -520,6 +572,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                                   isZooming) &&
                               !globalStateProvider
                                   .containsAny({GlobalStates.panningCanvas}),
+                          interactionEndFrictionCoefficient: 0.000135,
                           boundaryMargin: const EdgeInsets.all(double.infinity),
                           builder: (context, viewport) => const SizedBox(),
                         ),
@@ -559,7 +612,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         (
                           text: 'Move',
                           shortcut: 'V',
-                          tool: ToolData.move,
+                          tool: ToolType.move,
                           onTap: () {
                             toolNotifier.setMove();
                           },
@@ -575,7 +628,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         (
                           text: 'Frame',
                           shortcut: 'F',
-                          tool: ToolData.frame,
+                          tool: ToolType.frame,
                           onTap: () {
                             toolNotifier.setFrame();
                           },
@@ -587,7 +640,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         (
                           text: 'Rectangle',
                           shortcut: 'R',
-                          tool: ToolData.create,
+                          tool: ToolType.rectangle,
                           onTap: () {
                             toolNotifier.setRectangle();
                           },
@@ -599,12 +652,24 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         (
                           text: 'Hand',
                           shortcut: 'H',
-                          tool: ToolData.hand,
+                          tool: ToolType.hand,
                           onTap: () {
                             toolNotifier.setHand();
                           },
                           icon: const Icon(
                             CupertinoIcons.hand_raised,
+                            size: 18,
+                          )
+                        ),
+                        (
+                          text: 'Text',
+                          shortcut: 'T',
+                          tool: ToolType.text,
+                          onTap: () {
+                            toolNotifier.setText();
+                          },
+                          icon: const Icon(
+                            CupertinoIcons.textbox,
                             size: 18,
                           )
                         ),
@@ -646,6 +711,28 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         ),
                       ),
                       const Spacer(),
+                      TextButton.icon(
+                        style: ButtonStyle(
+                          shape: MaterialStateProperty.all(
+                            ContinuousRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                        onPressed: () {
+                          transformationController.value =
+                              Matrix4.identity().scaled(
+                            transformationController.value.getMaxScaleOnAxis(),
+                            transformationController.value.getMaxScaleOnAxis(),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.navigation_rounded,
+                          size: 16,
+                        ),
+                        label: const Text('Recenter'),
+                      ),
+                      const SizedBox(width: 8),
                       ValueListenableBuilder(
                         valueListenable: transformationController,
                         builder: (context, value, child) {
@@ -704,13 +791,16 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                                               size: 12,
                                             ),
                                           ),
-                                          Text(
-                                            e.name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall,
+                                          Expanded(
+                                            child: Text(
+                                              e.name.replaceAll('\n', ' '),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
+                                            ),
                                           ),
-                                          const Spacer(),
                                           if (hovered.contains(i))
                                             SizedBox(
                                               width: 18 * 2,
@@ -894,6 +984,91 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ),
               ],
             ),
+            Positioned.fill(
+              child: TransparentPointer(
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([
+                    globalStateNotifier.state,
+                  ]),
+                  builder: (context, child) {
+                    var leftClick = globalStateNotifier.state.value.states
+                        .contains(GlobalStates.leftClick);
+
+                    return MouseRegion(
+                      cursor: switch (leftClick) {
+                        true
+                            when globalStateNotifier.state.value.containsAny(
+                              {
+                                GlobalStates.resizingComponent,
+                                GlobalStates.rotatingComponent
+                              },
+                            ) =>
+                          SystemMouseCursors.none,
+                        _ => MouseCursor.defer
+                      },
+                      onHover: (event) =>
+                          services.mousePosition.value = event.position,
+                    );
+                  },
+                ),
+              ),
+            ),
+            AnimatedBuilder(
+              animation: Listenable.merge([
+                services.mousePosition,
+                globalStateNotifier.state,
+                toolNotifier.tool,
+                componentsNotifier.state,
+                selectedNotifier.state,
+              ]),
+              builder: (context, child) {
+                final stateContains =
+                    globalStateNotifier.state.value.containsAny;
+
+                final isRotating = globalStateNotifier.state.value.states
+                    .contains(GlobalStates.rotatingComponent);
+
+                final enabled = stateContains({
+                  GlobalStates.rotatingComponent,
+                  GlobalStates.resizingComponent
+                });
+
+                var angle = 0.0;
+                if (selectedNotifier.state.value.isNotEmpty && enabled) {
+                  angle = componentsNotifier
+                          .state
+                          .value[selectedNotifier.state.value.first]
+                          .component
+                          .angle +
+                      (isRotating ? pi / 6 : 0);
+                }
+
+                return !enabled
+                    ? const SizedBox.shrink()
+                    : Transform.translate(
+                        offset: services.mousePosition.value,
+                        child: Transform.translate(
+                          offset: const Offset(-12, -12),
+                          child: Transform.rotate(
+                            angle: angle,
+                            child: IgnorePointer(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Icon(
+                                  isRotating
+                                      ? CupertinoIcons.arrow_turn_up_right
+                                      : CupertinoIcons.arrow_left_right,
+                                  size: 14,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+              },
+            )
           ],
         ),
       ),
@@ -992,7 +1167,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               offset: Offset(tWidth < 0 ? -1 : 0, -1),
               duration: Duration.zero,
               child: SizedBox(
-                width: tWidth * scale,
+                width: (tWidth * scale).abs(),
                 height: 24,
                 child: Text(
                   e.name,
@@ -1011,40 +1186,154 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     );
   }
 
-  Widget buildComponentWidget(ComponentData e) {
+  Widget buildComponentWidget(int index, ComponentData e, Matrix4 transform,
+      {bool editText = false}) {
     final component = e.component;
+    final scale = transform.getMaxScaleOnAxis();
     final tWidth = component.size.width;
     final tHeight = component.size.height;
 
-    final child = Container(
-      width: tWidth < 0 ? -tWidth : tWidth,
-      height: tHeight < 0 ? -tHeight : tHeight,
-      decoration: BoxDecoration(
-        borderRadius: e.borderRadius,
-        border: e.border,
-        color: e.color,
-      ),
-    );
+    final child = e.type == ComponentType.text
+        ? SizedBox(
+            width: tWidth < 0 ? -tWidth : tWidth,
+            height: tHeight < 0 ? -tHeight : tHeight,
+            child: !editText
+                ? Text(
+                    e.name,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  )
+                : TextField(
+                    autofocus: true,
+                    controller: e.textController,
+                    onChanged: (value) {
+                      componentsNotifier.replace(index, name: value);
+
+                      print(value);
+
+                      final textStyle = Theme.of(context).textTheme.bodyMedium;
+
+                      final textSpan = TextSpan(
+                        text: value,
+                        style: textStyle,
+                      );
+
+                      final textPainter = TextPainter(
+                        text: textSpan,
+                        textDirection: TextDirection.ltr,
+                      );
+
+                      textPainter.layout(
+                        minWidth: 0,
+                        maxWidth: tWidth.abs(),
+                      );
+
+                      final height = textPainter.height;
+                      final newRect = rotateRect(
+                        Rect.fromLTWH(
+                          component.rect.topLeft.dx,
+                          component.rect.topLeft.dy,
+                          component.size.width,
+                          height,
+                        ),
+                        component.angle,
+                        component.rect.center,
+                      );
+                      if (height != component.size.height) {
+                        componentsNotifier.replace(
+                          index,
+                          transform: Component.fromEdges(
+                            (
+                              tl: newRect.tl,
+                              tr: newRect.tr,
+                              bl: newRect.bl,
+                              br: newRect.br,
+                            ),
+                            flipX: tWidth < 0,
+                            flipY: tHeight < 0,
+                            keepOrigin: true,
+                          ),
+                        );
+                      }
+                    },
+                    onTapOutside: (event) {
+                      print('TAPOUTSIDE');
+                      globalStateNotifier.remove(GlobalStates.editingText);
+                      e.textController?.dispose();
+                    },
+                    expands: true,
+                    maxLines: null,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    cursorHeight:
+                        Theme.of(context).textTheme.bodyMedium?.fontSize,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 3),
+                    ),
+                  ),
+          )
+        : Container(
+            width: tWidth < 0 ? -tWidth : tWidth,
+            height: tHeight < 0 ? -tHeight : tHeight,
+            decoration: BoxDecoration(
+              borderRadius: e.borderRadius,
+              border: e.border,
+              color: e.color,
+            ),
+          );
 
     return Positioned(
-      left: component.pos.dx + (tWidth < 0 ? tWidth : 0),
-      top: component.pos.dy + (tHeight < 0 ? tHeight : 0),
-      child: Transform.rotate(
-        angle: component.angle,
-        child: Transform.flip(
-          flipX: tWidth < 0,
-          flipY: tHeight < 0,
-          child: child,
+      left: transform.getTranslation().x +
+          component.pos.dx * scale +
+          (tWidth < 0 ? tWidth : 0),
+      top: transform.getTranslation().y +
+          component.pos.dy * scale +
+          (tHeight < 0 ? tHeight : 0),
+      child: Transform.scale(
+        scale: scale,
+        alignment: Alignment.topLeft,
+        child: Transform.rotate(
+          angle: component.angle,
+          child: Transform.flip(
+            flipX: tWidth < 0,
+            flipY: tHeight < 0,
+            child: child,
+          ),
         ),
       ),
     );
   }
 }
 
-class RightSidebar extends StatelessWidget with GetItMixin {
+class RightSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
   RightSidebar({
     super.key,
   });
+
+  @override
+  State<RightSidebar> createState() => _RightSidebarState();
+}
+
+class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
+  late final TextEditingController backgroundColorController;
+  late final TextEditingController backgroundWidthController;
+  late final TextEditingController backgroundHeightController;
+
+  @override
+  void initState() {
+    backgroundColorController = TextEditingController(
+      text: canvasStateNotifier.state.value.color.value
+          .toRadixString(16)
+          .toUpperCase()
+          .substring(2),
+    );
+    backgroundWidthController = TextEditingController(
+      text: canvasStateNotifier.state.value.size.width.toString(),
+    );
+    backgroundHeightController = TextEditingController(
+      text: canvasStateNotifier.state.value.size.height.toString(),
+    );
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1157,20 +1446,24 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                   height: 16,
                   margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(2),
                     color: canvasStateProvider.color,
                   ),
                 ),
                 Expanded(
                   child: TextField(
-                    controller: TextEditingController(
-                      text: canvasStateProvider.color.value
-                          .toRadixString(16)
-                          .toUpperCase()
-                          .substring(2),
+                    maxLength: 6,
+                    onChanged: (value) => canvasStateNotifier.update(
+                      backgroundColor: value.toColor,
                     ),
+                    controller: backgroundColorController,
                     style: textTheme.bodySmall,
-                    decoration: const InputDecoration.collapsed(hintText: ''),
+                    decoration: const InputDecoration(
+                      hintText: '',
+                      counter: SizedBox.shrink(),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.only(top: 32),
+                    ),
                   ),
                 ),
               ],
@@ -1222,9 +1515,17 @@ class RightSidebar extends StatelessWidget with GetItMixin {
               textAlign: TextAlign.center,
             ),
             keyboardType: TextInputType.number,
-            controller: TextEditingController(
-              text: canvasStateProvider.size.width.toString(),
-            ),
+            controller: backgroundWidthController,
+            onChanged: (text) {
+              print('test');
+              print(canvasStateProvider.size);
+              canvasStateNotifier.update(
+                  backgroundSize: Size(
+                double.parse(text),
+                canvasStateProvider.size.height,
+              ));
+              print(canvasStateProvider.size);
+            }
           ),
           (
             prefix: Text(
@@ -1233,9 +1534,12 @@ class RightSidebar extends StatelessWidget with GetItMixin {
               textAlign: TextAlign.center,
             ),
             keyboardType: TextInputType.number,
-            controller: TextEditingController(
-              text: canvasStateProvider.size.height.toString(),
-            ),
+            controller: backgroundHeightController,
+            onChanged: (text) => canvasStateNotifier.update(
+                    backgroundSize: Size(
+                  canvasStateProvider.size.width,
+                  double.parse(text),
+                ))
           ),
         ]
       ),
@@ -1259,6 +1563,7 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                     // w: 72
                     Expanded(
                       child: TextField(
+                        onChanged: e.onChanged,
                         cursorHeight: 12,
                         style: textTheme.bodySmall,
                         decoration: const InputDecoration.collapsed(
@@ -1300,16 +1605,20 @@ class RightSidebar extends StatelessWidget with GetItMixin {
             ),
             if (component != null)
               (
-                title: null,
+                title: Text(
+                  'Component',
+                  style: textTheme.labelMedium,
+                ),
                 contents: [
-                  Transform.translate(
-                    // offset: const Offset(0, -8),
-                    offset: Offset.zero,
-                    child: Column(
-                      children: [
-                        ...controls!.map(
-                          (e) => SizedBox(
-                            height: 32,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...controls!.mapIndexed(
+                        (i, e) => Padding(
+                          padding: EdgeInsets.only(
+                              bottom: i == controls.length - 1 ? 8 : 16.0),
+                          child: SizedBox(
+                            height: 16,
                             child: Row(
                               children: [
                                 ...e.children.map(
@@ -1346,33 +1655,35 @@ class RightSidebar extends StatelessWidget with GetItMixin {
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ]
               ),
-          ].map((e) {
-            final title = e.title;
-
-            return Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.grey.withOpacity(.5),
-                    width: 1,
+          ].map(
+            (e) {
+              final title = e.title;
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.grey.withOpacity(.5),
+                      width: 1,
+                    ),
                   ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (title != null) SizedBox(height: 32, child: title),
-                  ...e.contents.map((e) => e),
-                ],
-              ),
-            );
-          }),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (title != null) SizedBox(height: 32, child: title),
+                    ...e.contents.map((e) => e),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

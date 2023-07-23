@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:math';
 
-import 'package:editicert/logic/services.dart';
+import 'package:editicert/logic/component_index_service.dart';
+import 'package:editicert/logic/component_service.dart';
+import 'package:editicert/logic/global_state_service.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -59,6 +62,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
   final _visualComponent =
       ValueNotifier(const Component(Offset.zero, Size.zero, 0));
 
+  final stopwatch = Stopwatch();
+
   @override
   void initState() {
     final component = (componentsNotifier.state.value[widget.index]).component;
@@ -70,6 +75,12 @@ class _ControllerWidgetState extends State<ControllerWidget>
     });
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
   }
 
   @override
@@ -130,15 +141,44 @@ class _ControllerWidgetState extends State<ControllerWidget>
                     flipY: tSize.height < 0,
                     child: Listener(
                       onPointerDown: (event) {
-                        selectedNotifier.clear();
-                        hoveredNotifier
-                          ..clear()
-                          ..add(widget.index);
+                        stopwatch.start();
+                        (globalStateNotifier).update(
+                          (globalStateNotifier.state.value) +
+                              GlobalStates.draggingComponent,
+                        );
+                        if (!selectedNotifier.state.value
+                            .contains(widget.index)) {
+                          selectedNotifier.clear();
+                          hoveredNotifier.clear();
+                        }
                         handlePointerDownGlobal(event);
                       },
-                      onPointerMove: locked ? null : handleMove,
+                      onPointerMove: locked
+                          ? null
+                          : (event) {
+                              if (stopwatch.isRunning) {
+                                stopwatch
+                                  ..stop()
+                                  ..reset();
+                              }
+                              handleMove(event);
+                            },
                       onPointerUp: (event) {
+                        // handle text edit
+                        if (componentsNotifier.state.value[widget.index].type ==
+                                ComponentType.text &&
+                            stopwatch.isRunning &&
+                            stopwatch.elapsedMilliseconds <= 500) {
+                          print('TAPPED');
+                          (globalStateNotifier).update(
+                              (globalStateNotifier.state.value) +
+                                  GlobalStates.editingText);
+                          componentsNotifier.replace(widget.index,
+                              controller:
+                                  TextEditingController(text: component.name));
+                        }
                         selectedNotifier.add(widget.index);
+                        hoveredNotifier.add(widget.index);
                         handlePointerUp(event);
                       },
                       child: MouseRegion(
@@ -224,8 +264,9 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   /// basically save data
   void handlePointerUp(PointerUpEvent _) {
-    (globalStateNotifier).update(
-      (globalStateNotifier.state.value) -
+    print('UP');
+    globalStateNotifier.update(
+      globalStateNotifier.state.value -
           GlobalStates.draggingComponent -
           GlobalStates.resizingComponent -
           GlobalStates.rotatingComponent,
@@ -287,6 +328,12 @@ class _ControllerWidgetState extends State<ControllerWidget>
                 handlePointerDownGlobal(event);
               },
               onPointerMove: (event) {
+                (globalStateNotifier).update(
+                  (globalStateNotifier.state.value) +
+                      (rotate
+                          ? GlobalStates.rotatingComponent
+                          : GlobalStates.resizingComponent),
+                );
                 if (resize && alignment != null) {
                   handleResize(event, alignment, selected);
                 } else if (rotate) {
@@ -310,7 +357,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
                           color: Colors.white,
                           border:
                               Border.all(width: 1, color: Colors.blueAccent),
-                        ),
+                          borderRadius: BorderRadius.circular(2)),
                 ),
               ),
             ),
@@ -671,6 +718,7 @@ class Component {
     ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
     bool flipX = false,
     bool flipY = false,
+    bool keepOrigin = false,
   }) {
     final topLeft = edges.tl;
 
@@ -680,22 +728,47 @@ class Component {
     );
     final angle = atan2(edges.tr.dy - topLeft.dy, edges.tr.dx - topLeft.dx);
 
-    final newEdges = rotateRect(
-      Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height),
-      0,
-      Offset.zero,
-    );
+    final newEdges = !keepOrigin
+        ? rotateRect(
+            Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height),
+            0,
+            Offset.zero,
+          )
+        : rotateRect(
+            Rect.fromLTWH(0, 0, size.width, size.height),
+            0,
+            Offset.zero,
+          );
 
-    final newComponent = Component(
+    var newComponent = Component(
       newEdges.tl,
       size,
       angle + (flipX ? pi : 0),
     );
 
+    if (keepOrigin) {
+      final difference = topLeft - newComponent.rotatedEdges.tl;
+
+      newComponent = Component(
+        newEdges.tl + difference,
+        size,
+        angle + (flipX ? pi : 0),
+      );
+    }
+
+    print('CORRECTEDRECT:');
+    print(newComponent.rotatedEdges.tl);
+
+    ///----------------------------------------
+    print(
+        Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height).topLeft);
+    print(newEdges.tl);
+
+    ///----------------------------------------
     return newComponent;
   }
 
-  copyWith({Offset? pos, Size? size, double? angle}) {
+  Component copyWith({Offset? pos, Size? size, double? angle}) {
     return Component(pos ?? this.pos, size ?? this.size, angle ?? this.angle);
   }
 

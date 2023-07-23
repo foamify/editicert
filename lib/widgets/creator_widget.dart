@@ -1,6 +1,8 @@
 import 'dart:math';
 
-import 'package:editicert/logic/services.dart';
+import 'package:editicert/logic/component_service.dart';
+import 'package:editicert/logic/global_state_service.dart';
+import 'package:editicert/logic/tool_service.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/material.dart';
@@ -36,16 +38,36 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   }
 
   void handlePointerDown(PointerDownEvent event) {
-    globalStateNotifier
-        .update(globalStateNotifier.state.value + GlobalStates.creatingRectangle);
+    final componentType = {
+      ToolType.frame: ComponentType.frame,
+      ToolType.rectangle: ComponentType.rectangle,
+      ToolType.text: ComponentType.text,
+    };
+    final componentName = {
+      ToolType.frame: 'Frame',
+      ToolType.rectangle: 'Rectangle',
+      ToolType.text: 'Text',
+    };
+
+    globalStateNotifier.update(
+      globalStateNotifier.state.value + GlobalStates.creatingRectangle,
+    );
+
     final tController = canvasTransform.state.value;
+
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
     oComponent.value = Component(oPosition.value, Size.zero, 0);
+
     final index = componentsNotifier.state.value.length;
+
     componentsNotifier.add(ComponentData(
       component: oComponent.value,
-      name: 'Rectangle ${index + 1}',
+      name: '${componentName[toolNotifier.tool.value]} ${index + 1}',
+      type: componentType[toolNotifier.tool.value] ?? ComponentType.other,
+      color: toolNotifier.tool.value == ToolType.text
+          ? Colors.transparent
+          : const Color(0xFF9E9E9E),
     ));
   }
 
@@ -114,8 +136,8 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   }
 
   void handlePointerUp(PointerUpEvent _) {
-    globalStateNotifier
-        .update(globalStateNotifier.state.value - GlobalStates.creatingRectangle);
+    globalStateNotifier.update(
+        globalStateNotifier.state.value - GlobalStates.creatingRectangle);
 
     final components = componentsNotifier.state.value;
     final index = components.length - 1;

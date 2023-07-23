@@ -129,6 +129,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.6.0"
+  chalkdart:
+    dependency: transitive
+    description:
+      name: chalkdart
+      sha256: "5fceaf0eb65cb3a0746423aad4b285b9ec123133b9435630ac027f305b21e8b5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.9"
   characters:
     dependency: transitive
     description:
@@ -209,6 +217,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
+  custom_mouse_cursor:
+    dependency: "direct main"
+    description:
+      name: custom_mouse_cursor
+      sha256: "66e8949273aa5f3199f6a23e9ca488a0d8e0587ddba54189d7790a136f391edb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   dart_code_metrics:
     dependency: "direct dev"
     description:
@@ -281,6 +297,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  flex_color_picker:
+    dependency: "direct main"
+    description:
+      name: flex_color_picker
+      sha256: d8279250820ad279123fa8ee94151dd99400dd9ef4fb096589fcf956765d39a9
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.2"
+  flex_seed_scheme:
+    dependency: transitive
+    description:
+      name: flex_seed_scheme
+      sha256: "29c12aba221eb8a368a119685371381f8035011d18de5ba277ad11d7dfb8657f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -823,4 +855,4 @@ packages:
     version: "3.1.2"
 sdks:
   dart: ">=3.0.0 <4.0.0"
-  flutter: ">=3.7.0"
+  flutter: ">=3.10.0"
