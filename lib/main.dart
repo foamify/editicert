@@ -335,6 +335,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
         body: Stack(
           clipBehavior: Clip.none,
           children: [
+            /// Canvas Background
             ValueListenableBuilder(
                 valueListenable: transformationController,
                 builder: (context, transform, child) {
@@ -377,6 +378,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     ),
                   );
                 }),
+            /// Components and Controllers
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: sidebarWidth)
                   .copyWith(top: topbarHeight),
@@ -582,6 +584,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ],
               ),
             ),
+            /// Top bar, side bars
             Column(
               children: [
                 /// Top bar
@@ -984,6 +987,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ),
               ],
             ),
+            /// Custom pointer handler
             Positioned.fill(
               child: TransparentPointer(
                 child: AnimatedBuilder(
@@ -1013,6 +1017,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ),
               ),
             ),
+            /// Custom pointer
             AnimatedBuilder(
               animation: Listenable.merge([
                 services.mousePosition,
