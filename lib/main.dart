@@ -1031,7 +1031,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             enableOpacity: true,
                             enableShadesSelection: false,
                             enableTonalPalette: false,
-                            enableBrightness: false,
                             pickersEnabled: const {
                               ColorPickerType.wheel: true,
                               ColorPickerType.accent: false,
