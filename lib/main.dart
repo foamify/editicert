@@ -260,12 +260,12 @@ class HomePage extends StatefulWidget with GetItStatefulWidgetMixin {
 
 class _HomePageState extends State<HomePage> with GetItStateMixin {
   final oMatrix = ValueNotifier(Matrix4.identity());
+  var isShowColorPicker = false;
 
   @override
   Widget build(BuildContext context) {
     final canvasStateProvider =
         watchX((CanvasState canvasState) => canvasState.state);
-
     //
     final globalStateProvider =
         watchX((GlobalState globalState) => globalState.state);
@@ -337,47 +337,49 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
           children: [
             /// Canvas Background
             ValueListenableBuilder(
-                valueListenable: transformationController,
-                builder: (context, transform, child) {
-                  return Positioned(
-                    left: transform.getTranslation().x + sidebarWidth,
-                    top: transform.getTranslation().y + topbarHeight,
-                    child: Container(
-                      width: canvasStateProvider.size.width *
-                          transform.getMaxScaleOnAxis(),
-                      height: canvasStateProvider.size.height *
-                          transform.getMaxScaleOnAxis(),
-                      foregroundDecoration: BoxDecoration(
-                        border: !canvasStateProvider.hidden
-                            ? null
-                            : Border.all(
-                                color: Colors.grey,
-                                strokeAlign: BorderSide.strokeAlignOutside,
-                                width: 2,
-                              ),
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                      decoration: BoxDecoration(
-                        color: canvasStateProvider.hidden
-                            ? null
-                            : canvasStateProvider.color,
-                        border: !canvasStateProvider.hidden
-                            ? null
-                            : Border.all(
-                                color: Colors.grey,
-                                strokeAlign: BorderSide.strokeAlignOutside,
-                                width: 1),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black45,
-                            blurRadius: 24,
-                            blurStyle: BlurStyle.outer,
-                          ),
-                        ],
-                      ),
+              valueListenable: transformationController,
+              builder: (context, transform, child) {
+                return Positioned(
+                  left: transform.getTranslation().x + sidebarWidth,
+                  top: transform.getTranslation().y + topbarHeight,
+                  child: Container(
+                    width: canvasStateProvider.size.width *
+                        transform.getMaxScaleOnAxis(),
+                    height: canvasStateProvider.size.height *
+                        transform.getMaxScaleOnAxis(),
+                    foregroundDecoration: BoxDecoration(
+                      border: !canvasStateProvider.hidden
+                          ? null
+                          : Border.all(
+                              color: Colors.grey,
+                              strokeAlign: BorderSide.strokeAlignOutside,
+                              width: 2,
+                            ),
+                      borderRadius: BorderRadius.circular(1),
                     ),
-                  );
-                }),
+                    decoration: BoxDecoration(
+                      color: canvasStateProvider.hidden
+                          ? null
+                          : canvasStateProvider.color,
+                      border: !canvasStateProvider.hidden
+                          ? null
+                          : Border.all(
+                              color: Colors.grey,
+                              strokeAlign: BorderSide.strokeAlignOutside,
+                              width: 1),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black45,
+                          blurRadius: 24,
+                          blurStyle: BlurStyle.outer,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
             /// Components and Controllers
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: sidebarWidth)
@@ -584,6 +586,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ],
               ),
             ),
+
             /// Top bar, side bars
             Column(
               children: [
@@ -981,12 +984,68 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       const Expanded(
                         child: SizedBox.shrink(),
                       ),
-                      RightSidebar(),
+                      RightSidebar(
+                        toggleColorPicker: () {
+                          isShowColorPicker = !isShowColorPicker;
+                          setState(() {});
+                        },
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
+
+            /// Color picker
+            if (isShowColorPicker)
+              Positioned(
+                top: topbarHeight + 4,
+                right: sidebarWidth + 4,
+                child: Container(
+                  width: 240,
+                  height: 320,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: ColorPicker(
+                            color: canvasStateProvider.color,
+                            onColorChanged: (value) {
+                              canvasStateNotifier.update(
+                                backgroundColor: value,
+                              );
+                            },
+                            padding: EdgeInsets.zero,
+                            wheelSquarePadding: 24,
+                            columnSpacing: 0,
+                            opacityTrackHeight: 10,
+                            opacityThumbRadius: 12,
+                            wheelWidth: 8,
+                            colorCodeHasColor: true,
+                            showColorCode: true,
+                            enableOpacity: true,
+                            enableShadesSelection: false,
+                            enableTonalPalette: false,
+                            enableBrightness: false,
+                            pickersEnabled: const {
+                              ColorPickerType.wheel: true,
+                              ColorPickerType.accent: false,
+                              ColorPickerType.primary: false,
+                              ColorPickerType.both: false,
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
             /// Custom pointer handler
             Positioned.fill(
               child: TransparentPointer(
@@ -1017,6 +1076,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ),
               ),
             ),
+
             /// Custom pointer
             AnimatedBuilder(
               animation: Listenable.merge([
@@ -1312,7 +1372,10 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 class RightSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
   RightSidebar({
     super.key,
+    required this.toggleColorPicker,
   });
+
+  final VoidCallback toggleColorPicker;
 
   @override
   State<RightSidebar> createState() => _RightSidebarState();
@@ -1454,6 +1517,10 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     borderRadius: BorderRadius.circular(2),
                     color: canvasStateProvider.color,
                   ),
+                  child: InkWell(
+                    onTap: widget.toggleColorPicker,
+                    child: const SizedBox.shrink(),
+                  ),
                 ),
                 Expanded(
                   child: TextField(
@@ -1477,7 +1544,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: Text(
-              '${(canvasStateProvider.opacity * 100).truncate()}%',
+              '${(canvasStateProvider.color.opacity * 100).truncate()}%',
               style: textTheme.bodySmall,
             ),
           ),
