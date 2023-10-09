@@ -65,5 +65,6 @@ Certificate Editor & Batch Exporter
 - Eyedrop
   - Without showing the controls
 - Touch bar (personal feature)
+- Recenter button
 - Canvas Guides (like lunacy)
 - TBA
