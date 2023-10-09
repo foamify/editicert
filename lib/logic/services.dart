@@ -5,7 +5,6 @@ class Services {
   final mousePosition = ValueNotifier(Offset.zero);
 }
 
-
 class Keys {
   final state = ValueNotifier<Set<LogicalKeyboardKey>>({});
 

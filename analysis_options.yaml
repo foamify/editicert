@@ -1,1 +1,12 @@
 include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+
+dart_code_metrics:
+  extends:
+    - package:dart_code_metrics_presets/recommended.yaml
+    - package:dart_code_metrics_presets/metrics_recommended.yaml
+  rules-exclude:
+    - test/**
+    - lib/generated/**
