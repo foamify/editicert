@@ -2,10 +2,13 @@ import 'dart:math';
 
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
-import 'package:editicert/logic/global_state_service.dart';
+import 'package:editicert/state/canvas_events_cubit.dart';
+import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/keys_cubit.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 
 class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
@@ -21,7 +24,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
     with GetItStateMixin {
   Offset toScene(Offset offset) => tControl().toScene(offset);
 
-  TransformationController tControl() => (canvasTransform.state.value);
+  TransformationController tControl() =>
+      (context.read<CanvasTransformCubit>().state);
 
   ({Offset bl, Offset br, Offset tl, Offset tr}) getRotatedEdges() {
     final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
@@ -97,9 +101,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final hidden = component.hidden;
     final locked = component.locked;
     //
-    final moving = (globalStateNotifier.state.value)
-        .states
-        .contains(GlobalStates.draggingComponent);
+    final moving = (context.read<CanvasEventsCubit>().state)
+        .contains(CanvasEvent.draggingComponent);
 
     registerHandler(
       (Components components) => components.state,
@@ -114,7 +117,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     return AnimatedBuilder(
       animation: Listenable.merge([
         _visualComponent,
-        (canvasTransform.state.value),
+        (context.read<CanvasTransformCubit>().state),
         selectedNotifier.state,
       ]),
       builder: (context, child) {
@@ -141,9 +144,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
                     child: Listener(
                       onPointerDown: (event) {
                         stopwatch.start();
-                        (globalStateNotifier).update(
-                          (globalStateNotifier.state.value) +
-                              GlobalStates.draggingComponent,
+                        (context.read<CanvasEventsCubit>()).add(
+                              CanvasEvent.draggingComponent,
                         );
                         if (!selectedNotifier.state.value
                             .contains(widget.index)) {
@@ -169,9 +171,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
                             stopwatch.isRunning &&
                             stopwatch.elapsedMilliseconds <= 500) {
                           print('TAPPED');
-                          (globalStateNotifier).update(
-                              (globalStateNotifier.state.value) +
-                                  GlobalStates.editingText);
+                          (context.read<CanvasEventsCubit>()).add(
+                                  CanvasEvent.editingText);
                           componentsNotifier.replace(widget.index,
                               controller:
                                   TextEditingController(text: component.name));
@@ -264,12 +265,10 @@ class _ControllerWidgetState extends State<ControllerWidget>
   /// basically save data
   void handlePointerUp(PointerUpEvent _) {
     print('UP');
-    globalStateNotifier.update(
-      globalStateNotifier.state.value -
-          GlobalStates.draggingComponent -
-          GlobalStates.resizingComponent -
-          GlobalStates.rotatingComponent,
-    );
+    context.read<CanvasEventsCubit>()
+      ..remove(CanvasEvent.draggingComponent)
+      ..remove(CanvasEvent.resizingComponent)
+      ..remove(CanvasEvent.rotatingComponent);
     _component.value = _visualComponent.value;
   }
 
@@ -318,20 +317,18 @@ class _ControllerWidgetState extends State<ControllerWidget>
             offset: Offset.zero,
             child: Listener(
               onPointerDown: (event) {
-                (globalStateNotifier).update(
-                  (globalStateNotifier.state.value) +
-                      (rotate
-                          ? GlobalStates.rotatingComponent
-                          : GlobalStates.resizingComponent),
+                (context.read<CanvasEventsCubit>()).add(
+                  (rotate
+                      ? CanvasEvent.rotatingComponent
+                      : CanvasEvent.resizingComponent),
                 );
                 handlePointerDownGlobal(event);
               },
               onPointerMove: (event) {
-                (globalStateNotifier).update(
-                  (globalStateNotifier.state.value) +
-                      (rotate
-                          ? GlobalStates.rotatingComponent
-                          : GlobalStates.resizingComponent),
+                (context.read<CanvasEventsCubit>()).add(
+                  (rotate
+                      ? CanvasEvent.rotatingComponent
+                      : CanvasEvent.resizingComponent),
                 );
                 if (resize && alignment != null) {
                   handleResize(event, alignment, selected);
@@ -371,7 +368,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     required Alignment alignment,
   }) {
     final tValue = _visualComponent.value;
-    // final scale = (canvasTransformNotifier.state.value).getMaxScaleOnAxis();
+    // final scale = (context.read<CanvasTransformCubit>()Notifier.state.value).getMaxScaleOnAxis();
     const margin = 5.0;
 
     final edges = tValue.edges;
@@ -435,9 +432,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
             onPointerDown: (event) {
               handlePointerDownGlobal(event);
 
-              (globalStateNotifier).update(
-                (globalStateNotifier.state.value) +
-                    GlobalStates.resizingComponent,
+              (context.read<CanvasEventsCubit>()).add(
+                CanvasEvent.resizingComponent,
               );
             },
             onPointerMove: (event) {
@@ -463,8 +459,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
   void handleMove(
     PointerMoveEvent event,
   ) {
-    (globalStateNotifier).update(
-      (globalStateNotifier.state.value) + GlobalStates.draggingComponent,
+    (context.read<CanvasEventsCubit>()).add(
+      CanvasEvent.draggingComponent,
     );
     final delta = event.position - _originalPosition.value;
     _component.value = _originalComponent.value.copyWith(
@@ -475,7 +471,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   /// Handles rotation from the center of the widget to the pointer
   void handleRotate(PointerMoveEvent event) {
     final center = MatrixUtils.transformPoint(
-      (canvasTransform.state.value.value),
+      (context.read<CanvasTransformCubit>().state.value),
       _originalComponent.value.rect.center,
     );
     final originalAngle = atan2(
@@ -500,7 +496,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   ) {
     final tValue = _originalComponent.value;
 
-    final keys = keysNotifier.state.value;
+    final keys = context.read<KeysCubit>().state;
     // this is for mirrored resize
     final pressedAlt = keys.contains(LogicalKeyboardKey.alt) ||
         keys.contains(LogicalKeyboardKey.altLeft) ||

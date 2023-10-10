@@ -1,12 +1,16 @@
 import 'dart:math';
 
 import 'package:editicert/logic/component_service.dart';
-import 'package:editicert/logic/global_state_service.dart';
-import 'package:editicert/logic/tool_service.dart';
+import 'package:editicert/state/canvas_events_cubit.dart';
+import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/keys_cubit.dart';
+import 'package:editicert/state/tool_cubit.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CreatorWidget extends StatefulWidget {
   const CreatorWidget({super.key});
@@ -49,11 +53,13 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       ToolType.text: 'Text',
     };
 
-    globalStateNotifier.update(
-      globalStateNotifier.state.value + GlobalStates.creatingRectangle,
+    final canvasEvents = context.read<CanvasEventsCubit>();
+
+    canvasEvents.add(
+      CanvasEvent.creatingRectangle,
     );
 
-    final tController = canvasTransform.state.value;
+    final tController = context.read<CanvasTransformCubit>().state;
 
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
@@ -61,19 +67,21 @@ class _CreatorWidgetState extends State<CreatorWidget> {
 
     final index = componentsNotifier.state.value.length;
 
+    final currentTool = context.read<ToolCubit>().state;
+
     componentsNotifier.add(ComponentData(
       component: oComponent.value,
-      name: '${componentName[toolNotifier.tool.value]} ${index + 1}',
-      type: componentType[toolNotifier.tool.value] ?? ComponentType.other,
-      color: toolNotifier.tool.value == ToolType.text
+      name: '${componentName[currentTool]} ${index + 1}',
+      type: componentType[currentTool] ?? ComponentType.other,
+      color: currentTool == ToolType.text
           ? Colors.transparent
           : const Color(0xFF9E9E9E),
     ));
   }
 
   void handlePointerMove(PointerMoveEvent event) {
-    final tController = canvasTransform.state.value;
-    final keys = keysNotifier.state.value;
+    final tController = context.read<CanvasTransformCubit>().state;
+    final keys = context.read<KeysCubit>().state;
     final shift = keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
     final alt = keys.contains(LogicalKeyboardKey.altLeft) ||
@@ -136,8 +144,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   }
 
   void handlePointerUp(PointerUpEvent _) {
-    globalStateNotifier.update(
-        globalStateNotifier.state.value - GlobalStates.creatingRectangle);
+    context.read<CanvasEventsCubit>().remove(CanvasEvent.creatingRectangle);
 
     final components = componentsNotifier.state.value;
     final index = components.length - 1;
@@ -152,7 +159,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
         ),
       );
     }
-    toolNotifier.setMove();
+    context.read<ToolCubit>().setMove();
     selectedNotifier
       ..clear()
       ..add(index);

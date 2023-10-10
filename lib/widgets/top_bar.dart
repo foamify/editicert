@@ -1,12 +1,13 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:editicert/logic/global_state_service.dart';
-import 'package:editicert/logic/services.dart';
-import 'package:editicert/logic/tool_service.dart';
+import 'package:editicert/state/canvas_events_cubit.dart';
+import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/tool_cubit.dart';
 import 'package:editicert/utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 
 class TopBar extends StatelessWidget with GetItMixin {
@@ -15,11 +16,10 @@ class TopBar extends StatelessWidget with GetItMixin {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final tool = watchX((Tool tool) => tool.tool);
-    final transformationController = watchX((
-      TransformationControllerData data,
-    ) =>
-        data.state);
+    final tool = context.watch<ToolCubit>().state;
+    final transformationController =
+        context.watch<CanvasTransformCubit>().state;
+    final canvasEvents = context.watch<CanvasEventsCubit>();
 
     return Container(
       height: topbarHeight,
@@ -35,8 +35,7 @@ class TopBar extends StatelessWidget with GetItMixin {
       padding: EdgeInsets.only(
         left: 8 +
             (Platform.isMacOS &&
-                    !globalStateNotifier.state.value.states
-                        .contains(GlobalStates.fullscreen)
+                    !canvasEvents.state.contains(CanvasEvent.fullscreen)
                 ? 80
                 : 0),
         right: 8,
@@ -50,7 +49,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               shortcut: 'V',
               tool: ToolType.move,
               onTap: () {
-                toolNotifier.setMove();
+                context.read<ToolCubit>().setMove();
               },
               icon: Transform.rotate(
                 angle: -pi / 5,
@@ -66,7 +65,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               shortcut: 'F',
               tool: ToolType.frame,
               onTap: () {
-                toolNotifier.setFrame();
+                context.read<ToolCubit>().setFrame();
               },
               icon: const Icon(
                 CupertinoIcons.grid,
@@ -78,7 +77,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               shortcut: 'R',
               tool: ToolType.rectangle,
               onTap: () {
-                toolNotifier.setRectangle();
+                context.read<ToolCubit>().setRectangle();
               },
               icon: const Icon(
                 CupertinoIcons.square,
@@ -90,7 +89,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               shortcut: 'H',
               tool: ToolType.hand,
               onTap: () {
-                toolNotifier.setHand();
+                context.read<ToolCubit>().setHand();
               },
               icon: const Icon(
                 CupertinoIcons.hand_raised,
@@ -102,7 +101,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               shortcut: 'T',
               tool: ToolType.text,
               onTap: () {
-                toolNotifier.setText();
+                context.read<ToolCubit>().setText();
               },
               icon: const Icon(
                 CupertinoIcons.textbox,

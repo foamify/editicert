@@ -6,9 +6,12 @@ import 'package:collection/collection.dart';
 import 'package:editicert/logic/canvas_service.dart';
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
-import 'package:editicert/logic/global_state_service.dart';
-import 'package:editicert/logic/services.dart';
-import 'package:editicert/logic/tool_service.dart';
+import 'package:editicert/state/canvas_events_cubit.dart';
+import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/keys_cubit.dart';
+import 'package:editicert/state/pointer_cubit.dart';
+import 'package:editicert/state/tool_cubit.dart';
 import 'package:editicert/utils.dart';
 import 'package:editicert/widgets/controller_widget.dart';
 import 'package:editicert/widgets/creator_widget.dart';
@@ -20,6 +23,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
@@ -69,14 +73,12 @@ void main() async {
 class _MyDelegate extends NSWindowDelegate {
   @override
   void windowWillEnterFullScreen() {
-    globalStateNotifier.add(GlobalStates.fullscreen);
     WindowManipulator.removeToolbar();
     super.windowDidEnterFullScreen();
   }
 
   @override
   void windowWillExitFullScreen() {
-    globalStateNotifier.remove(GlobalStates.fullscreen);
     WindowManipulator.addToolbar();
     super.windowWillExitFullScreen();
   }
@@ -86,14 +88,9 @@ void setup() {
   final register = GetIt.I.registerSingleton;
 
   register<Components>(Components());
-  register<TransformationControllerData>(TransformationControllerData());
-  register<Tool>(Tool());
-  register<Keys>(Keys());
   register<Selected>(Selected());
   register<Hovered>(Hovered());
-  register<GlobalState>(GlobalState());
   register<CanvasState>(CanvasState());
-  register<Services>(Services());
 }
 
 class Main extends StatelessWidget with GetItMixin {
@@ -184,27 +181,27 @@ class Main extends StatelessWidget with GetItMixin {
                   PlatformMenuItem(
                     label: 'Move',
                     shortcut: const SingleActivator(LogicalKeyboardKey.keyV),
-                    onSelected: () => toolNotifier.setMove(),
+                    onSelected: () => context.read<ToolCubit>().setMove(),
                   ),
                   PlatformMenuItem(
                     label: 'Frame',
                     shortcut: const SingleActivator(LogicalKeyboardKey.keyF),
-                    onSelected: () => toolNotifier.setFrame(),
+                    onSelected: () => context.read<ToolCubit>().setFrame(),
                   ),
                   PlatformMenuItem(
                     label: 'Rectangle',
                     shortcut: const SingleActivator(LogicalKeyboardKey.keyR),
-                    onSelected: () => toolNotifier.setRectangle(),
+                    onSelected: () => context.read<ToolCubit>().setRectangle(),
                   ),
                   PlatformMenuItem(
                     label: 'Hand',
                     shortcut: const SingleActivator(LogicalKeyboardKey.keyH),
-                    onSelected: () => toolNotifier.setHand(),
+                    onSelected: () => context.read<ToolCubit>().setHand(),
                   ),
                   PlatformMenuItem(
                     label: 'Text',
                     shortcut: const SingleActivator(LogicalKeyboardKey.keyT),
-                    onSelected: () => toolNotifier.setText(),
+                    onSelected: () => context.read<ToolCubit>().setText(),
                   ),
                 ],
               ),
@@ -245,7 +242,13 @@ class Main extends StatelessWidget with GetItMixin {
           ),
           useMaterial3: true,
         ),
-        home: HomePage(),
+        home: MultiBlocProvider(providers: [
+          BlocProvider(create: (_) => CanvasEventsCubit()),
+          BlocProvider(create: (_) => CanvasTransformCubit()),
+          BlocProvider(create: (_) => KeysCubit()),
+          BlocProvider(create: (_) => PointerCubit(Offset.zero)),
+          BlocProvider(create: (_) => ToolCubit(ToolType.move)),
+        ], child: HomePage()),
       ),
     );
   }
@@ -283,52 +286,44 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     final canvasStateProvider =
         watchX((CanvasState canvasState) => canvasState.state);
     //
-    final globalStateProvider =
-        watchX((GlobalState globalState) => globalState.state);
+    final canvasEvents = context.watch<CanvasEventsCubit>();
 
-    final leftClick =
-        globalStateProvider.states.contains(GlobalStates.leftClick);
+    final leftClick = canvasEvents.state.contains(CanvasEvent.leftClick);
 
-    final middleClick =
-        globalStateProvider.states.contains(GlobalStates.middleClick);
+    final middleClick = canvasEvents.state.contains(CanvasEvent.middleClick);
 
-    final isCreateTooling = globalStateProvider.containsAny({
-      GlobalStates.creatingRectangle,
-      GlobalStates.creatingFrame,
-      GlobalStates.creatingText,
+    final isCreateTooling = canvasEvents.containsAny({
+      CanvasEvent.creatingRectangle,
+      CanvasEvent.creatingFrame,
+      CanvasEvent.creatingText,
     });
-    final isComponentTooling = globalStateProvider.containsAny({
-      GlobalStates.draggingComponent,
-      GlobalStates.resizingComponent,
-      GlobalStates.rotatingComponent,
+    final isComponentTooling = canvasEvents.containsAny({
+      CanvasEvent.draggingComponent,
+      CanvasEvent.resizingComponent,
+      CanvasEvent.rotatingComponent,
     });
     final isNotCanvasTooling = isComponentTooling || isCreateTooling;
-    final isCanvasTooling = globalStateProvider.containsAny({
-      GlobalStates.panningCanvas,
-      GlobalStates.zoomingCanvas,
+    final isCanvasTooling = canvasEvents.containsAny({
+      CanvasEvent.panningCanvas,
+      CanvasEvent.zoomingCanvas,
     });
-    final isZooming = globalStateProvider.containsAny(
-      {GlobalStates.zoomingCanvas},
+    final isZooming = canvasEvents.containsAny(
+      {CanvasEvent.zoomingCanvas},
     );
 
-    final transformationController = watchX((
-      TransformationControllerData data,
-    ) =>
-        data.state);
-    //
-    final tool = watchX((Tool tool) => tool.tool);
+    final transformationController = context.watch<CanvasTransformCubit>().state;
+    final tool = context.watch<ToolCubit>().state;
     final isToolHand = tool == ToolType.hand;
-    tool;
     //
     final components = watchX((Components components) => components.state);
     final selected = watchX((Selected selected) => selected.state);
     final hovered = watchX((Hovered hovered) => hovered.state);
     //
-    final keysProvider = watchX((Keys keys) => keys.state);
-    keysProvider;
-    final pressedMeta = keysProvider.contains(LogicalKeyboardKey.metaLeft) ||
-        keysProvider.contains(LogicalKeyboardKey.metaRight) ||
-        keysProvider.contains(LogicalKeyboardKey.meta);
+    final keys = context.watch<KeysCubit>().state;
+    keys;
+    final pressedMeta = keys.contains(LogicalKeyboardKey.metaLeft) ||
+        keys.contains(LogicalKeyboardKey.metaRight) ||
+        keys.contains(LogicalKeyboardKey.meta);
 
     final mqSize = MediaQuery.of(context).size;
     final colorScheme = Theme.of(context).colorScheme;
@@ -338,16 +333,16 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
       autofocus: true,
       onKey: (value) {
         value.isKeyPressed(value.logicalKey)
-            ? keysNotifier.add(value.logicalKey)
-            : keysNotifier.remove(value.logicalKey);
+            ? context.read<KeysCubit>().add(value.logicalKey)
+            : context.read<KeysCubit>().remove(value.logicalKey);
         // if (value.isKeyPressed(LogicalKeyboardKey.keyV)) {
-        //   toolNotifier.setMove();
+        //   context.read<ToolCubit>().setMove();
         // }
         // if (value.isKeyPressed(LogicalKeyboardKey.keyR)) {
-        //   toolNotifier.setCreate();
+        //   context.read<ToolCubit>().setCreate();
         // }
         // if (value.isKeyPressed(LogicalKeyboardKey.keyH)) {
-        //   toolNotifier.setHand();
+        //   context.read<ToolCubit>().setHand();
         // }
       },
       child: Scaffold(
@@ -452,8 +447,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                                           (component.type ==
                                                   ComponentType.text &&
                                               selected.contains(i) &&
-                                              globalStateProvider.containsAny(
-                                                  {GlobalStates.editingText}))
+                                              canvasEvents.containsAny(
+                                                  {CanvasEvent.editingText}))
                                       ? const SizedBox.shrink()
                                       : buildComponentWidget(
                                           i, component, transform);
@@ -490,8 +485,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                           ),
                         ),
                         // components
-                        if (globalStateProvider
-                            .containsAny({GlobalStates.editingText}))
+                        if (canvasEvents.containsAny({CanvasEvent.editingText}))
                           ValueListenableBuilder(
                             valueListenable: transformationController,
                             builder: (context, transform, child) => Stack(
@@ -534,25 +528,27 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       onPointerDown: (event) {
                         final state = (event.kind == PointerDeviceKind.mouse &&
                                 event.buttons == kMiddleMouseButton)
-                            ? GlobalStates.middleClick
-                            : GlobalStates.leftClick;
-                        globalStateNotifier.update(
-                          globalStateProvider + state,
-                        );
+                            ? CanvasEvent.middleClick
+                            : CanvasEvent.leftClick;
+                        context.read<CanvasEventsCubit>().add(
+                              state,
+                            );
                       },
                       onPointerUp: (event) {
                         (event.kind == PointerDeviceKind.mouse &&
                                 event.buttons == kMiddleMouseButton)
-                            ? GlobalStates.middleClick
-                            : GlobalStates.leftClick;
-                        globalStateNotifier.update(
-                          globalStateProvider - GlobalStates.leftClick,
-                        );
+                            ? CanvasEvent.middleClick
+                            : CanvasEvent.leftClick;
+                        context.read<CanvasEventsCubit>().remove(
+                              CanvasEvent.leftClick,
+                            );
                       },
                       child: MouseRegion(
                         cursor: switch ((
-                          globalStateNotifier.state.value.states
-                              .contains(GlobalStates.leftClick),
+                          context
+                              .read<CanvasEventsCubit>()
+                              .state
+                              .contains(CanvasEvent.leftClick),
                           isToolHand && (!isNotCanvasTooling || isCanvasTooling)
                         )) {
                           (false, true) => SystemMouseCursors.grab,
@@ -566,38 +562,38 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                               (isCanvasTooling && !leftClick && !isZooming),
                           onInteractionStart: (details) {
                             if (pressedMeta) {
-                              globalStateNotifier.update(
-                                globalStateProvider +
-                                    GlobalStates.zoomingCanvas,
-                              );
+                              context.read<CanvasEventsCubit>().add(
+                                    CanvasEvent.zoomingCanvas,
+                                  );
                             } else if (isToolHand || middleClick) {
-                              globalStateNotifier.update(
-                                globalStateProvider +
-                                    GlobalStates.panningCanvas,
-                              );
+                              context.read<CanvasEventsCubit>().add(
+                                    CanvasEvent.panningCanvas,
+                                  );
                             }
                           },
                           onInteractionUpdate: (details) {
-                            services.mousePosition.value = details.focalPoint;
-                            canvasTransform
+                            context
+                                .read<PointerCubit>()
+                                .update(details.focalPoint);
+                            context
+                                .read<CanvasTransformCubit>()
                                 .update(transformationController.value);
                             if (details.scale == 1 && !pressedMeta) {
-                              globalStateNotifier.update(
-                                globalStateProvider +
-                                    GlobalStates.panningCanvas,
-                              );
+                              context.read<CanvasEventsCubit>().add(
+                                    CanvasEvent.panningCanvas,
+                                  );
                             }
                           },
                           onInteractionEnd: (details) =>
-                              globalStateNotifier.update(globalStateProvider -
-                                  GlobalStates.panningCanvas -
-                                  GlobalStates.zoomingCanvas),
+                              context.read<CanvasEventsCubit>()
+                                ..remove(CanvasEvent.panningCanvas)
+                                ..remove(CanvasEvent.zoomingCanvas),
                           maxScale: 256,
                           minScale: .01,
-                          trackpadScrollCausesScale: (pressedMeta ||
-                                  isZooming) &&
-                              !globalStateProvider
-                                  .containsAny({GlobalStates.panningCanvas}),
+                          trackpadScrollCausesScale:
+                              (pressedMeta || isZooming) &&
+                                  !canvasEvents
+                                      .containsAny({CanvasEvent.panningCanvas}),
                           interactionEndFrictionCoefficient: 0.000135,
                           boundaryMargin: const EdgeInsets.all(double.infinity),
                           builder: (context, viewport) => const SizedBox(),
@@ -686,28 +682,22 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             /// Custom pointer handler
             Positioned.fill(
               child: TransparentPointer(
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([
-                    globalStateNotifier.state,
-                  ]),
-                  builder: (context, child) {
-                    var leftClick = globalStateNotifier.state.value.states
-                        .contains(GlobalStates.leftClick);
-
+                child: Builder(
+                  builder: (context) {
                     return MouseRegion(
                       cursor: switch (leftClick) {
                         true
-                            when globalStateNotifier.state.value.containsAny(
+                            when context.read<CanvasEventsCubit>().containsAny(
                               {
-                                GlobalStates.resizingComponent,
-                                GlobalStates.rotatingComponent
+                                CanvasEvent.resizingComponent,
+                                CanvasEvent.rotatingComponent
                               },
                             ) =>
                           SystemMouseCursors.none,
                         _ => MouseCursor.defer
                       },
                       onHover: (event) =>
-                          services.mousePosition.value = event.position,
+                          context.read<PointerCubit>().update(event.position),
                     );
                   },
                 ),
@@ -717,22 +707,21 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             /// Custom pointer
             AnimatedBuilder(
               animation: Listenable.merge([
-                services.mousePosition,
-                globalStateNotifier.state,
-                toolNotifier.tool,
                 componentsNotifier.state,
                 selectedNotifier.state,
               ]),
               builder: (context, child) {
                 final stateContains =
-                    globalStateNotifier.state.value.containsAny;
+                    context.read<CanvasEventsCubit>().containsAny;
 
-                final isRotating = globalStateNotifier.state.value.states
-                    .contains(GlobalStates.rotatingComponent);
+                final isRotating = context
+                    .read<CanvasEventsCubit>()
+                    .state
+                    .contains(CanvasEvent.rotatingComponent);
 
                 final enabled = stateContains({
-                  GlobalStates.rotatingComponent,
-                  GlobalStates.resizingComponent
+                  CanvasEvent.rotatingComponent,
+                  CanvasEvent.resizingComponent
                 });
 
                 var angle = 0.0;
@@ -748,7 +737,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 return !enabled
                     ? const SizedBox.shrink()
                     : Transform.translate(
-                        offset: services.mousePosition.value,
+                        offset: context.read<PointerCubit>().state,
                         child: Transform.translate(
                           offset: const Offset(-12, -12),
                           child: Transform.rotate(
@@ -782,7 +771,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     Color backgroundColor,
   ) {
     return ValueListenableBuilder(
-      valueListenable: canvasTransform.state.value,
+      valueListenable: context.read<CanvasTransformCubit>().state,
       builder: (context, matrix, child) {
         final component = e.component;
         final tWidth = component.size.width;
@@ -959,7 +948,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     },
                     onTapOutside: (event) {
                       print('TAPOUTSIDE');
-                      globalStateNotifier.remove(GlobalStates.editingText);
+                      context
+                          .read<CanvasEventsCubit>()
+                          .remove(CanvasEvent.editingText);
                       e.textController?.dispose();
                     },
                     expands: true,
