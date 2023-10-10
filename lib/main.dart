@@ -27,8 +27,6 @@ import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
-const _middleMouseButtonId = 4;
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();
@@ -535,7 +533,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     child: Listener(
                       onPointerDown: (event) {
                         final state = (event.kind == PointerDeviceKind.mouse &&
-                                event.buttons == _middleMouseButtonId)
+                                event.buttons == kMiddleMouseButton)
                             ? GlobalStates.middleClick
                             : GlobalStates.leftClick;
                         globalStateNotifier.update(
@@ -544,7 +542,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       },
                       onPointerUp: (event) {
                         (event.kind == PointerDeviceKind.mouse &&
-                                event.buttons == _middleMouseButtonId)
+                                event.buttons == kMiddleMouseButton)
                             ? GlobalStates.middleClick
                             : GlobalStates.leftClick;
                         globalStateNotifier.update(
