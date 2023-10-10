@@ -8,7 +8,6 @@ import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
 import 'package:editicert/state/canvas_events_cubit.dart';
 import 'package:editicert/state/canvas_transform_cubit.dart';
-import 'package:editicert/state/canvas_transform_cubit.dart';
 import 'package:editicert/state/keys_cubit.dart';
 import 'package:editicert/state/pointer_cubit.dart';
 import 'package:editicert/state/tool_cubit.dart';

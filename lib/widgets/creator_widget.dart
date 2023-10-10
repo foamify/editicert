@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:editicert/logic/component_service.dart';
 import 'package:editicert/state/canvas_events_cubit.dart';
 import 'package:editicert/state/canvas_transform_cubit.dart';
-import 'package:editicert/state/canvas_transform_cubit.dart';
 import 'package:editicert/state/keys_cubit.dart';
 import 'package:editicert/state/tool_cubit.dart';
 import 'package:editicert/utils.dart';
