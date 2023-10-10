@@ -17,6 +17,7 @@ import 'package:editicert/widgets/right_sidebar.dart';
 import 'package:editicert/widgets/top_bar.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -25,6 +26,8 @@ import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
+
+const _middleMouseButtonId = 4;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -287,6 +290,10 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
     final leftClick =
         globalStateProvider.states.contains(GlobalStates.leftClick);
+
+    final middleClick =
+        globalStateProvider.states.contains(GlobalStates.middleClick);
+
     final isCreateTooling = globalStateProvider.containsAny({
       GlobalStates.creatingRectangle,
       GlobalStates.creatingFrame,
@@ -526,12 +533,24 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                   TransparentPointer(
                     transparent: !isToolHand,
                     child: Listener(
-                      onPointerDown: (event) => globalStateNotifier.update(
-                        globalStateProvider + GlobalStates.leftClick,
-                      ),
-                      onPointerUp: (event) => globalStateNotifier.update(
-                        globalStateProvider - GlobalStates.leftClick,
-                      ),
+                      onPointerDown: (event) {
+                        final state = (event.kind == PointerDeviceKind.mouse &&
+                                event.buttons == _middleMouseButtonId)
+                            ? GlobalStates.middleClick
+                            : GlobalStates.leftClick;
+                        globalStateNotifier.update(
+                          globalStateProvider + state,
+                        );
+                      },
+                      onPointerUp: (event) {
+                        (event.kind == PointerDeviceKind.mouse &&
+                                event.buttons == _middleMouseButtonId)
+                            ? GlobalStates.middleClick
+                            : GlobalStates.leftClick;
+                        globalStateNotifier.update(
+                          globalStateProvider - GlobalStates.leftClick,
+                        );
+                      },
                       child: MouseRegion(
                         cursor: switch ((
                           globalStateNotifier.state.value.states
@@ -553,7 +572,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                                 globalStateProvider +
                                     GlobalStates.zoomingCanvas,
                               );
-                            } else if (isToolHand) {
+                            } else if (isToolHand || middleClick) {
                               globalStateNotifier.update(
                                 globalStateProvider +
                                     GlobalStates.panningCanvas,
