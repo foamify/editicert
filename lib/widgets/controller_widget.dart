@@ -6,6 +6,7 @@ import 'package:editicert/state/canvas_events_cubit.dart';
 import 'package:editicert/state/canvas_transform_cubit.dart';
 import 'package:editicert/state/keys_cubit.dart';
 import 'package:editicert/utils.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -143,9 +144,10 @@ class _ControllerWidgetState extends State<ControllerWidget>
                     flipY: tSize.height < 0,
                     child: Listener(
                       onPointerDown: (event) {
+                        if (event.buttons == kMiddleMouseButton) return;
                         stopwatch.start();
                         (context.read<CanvasEventsCubit>()).add(
-                              CanvasEvent.draggingComponent,
+                          CanvasEvent.draggingComponent,
                         );
                         if (!selectedNotifier.state.value
                             .contains(widget.index)) {
@@ -157,6 +159,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
                       onPointerMove: locked
                           ? null
                           : (event) {
+                              if (event.buttons == kMiddleMouseButton) return;
                               if (stopwatch.isRunning) {
                                 stopwatch
                                   ..stop()
@@ -165,14 +168,15 @@ class _ControllerWidgetState extends State<ControllerWidget>
                               handleMove(event);
                             },
                       onPointerUp: (event) {
+                        if (event.buttons == kMiddleMouseButton) return;
                         // handle text edit
                         if (componentsNotifier.state.value[widget.index].type ==
                                 ComponentType.text &&
                             stopwatch.isRunning &&
                             stopwatch.elapsedMilliseconds <= 500) {
                           print('TAPPED');
-                          (context.read<CanvasEventsCubit>()).add(
-                                  CanvasEvent.editingText);
+                          (context.read<CanvasEventsCubit>())
+                              .add(CanvasEvent.editingText);
                           componentsNotifier.replace(widget.index,
                               controller:
                                   TextEditingController(text: component.name));
@@ -257,13 +261,15 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   /// handles the pointer down event for rotation
   void handlePointerDownGlobal(PointerDownEvent event) {
+    if (event.buttons == kMiddleMouseButton) return;
     _component.value = (componentsNotifier.state.value[widget.index].component);
     _originalPosition.value = event.position;
     _originalComponent.value = _component.value;
   }
 
   /// basically save data
-  void handlePointerUp(PointerUpEvent _) {
+  void handlePointerUp(PointerUpEvent event) {
+    if (event.buttons == kMiddleMouseButton) return;
     print('UP');
     context.read<CanvasEventsCubit>()
       ..remove(CanvasEvent.draggingComponent)
@@ -317,6 +323,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
             offset: Offset.zero,
             child: Listener(
               onPointerDown: (event) {
+                if (event.buttons == kMiddleMouseButton) return;
                 (context.read<CanvasEventsCubit>()).add(
                   (rotate
                       ? CanvasEvent.rotatingComponent
@@ -325,6 +332,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
                 handlePointerDownGlobal(event);
               },
               onPointerMove: (event) {
+                if (event.buttons == kMiddleMouseButton) return;
                 (context.read<CanvasEventsCubit>()).add(
                   (rotate
                       ? CanvasEvent.rotatingComponent
@@ -430,6 +438,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
           offset: offset,
           child: Listener(
             onPointerDown: (event) {
+              if (event.buttons == kMiddleMouseButton) return;
               handlePointerDownGlobal(event);
 
               (context.read<CanvasEventsCubit>()).add(
@@ -437,6 +446,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
               );
             },
             onPointerMove: (event) {
+              if (event.buttons == kMiddleMouseButton) return;
               handleResize(event, alignment, selectedSide);
             },
             onPointerUp: handlePointerUp,
