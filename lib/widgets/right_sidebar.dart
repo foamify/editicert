@@ -139,6 +139,32 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                 ),
               ]
             ),
+            (
+              children: [
+                (
+                  prefix: Text(
+                    'FlipX',
+                    style: textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: component.flipX.toString(),
+                  ),
+                ),
+                (
+                  prefix: Text(
+                    'FlipY',
+                    style: textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  keyboardType: TextInputType.number,
+                  controller: TextEditingController(
+                    text: component.flipY.toString(),
+                  ),
+                ),
+              ]
+            ),
           ];
 
     final backgroundControl = SizedBox(

@@ -6,8 +6,10 @@ import 'package:collection/collection.dart';
 import 'package:editicert/logic/canvas_service.dart';
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
+import 'package:editicert/models/component.dart';
 import 'package:editicert/state/canvas_events_cubit.dart';
 import 'package:editicert/state/canvas_transform_cubit.dart';
+import 'package:editicert/state/debug_point_cubit.dart';
 import 'package:editicert/state/keys_cubit.dart';
 import 'package:editicert/state/pointer_cubit.dart';
 import 'package:editicert/state/tool_cubit.dart';
@@ -19,6 +21,7 @@ import 'package:editicert/widgets/right_sidebar.dart';
 import 'package:editicert/widgets/top_bar.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -247,6 +250,8 @@ class Main extends StatelessWidget with GetItMixin {
           BlocProvider(create: (_) => KeysCubit()),
           BlocProvider(create: (_) => PointerCubit(Offset.zero)),
           BlocProvider(create: (_) => ToolCubit(ToolType.move)),
+          //
+          BlocProvider(create: (_) => DebugPointCubit()),
         ], child: HomePage()),
       ),
     );
@@ -310,7 +315,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
       {CanvasEvent.zoomingCanvas},
     );
 
-    final transformationController = context.watch<CanvasTransformCubit>().state;
+    final transformationController =
+        context.watch<CanvasTransformCubit>().state;
     final tool = context.watch<ToolCubit>().state;
     final isToolHand = tool == ToolType.hand;
     //
@@ -508,6 +514,26 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                               ],
                             ),
                           ),
+
+                        if (kDebugMode)
+                          ...context
+                              .watch<DebugPointCubit>()
+                              .state
+                              .map((e) => Builder(builder: (context) {
+                                    final component = e;
+                                    final scale = transform.getMaxScaleOnAxis();
+                                    return Positioned(
+                                      left: transform.getTranslation().x +
+                                          component.dx * scale,
+                                      top: transform.getTranslation().y +
+                                          component.dy * scale,
+                                      child: Container(
+                                        width: 5,
+                                        height: 5,
+                                        color: Colors.red,
+                                      ),
+                                    );
+                                  }))
                       ],
                     ),
                   ),
@@ -898,8 +924,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     onChanged: (value) {
                       componentsNotifier.replace(index, name: value);
 
-                      print(value);
-
                       final textStyle = Theme.of(context).textTheme.bodyMedium;
 
                       final textSpan = TextSpan(
@@ -917,30 +941,29 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         maxWidth: tWidth.abs(),
                       );
 
-                      final height = textPainter.height;
-                      final newRect = rotateRect(
-                        Rect.fromLTWH(
-                          component.rect.topLeft.dx,
-                          component.rect.topLeft.dy,
-                          component.size.width,
-                          height,
-                        ),
-                        component.angle,
-                        component.rect.center,
-                      );
-                      if (height != component.size.height) {
+                      final newHeight = textPainter.height;
+
+                      if (newHeight != component.size.height) {
+                        final newRect = rotateRect(
+                          Rect.fromLTWH(
+                            component.rect.topLeft.dx,
+                            component.rect.topLeft.dy,
+                            component.size.width,
+                            newHeight,
+                          ),
+                          component.angle,
+                          component.rect.center,
+                        );
+
                         componentsNotifier.replace(
                           index,
-                          transform: Component.fromEdges(
-                            (
-                              tl: newRect.tl,
-                              tr: newRect.tr,
-                              bl: newRect.bl,
-                              br: newRect.br,
-                            ),
-                            flipX: tWidth < 0,
-                            flipY: tHeight < 0,
-                            keepOrigin: true,
+                          transform: Component(
+                            newRect.unrotated.topLeft,
+                            Size(component.size.width, newHeight),
+                            component.angle,
+                            component.flipX,
+                            component.flipY,
+                            // keepOrigin: true,
                           ),
                         );
                       }
@@ -986,8 +1009,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
         child: Transform.rotate(
           angle: component.angle,
           child: Transform.flip(
-            flipX: tWidth < 0,
-            flipY: tHeight < 0,
+            flipX: component.flipX,
+            flipY: component.flipY,
             child: child,
           ),
         ),

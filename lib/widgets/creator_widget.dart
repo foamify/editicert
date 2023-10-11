@@ -1,12 +1,12 @@
 import 'dart:math';
 
 import 'package:editicert/logic/component_service.dart';
+import 'package:editicert/models/component.dart';
 import 'package:editicert/state/canvas_events_cubit.dart';
 import 'package:editicert/state/canvas_transform_cubit.dart';
 import 'package:editicert/state/keys_cubit.dart';
 import 'package:editicert/state/tool_cubit.dart';
 import 'package:editicert/utils.dart';
-import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,7 +19,8 @@ class CreatorWidget extends StatefulWidget {
 }
 
 class _CreatorWidgetState extends State<CreatorWidget> {
-  final oComponent = ValueNotifier(const Component(Offset.zero, Size.zero, 0));
+  final oComponent =
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
 
   final oPosition = ValueNotifier(Offset.zero);
 
@@ -62,7 +63,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
 
     oPosition.value = tController
         .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
-    oComponent.value = Component(oPosition.value, Size.zero, 0);
+    oComponent.value = Component(oPosition.value, Size.zero, 0, false, false);
 
     final index = componentsNotifier.state.value.length;
 
@@ -155,6 +156,8 @@ class _CreatorWidgetState extends State<CreatorWidget> {
           oComponent.value.pos - const Offset(50, 50),
           const Size(100, 100),
           0,
+          false,
+          false,
         ),
       );
     }

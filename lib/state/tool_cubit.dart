@@ -20,5 +20,4 @@ class ToolCubit extends Cubit<ToolType> {
   void setFrame() => emit(ToolType.frame);
 
   void setText() => emit(ToolType.text);
-
 }

@@ -1,6 +1,6 @@
 import 'package:editicert/logic/component_index_service.dart';
+import 'package:editicert/models/component.dart';
 import 'package:editicert/utils.dart';
-import 'package:editicert/widgets/controller_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
@@ -85,7 +85,13 @@ class Components {
 class ComponentData {
   const ComponentData({
     this.name = 'Component',
-    this.component = const Component(Offset.zero, Size(100, 100), 0),
+    this.component = const Component(
+      Offset.zero,
+      Size(100, 100),
+      0,
+      false,
+      false,
+    ),
     this.color = const Color(0xFF9E9E9E),
     this.borderRadius = BorderRadius.zero,
     this.border = const Border(),

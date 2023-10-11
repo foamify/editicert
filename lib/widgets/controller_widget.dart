@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
+import 'package:editicert/models/component.dart';
 import 'package:editicert/state/canvas_events_cubit.dart';
 import 'package:editicert/state/canvas_transform_cubit.dart';
 import 'package:editicert/state/keys_cubit.dart';
@@ -58,13 +59,16 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   final _originalPosition = ValueNotifier(Offset.zero);
 
-  final _originalComponent =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0));
+  final _originalTransform = ValueNotifier(Matrix4.identity());
 
-  final _component = ValueNotifier(const Component(Offset.zero, Size.zero, 0));
+  final _originalComponent =
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
+
+  final _component =
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
 
   final _visualComponent =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0));
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
 
   final stopwatch = Stopwatch();
 
@@ -128,6 +132,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
         final selected = selectedNotifier.state.value.contains(widget.index);
         final selectedValue = selected && !moving;
         final borderWidth = selectedValue ? 1.0 : 2.0;
+        final flipX = _visualComponent.value.flipX;
+        final flipY = _visualComponent.value.flipY;
 
         return Stack(
           children: [
@@ -140,8 +146,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
                 child: Transform.rotate(
                   angle: tAngle,
                   child: Transform.flip(
-                    flipX: tSize.width < 0,
-                    flipY: tSize.height < 0,
+                    flipX: flipX,
+                    flipY: flipY,
                     child: Listener(
                       onPointerDown: (event) {
                         if (event.buttons == kMiddleMouseButton) return;
@@ -264,6 +270,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     if (event.buttons == kMiddleMouseButton) return;
     _component.value = (componentsNotifier.state.value[widget.index].component);
     _originalPosition.value = event.position;
+    _originalTransform.value = tControl().value;
     _originalComponent.value = _component.value;
   }
 
@@ -498,15 +505,14 @@ class _ControllerWidgetState extends State<ControllerWidget>
         .copyWith(angle: _originalComponent.value.angle - deltaAngle);
   }
 
-  /// Handles resizing from all edges/sides
   void handleResize(
     PointerMoveEvent event,
     Alignment alignment,
     Offset selected,
   ) {
     final tValue = _originalComponent.value;
-
     final keys = context.read<KeysCubit>().state;
+
     // this is for mirrored resize
     final pressedAlt = keys.contains(LogicalKeyboardKey.alt) ||
         keys.contains(LogicalKeyboardKey.altLeft) ||
@@ -516,281 +522,115 @@ class _ControllerWidgetState extends State<ControllerWidget>
         keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
 
-    final rOriginalPoint = rotatePoint(
-      _originalPosition.value,
-      selected + Offset(tValue.size.width, tValue.size.height) / 2,
-      -tValue.angle,
-    );
-
-    final rPosition = rotatePoint(
-      event.position,
-      selected + Offset(tValue.size.width, tValue.size.height) / 2,
-      -tValue.angle,
-    );
-
-    final oRect = tValue.rect;
-    final oEdges = rotateRect(oRect, 0, tValue.pos);
+    print('alt: $pressedAlt');
+    print('shift: $pressedShift');
 
     final scale = getScale();
 
-    final nDelta = (rPosition - rOriginalPoint) * scale;
-    var rDelta = (rPosition - rOriginalPoint) * scale;
+    final originalRect = tValue.rect;
+    final angle = tValue.angle;
 
-    if (pressedShift) {
-      final width = pressedAlt ? oRect.width / 2 : oRect.width;
-      final height = pressedAlt ? oRect.height / 2 : oRect.height;
+    final rectCenter = originalRect.center;
+    final originalEdges = rotateRect(originalRect, 0, Offset.zero);
 
-      final flipWidth = switch (alignment) {
-        Alignment.topLeft ||
-        Alignment.bottomLeft =>
-          width > 0 ? nDelta.dx > width : nDelta.dx < width,
-        Alignment.topRight ||
-        Alignment.bottomRight =>
-          width > 0 ? -nDelta.dx > width : -nDelta.dx < width,
-        _ => false,
-      };
-      final flipHeight = switch (alignment) {
-        Alignment.topLeft ||
-        Alignment.topRight =>
-          height > 0 ? nDelta.dy > height : nDelta.dy < height,
-        Alignment.bottomLeft ||
-        Alignment.bottomRight =>
-          height > 0 ? -nDelta.dy > height : -nDelta.dy < height,
-        _ => false,
-      };
+    final opposingOffset = getOffset(alignment, originalEdges, opposite: true);
+    final selectedOffset = getOffset(alignment, originalEdges);
 
-      final kFlipWidth = width < 0 ? -1 : 1;
-      final kFlipHeight = height < 0 ? -1 : 1;
-
-      var offsetX = 0.0;
-      var offsetY = 0.0;
-
-      switch (alignment) {
-        case Alignment.topLeft || Alignment.bottomLeft when flipWidth:
-          offsetX = width * 2;
-        case Alignment.topRight || Alignment.bottomRight when flipWidth:
-          offsetX = -width * 2;
-      }
-      switch (alignment) {
-        case Alignment.topLeft || Alignment.topRight when flipHeight:
-          offsetY = height * 2;
-        case Alignment.bottomLeft || Alignment.bottomRight when flipHeight:
-          offsetY = -height * 2;
-      }
-
-      if (flipWidth) rDelta = rDelta.scale(-1, 1) + Offset(offsetX, 0);
-      if (flipHeight) rDelta = rDelta.scale(1, -1) + Offset(0, offsetY);
-
-      rDelta = switch (alignment) {
-        Alignment.topLeft => rDelta.dx * kFlipWidth < rDelta.dy * kFlipHeight
-            ? Offset(rDelta.dx * kFlipHeight, rDelta.dx * kFlipWidth)
-            : Offset(rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
-        Alignment.topRight => -rDelta.dx * kFlipWidth < rDelta.dy * kFlipHeight
-            ? Offset(rDelta.dx * kFlipHeight, -rDelta.dx * kFlipWidth)
-            : Offset(-rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
-        Alignment.bottomLeft =>
-          rDelta.dx * kFlipWidth < -rDelta.dy * kFlipHeight
-              ? Offset(rDelta.dx * kFlipHeight, -rDelta.dx * kFlipWidth)
-              : Offset(-rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
-        Alignment.bottomRight =>
-          -rDelta.dx * kFlipWidth < -rDelta.dy * kFlipHeight
-              ? Offset(rDelta.dx * kFlipHeight, rDelta.dx * kFlipWidth)
-              : Offset(rDelta.dy * kFlipWidth, rDelta.dy * kFlipHeight),
-        _ => rDelta,
-      };
-
-      if (flipWidth) {
-        rDelta = Offset(
-          width > 0 ? offsetX - rDelta.dx : -rDelta.dx + offsetX,
-          rDelta.dy,
-        );
-      }
-      if (flipHeight) {
-        rDelta = Offset(
-          rDelta.dx,
-          height > 0 ? offsetY - rDelta.dy : -rDelta.dy + offsetY,
-        );
-      }
-    }
-
-    final rDeltaInvert =
-        pressedAlt ? Offset(-rDelta.dx, -rDelta.dy) : Offset.zero;
-
-    final deltaTop = switch (alignment) {
-      Alignment.topLeft || Alignment.topRight => Offset(0, rDelta.dy),
-      Alignment.bottomLeft ||
-      Alignment.bottomRight =>
-        Offset(0, rDeltaInvert.dy),
-      Alignment.topCenter => Offset(0, rDelta.dy),
-      Alignment.bottomCenter => Offset(0, rDeltaInvert.dy),
-      _ => Offset.zero,
-    };
-
-    final deltaBottom = switch (alignment) {
-      Alignment.topLeft || Alignment.topRight => Offset(0, rDeltaInvert.dy),
-      Alignment.bottomLeft || Alignment.bottomRight => Offset(0, rDelta.dy),
-      Alignment.topCenter => Offset(0, rDeltaInvert.dy),
-      Alignment.bottomCenter => Offset(0, rDelta.dy),
-      _ => Offset.zero,
-    };
-
-    final deltaLeft = switch (alignment) {
-      Alignment.topLeft || Alignment.bottomLeft => Offset(rDelta.dx, 0),
-      Alignment.topRight || Alignment.bottomRight => Offset(rDeltaInvert.dx, 0),
-      Alignment.centerLeft => Offset(rDelta.dx, 0),
-      Alignment.centerRight => Offset(rDeltaInvert.dx, 0),
-      _ => Offset.zero,
-    };
-
-    final deltaRight = switch (alignment) {
-      Alignment.topLeft || Alignment.bottomLeft => Offset(rDeltaInvert.dx, 0),
-      Alignment.topRight || Alignment.bottomRight => Offset(rDelta.dx, 0),
-      Alignment.centerLeft => Offset(rDeltaInvert.dx, 0),
-      Alignment.centerRight => Offset(rDelta.dx, 0),
-      _ => Offset.zero,
-    };
-
-    var newEdges = (
-      tl: oEdges.tl + deltaTop + deltaLeft,
-      tr: oEdges.tr + deltaTop + deltaRight,
-      bl: oEdges.bl + deltaBottom + deltaLeft,
-      br: Offset.zero
-    );
-    final newRect = rectFromEdges(newEdges);
-    final newEdgesR = rotateRect(
-      newRect,
-      tValue.angle,
-      tValue.pos.translate(
-        switch (alignment) {
-          Alignment.topLeft ||
-          Alignment.bottomLeft =>
-            (rDelta.dx - rDeltaInvert.dx) / 2,
-          Alignment.topRight ||
-          Alignment.bottomRight =>
-            (-rDelta.dx + rDeltaInvert.dx) / 2,
-          Alignment.centerLeft => (rDelta.dx - rDeltaInvert.dx) / 2,
-          Alignment.centerRight => (-rDelta.dx + rDeltaInvert.dx) / 2,
-          _ => 0,
-        },
-        switch (alignment) {
-          Alignment.topLeft ||
-          Alignment.topRight =>
-            (rDelta.dy - rDeltaInvert.dy) / 2,
-          Alignment.bottomLeft ||
-          Alignment.bottomRight =>
-            (-rDelta.dy + rDeltaInvert.dy) / 2,
-          Alignment.topCenter => (rDelta.dy - rDeltaInvert.dy) / 2,
-          Alignment.bottomCenter => (-rDelta.dy + rDeltaInvert.dy) / 2,
-          _ => 0,
-        },
-      ),
+    final rotatedOriginalPoint = rotatePoint(
+      MatrixUtils.transformPoint(
+          tControl().value.clone()..invert(), _originalPosition.value),
+      selected + Offset(tValue.size.width, tValue.size.height) / 2,
+      -angle,
     );
 
-    _component.value = Component.fromEdges(
-      newEdgesR,
-      flipX: newRect.size.width < 0,
-      flipY: newRect.size.height > 0,
+    final rotatedCursorPoint = rotatePoint(
+      MatrixUtils.transformPoint(
+          tControl().value.clone()..invert(), event.position),
+      selected + Offset(tValue.size.width, tValue.size.height) / 2,
+      -angle,
+    );
+
+    final originalCursorDelta =
+        (event.position - _originalPosition.value) * scale;
+    final rotatedCursorDelta = (rotatedCursorPoint - rotatedOriginalPoint);
+
+    final originalRectEdges = rotateRect(originalRect, angle, rectCenter);
+    final originalSelectedEdge = getOffset(alignment, originalRectEdges);
+
+    final newRect = Rect.fromPoints(opposingOffset, selectedOffset);
+    var rotatedNewRect = rotateRect(newRect, angle, Offset.zero);
+    var newRotatedSelectedEdge = getOffset(alignment, rotatedNewRect);
+
+    final selectedPointDelta = originalSelectedEdge - newRotatedSelectedEdge;
+
+    rotatedNewRect = rotatedNewRect.translated(selectedPointDelta);
+    newRotatedSelectedEdge = getOffset(alignment, rotatedNewRect);
+
+    final translatedCenter = getMiddleOffset(
+      opposingOffset + (originalCursorDelta - rotatedCursorDelta),
+      selectedOffset + rotatedCursorDelta,
+    );
+
+    final pointModifier = switch (alignment) {
+      // edges
+      Alignment.topRight => const Point(1, -1),
+      Alignment.topLeft => const Point(-1, -1),
+      Alignment.bottomRight => const Point(1, 1),
+      Alignment.bottomLeft => const Point(-1, 1),
+      // sides
+      Alignment.topCenter => const Point(0, -1),
+      Alignment.centerLeft => const Point(-1, 0),
+      Alignment.centerRight => const Point(1, 0),
+      Alignment.bottomCenter => const Point(0, 1),
+      _ => const Point(0, 0),
+    };
+
+    final resizedRect = Rect.fromCenter(
+      center: translatedCenter,
+      width: originalRect.width + rotatedCursorDelta.dx * pointModifier.x,
+      height: originalRect.height + rotatedCursorDelta.dy * pointModifier.y,
+    );
+
+    var rotatedResizedRect = rotateRect(resizedRect, angle, resizedRect.center);
+
+    // Start handling side resize
+
+    final opposingSideOffsetModifier = switch (alignment) {
+      Alignment.topCenter => const Offset(-1, 0),
+      Alignment.centerLeft => const Offset(0, -1),
+      Alignment.centerRight => const Offset(0, -1),
+      Alignment.bottomCenter => const Offset(-1, 0),
+      _ => const Offset(0, 0),
+    };
+
+    final opposingDelta = rotatePoint(
+        rotatedCursorDelta.scale(
+            opposingSideOffsetModifier.dx, opposingSideOffsetModifier.dy),
+        Offset.zero,
+        angle);
+
+    rotatedResizedRect = rotatedResizedRect.translated(opposingDelta / 2);
+
+    // End handling side resize
+
+    // Unrotate the final rect.
+    final unrotatedRect = rotatedResizedRect.unrotated;
+
+    var flipX = rotatedResizedRect.tr.dx < rotatedResizedRect.tl.dx;
+    var flipY = rotatedResizedRect.tr.dy > rotatedResizedRect.br.dy;
+    var topLeft = unrotatedRect.topLeft;
+    var size = unrotatedRect.size;
+
+    _component.value = Component(
+      topLeft,
+      size,
+      angle,
+      flipX,
+      flipY,
     );
   }
 
   Size getSize() => _visualComponent.value.size / getScale();
 
   double getScale() => toScene(const Offset(1, 0)).dx - toScene(Offset.zero).dx;
-}
-
-class Component {
-  final Offset pos;
-  final Size size;
-  final double angle;
-
-  const Component(this.pos, this.size, this.angle);
-
-  Rect get rect => Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height);
-
-  ({Offset bl, Offset br, Offset tl, Offset tr}) get rotatedEdges => rotateRect(
-        rect,
-        angle,
-        pos + Offset(size.width / 2, size.height / 2),
-      );
-
-  ({Offset bl, Offset br, Offset tl, Offset tr}) get edges => rotateRect(
-        rect,
-        angle,
-        pos,
-      );
-
-  static fromEdges(
-    ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
-    bool flipX = false,
-    bool flipY = false,
-    bool keepOrigin = false,
-  }) {
-    final topLeft = edges.tl;
-
-    final size = Size(
-      (topLeft - edges.tr).distance * (flipX ? -1 : 1),
-      (topLeft - edges.bl).distance * (flipY ? -1 : 1),
-    );
-    final angle = atan2(edges.tr.dy - topLeft.dy, edges.tr.dx - topLeft.dx);
-
-    final newEdges = !keepOrigin
-        ? rotateRect(
-            Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height),
-            0,
-            Offset.zero,
-          )
-        : rotateRect(
-            Rect.fromLTWH(0, 0, size.width, size.height),
-            0,
-            Offset.zero,
-          );
-
-    var newComponent = Component(
-      newEdges.tl,
-      size,
-      angle + (flipX ? pi : 0),
-    );
-
-    if (keepOrigin) {
-      final difference = topLeft - newComponent.rotatedEdges.tl;
-
-      newComponent = Component(
-        newEdges.tl + difference,
-        size,
-        angle + (flipX ? pi : 0),
-      );
-    }
-
-    print('CORRECTEDRECT:');
-    print(newComponent.rotatedEdges.tl);
-
-    ///----------------------------------------
-    print(
-        Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height).topLeft);
-    print(newEdges.tl);
-
-    ///----------------------------------------
-    return newComponent;
-  }
-
-  Component copyWith({Offset? pos, Size? size, double? angle}) {
-    return Component(pos ?? this.pos, size ?? this.size, angle ?? this.angle);
-  }
-
-  @override
-  String toString() {
-    return 'Component{pos: $pos, size: $size, angle: $angle}';
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Component &&
-          runtimeType == other.runtimeType &&
-          pos == other.pos &&
-          size == other.size &&
-          angle == other.angle;
-
-  @override
-  int get hashCode => pos.hashCode ^ size.hashCode ^ angle.hashCode;
 }
