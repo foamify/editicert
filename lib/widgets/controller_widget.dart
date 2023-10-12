@@ -611,22 +611,43 @@ class _ControllerWidgetState extends State<ControllerWidget>
       // handle aspect ratio resize
 
       final aspectRatio = originalRect.size.aspectRatio;
+      // ignore: move-variable-closer-to-its-usage
       var newAspectRatio = resizedRect.size.aspectRatio;
+      // print('old: $aspectRatio');
+      // print('new: $newAspectRatio');
 
       var newWidth = resizedRect.size.width;
       var newHeight = resizedRect.size.height;
 
-      final originallyFlipX = tValue.flipX;
-      final originallyFlipY = tValue.flipY;
+      if (alignment
+          case Alignment.topCenter ||
+              Alignment.bottomCenter ||
+              Alignment.centerLeft ||
+              Alignment.centerRight) {
+        if (alignment case Alignment.topCenter || Alignment.bottomCenter) {
+          newWidth = newHeight * aspectRatio;
+          resizedRect =
+              resizedRect.translate((newWidth - originalRect.width) / 2, 0);
+          newWidth = newHeight * aspectRatio;
+        } else {
+          newHeight = newWidth / aspectRatio;
+          resizedRect =
+              resizedRect.translate(0, (newHeight - originalRect.height) / 2);
+        }
+        // if (flipY != originallyFlipY) newHeight = -newHeight;
+      } else {
+        final originallyFlipX = tValue.flipX;
+        final originallyFlipY = tValue.flipY;
 
-      if (aspectRatio > newAspectRatio.abs()) {
-        newWidth = newHeight * aspectRatio;
-        if (flipX != originallyFlipX) newWidth = -newWidth;
-        if (flipY != originallyFlipY) newWidth = -newWidth;
-      } else if (aspectRatio < newAspectRatio.abs()) {
-        newHeight = newWidth / aspectRatio;
-        if (flipX != originallyFlipX) newHeight = -newHeight;
-        if (flipY != originallyFlipY) newHeight = -newHeight;
+        if (aspectRatio > newAspectRatio.abs()) {
+          newWidth = newHeight * aspectRatio;
+          if (flipX != originallyFlipX) newWidth = -newWidth;
+          if (flipY != originallyFlipY) newWidth = -newWidth;
+        } else if (aspectRatio < newAspectRatio.abs()) {
+          newHeight = newWidth / aspectRatio;
+          if (flipX != originallyFlipX) newHeight = -newHeight;
+          if (flipY != originallyFlipY) newHeight = -newHeight;
+        }
       }
 
       // mirrored
