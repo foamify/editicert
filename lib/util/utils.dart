@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-match-file-name
+
 import 'dart:math';
 import 'package:editicert/logic/canvas_service.dart';
 import 'package:editicert/logic/component_index_service.dart';
@@ -34,10 +36,7 @@ extension EdgesEx on Edges {
 
   double get angle => getAngleFromPoints(tl, tr);
 
-  Size get size => Size(
-        tr.dx - tl.dx,
-        tr.dy - br.dy,
-      );
+  Size get size => Size(tr.dx - tl.dx, tr.dy - br.dy);
 
   Offset get center => getMiddleOffset(tr, bl);
 
@@ -47,11 +46,7 @@ extension EdgesEx on Edges {
       );
 }
 
-Edges rotateRect(
-  Rect rect,
-  double angle,
-  Offset origin,
-) {
+Edges rotateRect(Rect rect, double angle, Offset origin) {
   final topLeft = rotatePoint(rect.topLeft, origin, angle);
   final topRight = rotatePoint(rect.topRight, origin, angle);
   final bottomLeft = rotatePoint(rect.bottomLeft, origin, angle);
