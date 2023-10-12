@@ -1025,11 +1025,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
     return Positioned(
       left: transform.getTranslation().x +
-          component.pos.dx * scale +
-          (tWidth < 0 ? tWidth : 0),
+          (component.pos.dx + (tWidth < 0 ? tWidth : 0)) * scale,
       top: transform.getTranslation().y +
-          component.pos.dy * scale +
-          (tHeight < 0 ? tHeight : 0),
+          (component.pos.dy + (tHeight < 0 ? tHeight : 0)) * scale,
       child: Transform.scale(
         scale: scale,
         alignment: Alignment.topLeft,

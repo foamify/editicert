@@ -509,10 +509,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
         keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
 
-    print('alt: $pressedAlt');
-    print('shift: $pressedShift');
-
-    final scale = getScale();
+    print('Alt: $pressedAlt');
+    print('Shift: $pressedShift');
 
     final originalRect = tValue.rect;
     final angle = tValue.angle;
@@ -523,42 +521,55 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final opposingOffset = getOffset(alignment, originalEdges, opposite: true);
     final selectedOffset = getOffset(alignment, originalEdges);
 
+    final invertedComponentTransform = tControl().value.clone()..invert();
+
     final rotatedOriginalPoint = rotatePoint(
       MatrixUtils.transformPoint(
-          tControl().value.clone()..invert(), _originalPosition.value),
+          invertedComponentTransform, _originalPosition.value),
       selected + Offset(tValue.size.width, tValue.size.height) / 2,
       -angle,
     );
 
     final rotatedCursorPoint = rotatePoint(
-      MatrixUtils.transformPoint(
-          tControl().value.clone()..invert(), event.position),
+      MatrixUtils.transformPoint(invertedComponentTransform, event.position),
       selected + Offset(tValue.size.width, tValue.size.height) / 2,
       -angle,
     );
 
-    final originalCursorDelta =
-        (event.position - _originalPosition.value) * scale;
-    final rotatedCursorDelta = (rotatedCursorPoint - rotatedOriginalPoint);
+    final rotatedOriginalRect = rotateRect(originalRect, angle, rectCenter);
+    final originalCenter = rotatedOriginalRect.center;
 
-    final originalRectEdges = rotateRect(originalRect, angle, rectCenter);
-    final originalSelectedEdge = getOffset(alignment, originalRectEdges);
-
-    final newRect = Rect.fromPoints(opposingOffset, selectedOffset);
-    var rotatedNewRect = rotateRect(newRect, angle, Offset.zero);
-    var newRotatedSelectedEdge = getOffset(alignment, rotatedNewRect);
-
-    final selectedPointDelta = originalSelectedEdge - newRotatedSelectedEdge;
-
-    rotatedNewRect = rotatedNewRect.translated(selectedPointDelta);
-    newRotatedSelectedEdge = getOffset(alignment, rotatedNewRect);
-
-    final translatedCenter = getMiddleOffset(
-      opposingOffset + (originalCursorDelta - rotatedCursorDelta),
-      selectedOffset + rotatedCursorDelta,
+    final rotatedOpposingPoint = rotatePoint(
+      opposingOffset,
+      originalCenter,
+      angle,
     );
 
-    final pointModifier = switch (alignment) {
+    final rotatedSelectedPoint = rotatePoint(
+      selectedOffset,
+      originalCenter,
+      angle,
+    );
+
+    var cursorDelta = (rotatedCursorPoint - rotatedOriginalPoint);
+    Offset rotatedCursorDelta() => rotatePoint(cursorDelta, Offset.zero, angle);
+
+    if (alignment case Alignment.topCenter || Alignment.bottomCenter) {
+      // Remove the horizontal delta if top/bottom side resize
+      cursorDelta = Offset(0, cursorDelta.dy);
+    } else if (alignment case Alignment.centerLeft || Alignment.centerRight) {
+      // Remove the vertical delta if left/right side resize
+      cursorDelta = Offset(cursorDelta.dx, 0);
+    }
+
+    final newCenter = getMiddleOffset(
+        rotatedOpposingPoint + rotatedCursorDelta(), rotatedSelectedPoint);
+
+    // TODO(damywise): Found method to keep aspect ratio but rotate
+    // final otherEdge1 = rotatePoint(rotatedSelectedPoint + originalCursorDelta, newCenter, -90);
+    // final otherEdge2 = rotatePoint(rotatedOpposingPoint, newCenter, -90);
+
+    var pointModifier = switch (alignment) {
       // edges
       Alignment.topRight => const Point(1, -1),
       Alignment.topLeft => const Point(-1, -1),
@@ -572,41 +583,32 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _ => const Point(0, 0),
     };
 
+    final center = pressedAlt ? originalCenter : newCenter;
+    if (pressedAlt) {
+      // Resized twice as big if mirrored (pressed alt/option)
+      pointModifier = pointModifier * 2;
+    }
+
     final resizedRect = Rect.fromCenter(
-      center: translatedCenter,
-      width: originalRect.width + rotatedCursorDelta.dx * pointModifier.x,
-      height: originalRect.height + rotatedCursorDelta.dy * pointModifier.y,
+      center: center,
+      width: originalRect.width + cursorDelta.dx * pointModifier.x,
+      height: originalRect.height + cursorDelta.dy * pointModifier.y,
     );
 
-    var rotatedResizedRect = rotateRect(resizedRect, angle, resizedRect.center);
+    // final rotatedResizedRect = rotateRect(resizedRect, angle, center);
+    // context.read<DebugPointCubit>().update([
+    //   rotatedResizedRect.tl,
+    //   rotatedResizedRect.tr,
+    //   rotatedResizedRect.bl,
+    //   rotatedResizedRect.br,
+    //   cursorDelta,
+    //   rotatedCursorDelta(),
+    // ]);
 
-    // Start handling side resize
-
-    final opposingSideOffsetModifier = switch (alignment) {
-      Alignment.topCenter => const Offset(-1, 0),
-      Alignment.centerLeft => const Offset(0, -1),
-      Alignment.centerRight => const Offset(0, -1),
-      Alignment.bottomCenter => const Offset(-1, 0),
-      _ => const Offset(0, 0),
-    };
-
-    final opposingDelta = rotatePoint(
-        rotatedCursorDelta.scale(
-            opposingSideOffsetModifier.dx, opposingSideOffsetModifier.dy),
-        Offset.zero,
-        angle);
-
-    rotatedResizedRect = rotatedResizedRect.translated(opposingDelta / 2);
-
-    // End handling side resize
-
-    // Unrotate the final rect.
-    final unrotatedRect = rotatedResizedRect.unrotated;
-
-    var flipX = rotatedResizedRect.tr.dx < rotatedResizedRect.tl.dx;
-    var flipY = rotatedResizedRect.tr.dy > rotatedResizedRect.br.dy;
-    var topLeft = unrotatedRect.topLeft;
-    var size = unrotatedRect.size;
+    var topLeft = resizedRect.topLeft;
+    var size = resizedRect.size;
+    var flipX = resizedRect.edges.tr.dx < resizedRect.edges.tl.dx;
+    var flipY = resizedRect.edges.tr.dy > resizedRect.edges.br.dy;
 
     _component.value = Component(
       topLeft,

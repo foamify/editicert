@@ -23,6 +23,10 @@ const textFieldWidth = 96.0;
 
 typedef Edges = ({Offset bl, Offset br, Offset tl, Offset tr});
 
+extension RectEx on Rect {
+  Edges get edges => rotateRect(this, 0, Offset.zero);
+}
+
 extension EdgesEx on Edges {
   Edges translated(Offset offset) {
     return (bl: bl + offset, br: br + offset, tl: tl + offset, tr: tr + offset);
