@@ -551,6 +551,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     var cursorDelta = (rotatedCursorPoint - rotatedOriginalPoint);
     Offset rotatedCursorDelta() => rotatePoint(cursorDelta, Offset.zero, angle);
 
+    // handle resizing from sides, not edges
     if (alignment case Alignment.topCenter || Alignment.bottomCenter) {
       // Remove the horizontal delta if top/bottom side resize
       cursorDelta = Offset(0, cursorDelta.dy);
@@ -559,6 +560,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
       cursorDelta = Offset(cursorDelta.dx, 0);
     }
 
+    // on resize, we get the new center origin by simple getting the middle
+    // offset between the opposing point and the current cursor position
     final newCenter = getMiddleOffset(
       rotatedOpposingPoint + rotatedCursorDelta(),
       rotatedSelectedPoint,
@@ -568,6 +571,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     // final otherEdge1 = rotatePoint(rotatedSelectedPoint + originalCursorDelta, newCenter, -90);
     // final otherEdge2 = rotatePoint(rotatedOpposingPoint, newCenter, -90);
 
+    // TODO(damywise): Explanation
     var pointModifier = switch (alignment) {
       // edges
       Alignment.topRight => const Point(1, -1),
@@ -582,12 +586,15 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _ => const Point(0, 0),
     };
 
+    // if mirrored, the center origin does not move.
     final center = pressedAlt ? originalCenter : newCenter;
     if (pressedAlt) {
-      // Resized twice as big if mirrored (pressed alt/option)
+      // if mirrored (pressed alt/option), resize is twice as big to compensate
+      // the opposing side
       pointModifier = pointModifier * 2;
     }
 
+    // basic resizing for edges and sides
     var resizedRect = Rect.fromCenter(
       center: center,
       width: originalRect.width + cursorDelta.dx * pointModifier.x,
