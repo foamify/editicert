@@ -641,16 +641,15 @@ class _ControllerWidgetState extends State<ControllerWidget>
           resizedRect =
               resizedRect.translate(0, (newHeight - originalRect.height) / 2);
         }
-        // if (flipY != originallyFlipY) newHeight = -newHeight;
       } else {
         final originallyFlipX = tValue.flipX;
         final originallyFlipY = tValue.flipY;
 
-        if (aspectRatio > newAspectRatio.abs()) {
+        if (aspectRatio.abs() > newAspectRatio.abs()) {
           newWidth = newHeight * aspectRatio;
           if (flipX != originallyFlipX) newWidth = -newWidth;
           if (flipY != originallyFlipY) newWidth = -newWidth;
-        } else if (aspectRatio < newAspectRatio.abs()) {
+        } else if (aspectRatio.abs() < newAspectRatio.abs()) {
           newHeight = newWidth / aspectRatio;
           if (flipX != originallyFlipX) newHeight = -newHeight;
           if (flipY != originallyFlipY) newHeight = -newHeight;
