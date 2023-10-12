@@ -502,13 +502,10 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final pressedAlt = keys.contains(LogicalKeyboardKey.alt) ||
         keys.contains(LogicalKeyboardKey.altLeft) ||
         keys.contains(LogicalKeyboardKey.altRight);
-    // this is for rectangle resize
+    // this is for aspect ratio resize
     final pressedShift = keys.contains(LogicalKeyboardKey.shift) ||
         keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
-
-    print('Alt: $pressedAlt');
-    print('Shift: $pressedShift');
 
     final originalRect = tValue.rect;
     final angle = tValue.angle;
@@ -591,7 +588,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
       pointModifier = pointModifier * 2;
     }
 
-    final resizedRect = Rect.fromCenter(
+    var resizedRect = Rect.fromCenter(
       center: center,
       width: originalRect.width + cursorDelta.dx * pointModifier.x,
       height: originalRect.height + cursorDelta.dy * pointModifier.y,
@@ -607,10 +604,53 @@ class _ControllerWidgetState extends State<ControllerWidget>
     //   rotatedCursorDelta(),
     // ]);
 
-    var topLeft = resizedRect.topLeft;
-    var size = resizedRect.size;
     var flipX = resizedRect.edges.tr.dx < resizedRect.edges.tl.dx;
     var flipY = resizedRect.edges.tr.dy > resizedRect.edges.br.dy;
+
+    if (pressedShift) {
+      // handle aspect ratio resize
+
+      final aspectRatio = originalRect.size.aspectRatio;
+      var newAspectRatio = resizedRect.size.aspectRatio;
+
+      var newWidth = resizedRect.size.width;
+      var newHeight = resizedRect.size.height;
+
+      final originallyFlipX = tValue.flipX;
+      final originallyFlipY = tValue.flipY;
+
+      if (aspectRatio > newAspectRatio.abs()) {
+        newWidth = newHeight * aspectRatio;
+        if (flipX != originallyFlipX) newWidth = -newWidth;
+        if (flipY != originallyFlipY) newWidth = -newWidth;
+      } else if (aspectRatio < newAspectRatio.abs()) {
+        newHeight = newWidth / aspectRatio;
+        if (flipX != originallyFlipX) newHeight = -newHeight;
+        if (flipY != originallyFlipY) newHeight = -newHeight;
+      }
+
+      // mirrored
+      var aspectRatioRect =
+          Rect.fromCenter(center: center, width: newWidth, height: newHeight);
+      if (!pressedAlt) {
+        // non-mirrored
+        final rotatedResizedRect = rotateRect(resizedRect, angle, center);
+        var rotatedResizedOpposingOffset =
+            getOffset(alignment, rotatedResizedRect, opposite: true);
+
+        final ratioOpposingOffset =
+            getOffset(alignment, aspectRatioRect.edges, opposite: true);
+        final rotatedRatioOpposingOffset =
+            rotatePoint(ratioOpposingOffset, center, angle);
+
+        final delta = rotatedRatioOpposingOffset - rotatedResizedOpposingOffset;
+        aspectRatioRect = aspectRatioRect.translate(-delta.dx, -delta.dy);
+      }
+      resizedRect = aspectRatioRect;
+    }
+
+    var topLeft = resizedRect.topLeft;
+    var size = resizedRect.size;
 
     _component.value = Component(topLeft, size, angle, flipX, flipY);
   }
