@@ -1,13 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum ToolType {
-  move,
-  rectangle,
-  hand,
-  frame,
-  text,
-}
-
 class ToolCubit extends Cubit<ToolType> {
   ToolCubit(super.initialState);
 
@@ -20,4 +12,12 @@ class ToolCubit extends Cubit<ToolType> {
   void setFrame() => emit(ToolType.frame);
 
   void setText() => emit(ToolType.text);
+}
+
+enum ToolType {
+  move,
+  rectangle,
+  hand,
+  frame,
+  text,
 }

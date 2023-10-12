@@ -14,6 +14,13 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   final oPosition = ValueNotifier(Offset.zero);
 
   @override
+  void dispose() {
+    oComponent.dispose();
+    oPosition.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Listener(
       onPointerDown: handlePointerDown,
@@ -35,18 +42,20 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       ToolType.frame: ComponentType.frame,
       ToolType.rectangle: ComponentType.rectangle,
       ToolType.text: ComponentType.text,
+      ToolType.hand: null,
+      ToolType.move: null,
     };
     final componentName = {
       ToolType.frame: 'Frame',
       ToolType.rectangle: 'Rectangle',
       ToolType.text: 'Text',
+      ToolType.hand: null,
+      ToolType.move: null,
     };
 
     final canvasEvents = context.read<CanvasEventsCubit>();
 
-    canvasEvents.add(
-      CanvasEvent.creatingRectangle,
-    );
+    canvasEvents.add(CanvasEvent.creatingRectangle);
 
     final tController = context.read<CanvasTransformCubit>().state;
 
@@ -60,7 +69,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
 
     componentsNotifier.add(ComponentData(
       component: oComponent.value,
-      name: '${componentName[currentTool]} ${index + 1}',
+      name: '${componentName[currentTool] ?? '[Error CompType]'} ${index + 1}',
       type: componentType[currentTool] ?? ComponentType.other,
       color: currentTool == ToolType.text
           ? Colors.transparent
@@ -106,21 +115,13 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     final newRect = Rect.fromPoints(
       oPosition.value,
       shift
-          ? oPosition.value +
-              Offset(
-                longestSide * xScale,
-                longestSide * yScale,
-              )
-          : Offset(
-              pos.dx,
-              pos.dy,
-            ),
+          ? oPosition.value + Offset(longestSide * xScale, longestSide * yScale)
+          : Offset(pos.dx, pos.dy),
     );
     final newComponent = oComponent.value.copyWith(
       pos: (alt
           ? newRect.topLeft -
               switch ((deltaX, deltaY)) {
-                _ when shift => newRect.size.bottomRight(Offset.zero),
                 (false, false) => newRect.size.bottomRight(Offset.zero),
                 (true, false) => newRect.size.bottomLeft(Offset.zero),
                 (false, true) => newRect.size.topRight(Offset.zero),
@@ -137,6 +138,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
 
     final components = componentsNotifier.state.value;
     final index = components.length - 1;
+    // ignore: avoid-unsafe-collection-methods
     final component = components[index].component;
     if (component.size.width == 0 || component.size.height == 0) {
       componentsNotifier.replace(

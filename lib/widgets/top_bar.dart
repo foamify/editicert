@@ -16,10 +16,7 @@ class TopBar extends StatelessWidget with GetItMixin {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.withOpacity(.375),
-            width: 1,
-          ),
+          bottom: BorderSide(color: Colors.grey.withOpacity(.375), width: 1),
         ),
       ),
       padding: EdgeInsets.only(
@@ -44,11 +41,8 @@ class TopBar extends StatelessWidget with GetItMixin {
               icon: Transform.rotate(
                 angle: -pi / 5,
                 alignment: const Alignment(-0.2, 0.3),
-                child: const Icon(
-                  Icons.navigation_outlined,
-                  size: 18,
-                ),
-              )
+                child: const Icon(Icons.navigation_outlined, size: 18),
+              ),
             ),
             (
               text: 'Frame',
@@ -57,10 +51,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setFrame();
               },
-              icon: const Icon(
-                CupertinoIcons.grid,
-                size: 18,
-              )
+              icon: const Icon(CupertinoIcons.grid, size: 18),
             ),
             (
               text: 'Rectangle',
@@ -69,10 +60,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setRectangle();
               },
-              icon: const Icon(
-                CupertinoIcons.square,
-                size: 18,
-              )
+              icon: const Icon(CupertinoIcons.square, size: 18),
             ),
             (
               text: 'Hand',
@@ -81,10 +69,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setHand();
               },
-              icon: const Icon(
-                CupertinoIcons.hand_raised,
-                size: 18,
-              )
+              icon: const Icon(CupertinoIcons.hand_raised, size: 18),
             ),
             (
               text: 'Text',
@@ -93,18 +78,13 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setText();
               },
-              icon: const Icon(
-                CupertinoIcons.textbox,
-                size: 18,
-              )
+              icon: const Icon(CupertinoIcons.textbox, size: 18),
             ),
           ].map(
             (e) => Tooltip(
               richMessage: TextSpan(
                 children: [
-                  TextSpan(
-                    text: '${e.text} ',
-                  ),
+                  TextSpan(text: '${e.text} '),
                   TextSpan(
                     text: ' ${e.shortcut}',
                     style: TextStyle(
@@ -149,16 +129,13 @@ class TopBar extends StatelessWidget with GetItMixin {
                 transformationController.value.getMaxScaleOnAxis(),
               );
             },
-            icon: const Icon(
-              Icons.navigation_rounded,
-              size: 16,
-            ),
+            icon: const Icon(Icons.navigation_rounded, size: 16),
             label: const Text('Recenter'),
           ),
           const SizedBox(width: 8),
           ValueListenableBuilder(
             valueListenable: transformationController,
-            builder: (context, value, child) {
+            builder: (_, value, child) {
               return Text(
                 '${(value.getMaxScaleOnAxis() * 100).truncate()}%',
               );

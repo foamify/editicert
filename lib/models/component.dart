@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-shadowing
+
 import 'dart:math';
 import 'dart:ui';
 
@@ -17,13 +19,7 @@ class Component {
     bool flipX = false,
     bool flipY = false,
   }) =>
-      Component(
-        edges.tl,
-        edges.size,
-        edges.angle,
-        flipX,
-        flipY,
-      );
+      Component(edges.tl, edges.size, edges.angle, flipX, flipY);
 
   static fromEdgesOld(
     ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
@@ -70,7 +66,8 @@ class Component {
 
     ///----------------------------------------
     print(
-        Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height).topLeft);
+      Rect.fromLTWH(topLeft.dx, topLeft.dy, size.width, size.height).topLeft,
+    );
     print(newEdges.tl);
 
     ///----------------------------------------

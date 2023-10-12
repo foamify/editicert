@@ -1,3 +1,5 @@
+// ignore_for_file: avoid-unsafe-collection-methods
+
 part of '../main.dart';
 
 class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
@@ -59,33 +61,37 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   final stopwatch = Stopwatch();
 
+  late final VoidCallback _componentListener;
+
   @override
   void initState() {
+    super.initState();
+    _componentListener = () {
+      (componentsNotifier).replace(widget.index, transform: _component.value);
+      _visualComponent.value = _component.value;
+    };
     final component = (componentsNotifier.state.value[widget.index]).component;
     _component.value = component;
     _visualComponent.value = component;
-    _component.addListener(() {
-      (componentsNotifier).replace(widget.index, transform: _component.value);
-      _visualComponent.value = _component.value;
-    });
-
-    super.initState();
+    _component.addListener(_componentListener);
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
+    _component.removeListener(_componentListener);
+    _component.dispose();
+    _visualComponent.dispose();
+    _originalComponent.dispose();
+    _originalPosition.dispose();
+    _originalTransform.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final hovereds = watchX(
-      (Hovered hovered) => hovered.state,
-    );
-    final components = watchX(
-      (Components components) => components.state,
-    );
+    final hovereds = watchX((Hovered hovered) => hovered.state);
+    final components =
+        watchX((ComponentService componentsService) => componentsService.state);
     //
     final hovered = hovereds.contains(widget.index);
     final component = components[widget.index];
@@ -97,8 +103,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
         .contains(CanvasEvent.draggingComponent);
 
     registerHandler(
-      (Components components) => components.state,
-      (context, next, _) {
+      (ComponentService componentsService) => componentsService.state,
+      (_, next, __) {
         if (next.length <= widget.index) return;
         if (next[widget.index].component != _component.value) {
           _visualComponent.value = next[widget.index].component;
@@ -112,7 +118,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
         (context.read<CanvasTransformCubit>().state),
         selectedNotifier.state,
       ]),
-      builder: (context, child) {
+      builder: (context2, child) {
         final pos = getPos();
         final tSize = getSize();
         final tAngle = _visualComponent.value.angle;
@@ -139,7 +145,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
                       onPointerDown: (event) {
                         if (event.buttons == kMiddleMouseButton) return;
                         stopwatch.start();
-                        (context.read<CanvasEventsCubit>()).add(
+                        (context2.read<CanvasEventsCubit>()).add(
                           CanvasEvent.draggingComponent,
                         );
                         if (!selectedNotifier.state.value
@@ -168,11 +174,13 @@ class _ControllerWidgetState extends State<ControllerWidget>
                             stopwatch.isRunning &&
                             stopwatch.elapsedMilliseconds <= 500) {
                           print('TAPPED');
-                          (context.read<CanvasEventsCubit>())
+                          (context2.read<CanvasEventsCubit>())
                               .add(CanvasEvent.editingText);
-                          componentsNotifier.replace(widget.index,
-                              controller:
-                                  TextEditingController(text: component.name));
+                          componentsNotifier.replace(
+                            widget.index,
+                            controller:
+                                TextEditingController(text: component.name),
+                          );
                         }
                         selectedNotifier.add(widget.index);
                         hoveredNotifier.add(widget.index);
@@ -223,9 +231,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
                       Alignment.bottomCenter,
                       Alignment.centerLeft,
                       Alignment.centerRight,
-                    ].map((e) => _buildResizer(
-                          alignment: e,
-                        )),
+                    ].map((e) => _buildResizer(alignment: e)),
                   // edge resize controls
                   if (selectedValue)
                     ...[
@@ -284,12 +290,11 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final topRight = rotatedEdges.tl;
 
     final rotatedEdge = switch (alignment) {
-      Alignment.topLeft => topRight,
+      Alignment.topLeft || Alignment.topCenter => topRight,
       Alignment.topRight => rotatedEdges.tr,
       Alignment.bottomLeft => rotatedEdges.bl,
       Alignment.bottomRight => rotatedEdges.br,
       //
-      Alignment.topCenter => topRight,
       _ => Offset.zero,
     };
 
@@ -355,7 +360,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
                           color: Colors.white,
                           border:
                               Border.all(width: 1, color: Colors.blueAccent),
-                          borderRadius: BorderRadius.circular(2)),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                 ),
               ),
             ),
@@ -366,9 +372,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   }
 
   /// Builds the side resizer
-  Widget _buildResizer({
-    required Alignment alignment,
-  }) {
+  Widget _buildResizer({required Alignment alignment}) {
     final tValue = _visualComponent.value;
     // final scale = (context.read<CanvasTransformCubit>()Notifier.state.value).getMaxScaleOnAxis();
     const margin = 5.0;
@@ -414,10 +418,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final rTopLeft = rotatedEdges.tl;
 
     final selectedSide = switch (alignment) {
-      Alignment.topCenter => topLeft,
-      Alignment.centerLeft => topLeft,
-      Alignment.bottomCenter => bottomRight,
-      Alignment.centerRight => bottomRight,
+      Alignment.topCenter || Alignment.centerLeft => topLeft,
+      Alignment.bottomCenter || Alignment.centerRight => bottomRight,
       _ => Offset.zero,
     };
 
@@ -460,12 +462,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
   }
 
   /// Handles movement
-  void handleMove(
-    PointerMoveEvent event,
-  ) {
-    (context.read<CanvasEventsCubit>()).add(
-      CanvasEvent.draggingComponent,
-    );
+  void handleMove(PointerMoveEvent event) {
+    (context.read<CanvasEventsCubit>()).add(CanvasEvent.draggingComponent);
     final delta = event.position - _originalPosition.value;
     _component.value = _originalComponent.value.copyWith(
       pos: _originalComponent.value.pos + delta * getScale(),
@@ -525,7 +523,9 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
     final rotatedOriginalPoint = rotatePoint(
       MatrixUtils.transformPoint(
-          invertedComponentTransform, _originalPosition.value),
+        invertedComponentTransform,
+        _originalPosition.value,
+      ),
       selected + Offset(tValue.size.width, tValue.size.height) / 2,
       -angle,
     );
@@ -563,7 +563,9 @@ class _ControllerWidgetState extends State<ControllerWidget>
     }
 
     final newCenter = getMiddleOffset(
-        rotatedOpposingPoint + rotatedCursorDelta(), rotatedSelectedPoint);
+      rotatedOpposingPoint + rotatedCursorDelta(),
+      rotatedSelectedPoint,
+    );
 
     // TODO(damywise): Found method to keep aspect ratio but rotate
     // final otherEdge1 = rotatePoint(rotatedSelectedPoint + originalCursorDelta, newCenter, -90);
@@ -610,13 +612,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     var flipX = resizedRect.edges.tr.dx < resizedRect.edges.tl.dx;
     var flipY = resizedRect.edges.tr.dy > resizedRect.edges.br.dy;
 
-    _component.value = Component(
-      topLeft,
-      size,
-      angle,
-      flipX,
-      flipY,
-    );
+    _component.value = Component(topLeft, size, angle, flipX, flipY);
   }
 
   Size getSize() => _visualComponent.value.size / getScale();

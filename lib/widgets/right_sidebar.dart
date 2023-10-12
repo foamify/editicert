@@ -1,10 +1,7 @@
 part of '../main.dart';
 
 class RightSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
-  RightSidebar({
-    super.key,
-    required this.toggleColorPicker,
-  });
+  RightSidebar({super.key, required this.toggleColorPicker});
 
   final VoidCallback toggleColorPicker;
 
@@ -19,6 +16,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
 
   @override
   void initState() {
+    super.initState();
     backgroundColorController = TextEditingController(
       text: canvasStateNotifier.state.value.color.value
           .toRadixString(16)
@@ -31,16 +29,24 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
     backgroundHeightController = TextEditingController(
       text: canvasStateNotifier.state.value.size.height.toString(),
     );
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    backgroundColorController.dispose();
+    backgroundWidthController.dispose();
+    backgroundHeightController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final selected = watchX((Selected selected) => selected.state);
+    final selected = watchX((Selected selectedState) => selectedState.state);
     final canvasStateProvider =
-        watchX((CanvasState canvasState) => canvasState.state);
+        watchX((CanvasService canvasState) => canvasState.state);
     final component = selected.firstOrNull == null
         ? null
+        // ignore: avoid-unsafe-collection-methods
         : componentsNotifier.state.value[selected.first].component;
     final textTheme = Theme.of(context).textTheme;
 
@@ -71,7 +77,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     text: component.pos.dy.toStringAsFixed(1),
                   ),
                 ),
-              ]
+              ],
             ),
             (
               children: [
@@ -97,17 +103,14 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     text: component.size.height.toStringAsFixed(1),
                   ),
                 ),
-              ]
+              ],
             ),
             (
               children: [
                 (
                   prefix: Transform.translate(
                     offset: const Offset(0, -1),
-                    child: const Icon(
-                      size: 14,
-                      CupertinoIcons.rotate_right,
-                    ),
+                    child: const Icon(size: 14, CupertinoIcons.rotate_right),
                   ),
                   keyboardType: TextInputType.number,
                   controller: TextEditingController(
@@ -124,11 +127,9 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     ),
                   ),
                   keyboardType: TextInputType.number,
-                  controller: TextEditingController(
-                    text: '0',
-                  ),
+                  controller: TextEditingController(text: '0'),
                 ),
-              ]
+              ],
             ),
             (
               children: [
@@ -154,7 +155,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     text: component.flipY.toString(),
                   ),
                 ),
-              ]
+              ],
             ),
           ];
 
@@ -172,10 +173,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                   margin: const EdgeInsets.only(right: 6),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(2),
-                    border: Border.all(
-                      color: Colors.white,
-                      width: .5,
-                    ),
+                    border: Border.all(color: Colors.white, width: .5),
                     color: canvasStateProvider.color,
                   ),
                   child: InkWell(
@@ -253,12 +251,13 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
               print('test');
               print(canvasStateProvider.size);
               canvasStateNotifier.update(
-                  backgroundSize: Size(
-                double.parse(text),
-                canvasStateProvider.size.height,
-              ));
+                backgroundSize: Size(
+                  double.parse(text),
+                  canvasStateProvider.size.height,
+                ),
+              );
               print(canvasStateProvider.size);
-            }
+            },
           ),
           (
             prefix: Text(
@@ -269,22 +268,23 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             keyboardType: TextInputType.number,
             controller: backgroundHeightController,
             onChanged: (text) => canvasStateNotifier.update(
-                    backgroundSize: Size(
-                  canvasStateProvider.size.width,
-                  double.parse(text),
-                ))
+                  backgroundSize: Size(
+                    canvasStateProvider.size.width,
+                    double.parse(text),
+                  ),
+                ),
           ),
-        ]
+        ],
       ),
     ];
 
     final canvasSizeControl = canvasSizeControlData.map(
-      (e) => SizedBox(
+      (control) => SizedBox(
         height: 32,
         child: Row(
           children: [
-            ...e.children.map(
-              (e) => SizedBox(
+            ...control.children.map(
+              (controlInner) => SizedBox(
                 width: textFieldWidth,
                 child: Row(
                   children: [
@@ -293,19 +293,19 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                       width: 16,
                       height: 16,
                       margin: const EdgeInsets.only(right: 6),
-                      child: e.prefix,
+                      child: controlInner.prefix,
                     ),
                     // w: 72
                     Expanded(
                       child: TextField(
-                        onChanged: e.onChanged,
+                        onChanged: controlInner.onChanged,
                         cursorHeight: 12,
                         style: textTheme.bodySmall,
                         decoration: const InputDecoration.collapsed(
                           hintText: '',
                         ),
-                        keyboardType: e.keyboardType,
-                        controller: e.controller,
+                        keyboardType: controlInner.keyboardType,
+                        controller: controlInner.controller,
                       ),
                     ),
                   ],
@@ -326,38 +326,31 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
         children: [
           ...[
             (
-              title: Text(
-                'Background',
-                style: textTheme.labelMedium,
-              ),
+              title: Text('Background', style: textTheme.labelMedium),
               contents: [
                 backgroundControl,
-                const SizedBox(
-                  height: 8,
-                ),
+                const SizedBox(height: 8),
                 ...canvasSizeControl,
-              ]
+              ],
             ),
             if (component != null)
               (
-                title: Text(
-                  'Component',
-                  style: textTheme.labelMedium,
-                ),
+                title: Text('Component', style: textTheme.labelMedium),
                 contents: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ...controls!.mapIndexed(
-                        (i, e) => Padding(
+                        (i, outerContent) => Padding(
                           padding: EdgeInsets.only(
-                              bottom: i == controls.length - 1 ? 8 : 16.0),
+                            bottom: i == controls.length - 1 ? 8 : 16.0,
+                          ),
                           child: SizedBox(
                             height: 16,
                             child: Row(
                               children: [
-                                ...e.children.map(
-                                  (e) => SizedBox(
+                                ...outerContent.children.map(
+                                  (innerContent) => SizedBox(
                                     width: textFieldWidth,
                                     child: Row(
                                       children: [
@@ -367,7 +360,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                                           height: 16,
                                           margin:
                                               const EdgeInsets.only(right: 6),
-                                          child: e.prefix,
+                                          child: innerContent.prefix,
                                         ),
                                         // w: 72
                                         Expanded(
@@ -378,8 +371,9 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                                                 const InputDecoration.collapsed(
                                               hintText: '',
                                             ),
-                                            keyboardType: e.keyboardType,
-                                            controller: e.controller,
+                                            keyboardType:
+                                                innerContent.keyboardType,
+                                            controller: innerContent.controller,
                                           ),
                                         ),
                                       ],
@@ -393,32 +387,29 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                       ),
                     ],
                   ),
-                ]
+                ],
               ),
-          ].map(
-            (e) {
-              final title = e.title;
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Colors.grey.withOpacity(.5),
-                      width: 1,
-                    ),
+          ].map((content) {
+            final title = content.title;
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.grey.withOpacity(.5),
+                    width: 1,
                   ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 32, child: title),
-                    ...e.contents.map((e) => e),
-                  ],
-                ),
-              );
-            },
-          ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 32, child: title),
+                  ...content.contents.map((content2) => content2),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );

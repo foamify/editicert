@@ -10,11 +10,11 @@ class LeftSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
 class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
   @override
   Widget build(BuildContext context) {
-    final components = watchX((Components components) => components.state);
-    final selected = watchX((Selected selected) => selected.state);
-    final hovered = watchX((Hovered hovered) => hovered.state);
+    final components =
+        watchX((ComponentService componentsState) => componentsState.state);
+    final selected = watchX((Selected selectedState) => selectedState.state);
+    final hovered = watchX((Hovered hoveredState) => hoveredState.state);
 
-    final mqSize = MediaQuery.of(context).size;
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -49,13 +49,8 @@ class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
                     child: Row(
                       children: [
                         const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.0,
-                          ),
-                          child: Icon(
-                            Icons.rectangle_outlined,
-                            size: 12,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Icon(Icons.rectangle_outlined, size: 12),
                         ),
                         Expanded(
                           child: Text(
@@ -101,10 +96,7 @@ class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
                                   highlightColor: Colors.transparent,
                                   padding: EdgeInsets.zero,
                                   constraints: BoxConstraints.tight(
-                                    const Size(
-                                      18,
-                                      double.infinity,
-                                    ),
+                                    const Size(18, double.infinity),
                                   ),
                                   onPressed: () => componentsNotifier.replace(
                                     i,

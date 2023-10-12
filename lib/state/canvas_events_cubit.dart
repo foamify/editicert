@@ -1,27 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-enum CanvasEvent {
-  //
-  leftClick,
-  rightClick,
-  middleClick,
-  panningCanvas,
-  zoomingCanvas,
-  //
-  draggingComponent,
-  resizingComponent,
-  rotatingComponent,
-  //
-  creatingRectangle,
-  creatingFrame,
-  creatingText,
-  //
-  editingText,
-  //
-  draggingSidebarComponent,
-  fullscreen,
-}
-
 class CanvasEventsCubit extends Cubit<Set<CanvasEvent>> {
   CanvasEventsCubit() : super({});
 
@@ -49,9 +27,35 @@ class CanvasEventsCubit extends Cubit<Set<CanvasEvent>> {
   bool containsAny(Set<CanvasEvent> events) =>
       state.any((element) => events.contains(element));
 
+  // ignore: avoid-unsafe-collection-methods
   CanvasEvent operator +(CanvasEvent other) => CanvasEvent
+      // ignore: avoid-unsafe-collection-methods
       .values[state.indexed.where((element) => element.$2 == other).first.$1];
 
+  // ignore: avoid-unsafe-collection-methods
   CanvasEvent operator -(CanvasEvent other) => CanvasEvent
+      // ignore: avoid-unsafe-collection-methods
       .values[state.indexed.where((element) => element.$2 == other).first.$1];
+}
+
+enum CanvasEvent {
+  //
+  leftClick,
+  rightClick,
+  middleClick,
+  panningCanvas,
+  zoomingCanvas,
+  //
+  draggingComponent,
+  resizingComponent,
+  rotatingComponent,
+  //
+  creatingRectangle,
+  creatingFrame,
+  creatingText,
+  //
+  editingText,
+  //
+  draggingSidebarComponent,
+  fullscreen,
 }

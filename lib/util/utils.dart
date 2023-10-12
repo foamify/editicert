@@ -8,13 +8,13 @@ import 'package:get_it/get_it.dart';
 
 final _get = GetIt.I.get;
 
-Components get componentsNotifier => _get<Components>();
+ComponentService get componentsNotifier => _get<ComponentService>();
 
 Selected get selectedNotifier => _get<Selected>();
 
 Hovered get hoveredNotifier => _get<Hovered>();
 
-CanvasState get canvasStateNotifier => _get<CanvasState>();
+CanvasService get canvasStateNotifier => _get<CanvasService>();
 
 const sidebarWidth = 240.0;
 const topbarHeight = 52.0;

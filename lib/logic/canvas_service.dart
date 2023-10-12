@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CanvasState {
+class CanvasService {
   final state = ValueNotifier(CanvasData(
     color: Colors.white,
     hidden: false,

@@ -55,7 +55,7 @@ SPEC CHECKSUMS:
   irondash_engine_context: da62996ee25616d2f01bbeb85dc115d813359478
   macos_window_utils: 933f91f64805e2eb91a5bd057cf97cd097276663
   screen_retriever: 59634572a57080243dd1bf715e55b6c54f241a38
-  super_native_extensions: 0ba7a4de24239dd26f9b2f0aa60bd4f5f733d74b
+  super_native_extensions: 85efee3a7495b46b04befcfc86ed12069264ebf3
   touch_bar_macos: ab7c41504349deac8ba6bd08ff3b155cafdb4881
   window_manager: 3a1844359a6295ab1e47659b1a777e36773cd6e8
 

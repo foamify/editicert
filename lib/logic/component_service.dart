@@ -4,7 +4,7 @@ import 'package:editicert/util/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 
-class Components {
+class ComponentService {
   // Components() {
   //   _state = List.filled(200, ComponentData());
   // }
@@ -24,6 +24,7 @@ class Components {
     selectedNotifier.clear();
     hoveredNotifier.clear();
 
+    // ignore: avoid-unsafe-collection-methods
     final component = _state[oldIndex];
 
     _state = [
@@ -48,6 +49,7 @@ class Components {
     ComponentType? type,
     TextEditingController? controller,
   }) {
+    // ignore: avoid-unsafe-collection-methods
     final component = _state[index];
     _state = [
       ..._state
