@@ -24,11 +24,17 @@ import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'widgets/canvas.dart';
+
 part 'widgets/controller_widget.dart';
+
 part 'widgets/creator_widget.dart';
+
 part 'widgets/selector_widget.dart';
+
 part 'widgets/left_sidebar.dart';
+
 part 'widgets/right_sidebar.dart';
+
 part 'widgets/top_bar.dart';
 
 void main() async {
@@ -334,19 +340,42 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
-      onKey: (value) {
-        value.isKeyPressed(value.logicalKey)
-            ? context.read<KeysCubit>().add(value.logicalKey)
-            : context.read<KeysCubit>().remove(value.logicalKey);
-        // if (value.isKeyPressed(LogicalKeyboardKey.keyV)) {
-        //   context.read<ToolCubit>().setMove();
-        // }
-        // if (value.isKeyPressed(LogicalKeyboardKey.keyR)) {
-        //   context.read<ToolCubit>().setCreate();
-        // }
-        // if (value.isKeyPressed(LogicalKeyboardKey.keyH)) {
-        //   context.read<ToolCubit>().setHand();
-        // }
+      onKey: (event) {
+        event.isKeyPressed(event.logicalKey)
+            ? context.read<KeysCubit>().add(event.logicalKey)
+            : context.read<KeysCubit>().remove(event.logicalKey);
+        if (Platform.isWindows) {
+          final shortcuts = {
+            const SingleActivator(LogicalKeyboardKey.keyV):
+                VoidCallbackIntent(context.read<ToolCubit>().setMove),
+            const SingleActivator(LogicalKeyboardKey.keyF):
+                VoidCallbackIntent(context.read<ToolCubit>().setFrame),
+            const SingleActivator(LogicalKeyboardKey.keyR):
+                VoidCallbackIntent(context.read<ToolCubit>().setRectangle),
+            const SingleActivator(LogicalKeyboardKey.keyH):
+                VoidCallbackIntent(context.read<ToolCubit>().setHand),
+            const SingleActivator(LogicalKeyboardKey.keyT):
+                VoidCallbackIntent(context.read<ToolCubit>().setText),
+            const SingleActivator(LogicalKeyboardKey.delete):
+                VoidCallbackIntent(selected.isEmpty
+                    ? () {}
+                    : () => componentsNotifier.removeSelected()),
+            const SingleActivator(LogicalKeyboardKey.bracketLeft):
+                VoidCallbackIntent(
+                    selected.isEmpty ? () {} : () => handleGoBackward()),
+            const SingleActivator(LogicalKeyboardKey.bracketRight):
+                VoidCallbackIntent(
+                    selected.isEmpty ? () {} : () => handleGoForward()),
+          };
+          var i = 0;
+          while (i < shortcuts.length) {
+            if (ShortcutActivator.isActivatedBy(
+                shortcuts.keys.elementAt(i), event)) {
+              shortcuts.values.elementAt(i).callback();
+            }
+            i++;
+          }
+        }
       },
       child: Scaffold(
         backgroundColor: const Color(0xFF333333),
