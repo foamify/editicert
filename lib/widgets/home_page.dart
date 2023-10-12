@@ -475,14 +475,14 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                   builder: (context2) {
                     return MouseRegion(
                       cursor: switch (leftClick) {
-                        true
-                            when context2.read<CanvasEventsCubit>().containsAny(
-                              {
-                                CanvasEvent.resizingComponent,
-                                CanvasEvent.rotatingComponent,
-                              },
-                            ) =>
-                          SystemMouseCursors.none,
+                        // true
+                        //     when context2.read<CanvasEventsCubit>().containsAny(
+                        //       {
+                        //         CanvasEvent.resizingComponent,
+                        //         CanvasEvent.rotatingComponent,
+                        //       },
+                        //     ) =>
+                        //   SystemMouseCursors.none,
                         _ => MouseCursor.defer,
                       },
                       onHover: (event) =>
