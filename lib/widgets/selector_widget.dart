@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+part of '../main.dart';
 
 /// Marquee
 class SelectorWidget extends StatelessWidget {

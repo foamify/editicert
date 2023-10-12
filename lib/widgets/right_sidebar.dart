@@ -1,13 +1,4 @@
-import 'dart:math';
-
-import 'package:collection/collection.dart';
-import 'package:editicert/logic/canvas_service.dart';
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/utils.dart';
-import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:get_it_mixin/get_it_mixin.dart';
+part of '../main.dart';
 
 class RightSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
   RightSidebar({

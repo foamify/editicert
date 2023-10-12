@@ -1,17 +1,4 @@
-import 'dart:math';
-
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/logic/component_service.dart';
-import 'package:editicert/models/component.dart';
-import 'package:editicert/state/canvas_events_cubit.dart';
-import 'package:editicert/state/canvas_transform_cubit.dart';
-import 'package:editicert/state/keys_cubit.dart';
-import 'package:editicert/utils.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it_mixin/get_it_mixin.dart';
+part of '../main.dart';
 
 class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
   ControllerWidget(this.index, {super.key});

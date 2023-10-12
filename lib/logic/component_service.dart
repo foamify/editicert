@@ -1,6 +1,6 @@
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/models/component.dart';
-import 'package:editicert/utils.dart';
+import 'package:editicert/util/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 

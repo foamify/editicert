@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:editicert/utils.dart';
+import 'package:editicert/util/utils.dart';
 
 class Component {
   final Offset pos;

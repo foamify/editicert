@@ -7,18 +7,8 @@ import 'package:editicert/logic/canvas_service.dart';
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
 import 'package:editicert/models/component.dart';
-import 'package:editicert/state/canvas_events_cubit.dart';
-import 'package:editicert/state/canvas_transform_cubit.dart';
-import 'package:editicert/state/debug_point_cubit.dart';
-import 'package:editicert/state/keys_cubit.dart';
-import 'package:editicert/state/pointer_cubit.dart';
-import 'package:editicert/state/tool_cubit.dart';
-import 'package:editicert/utils.dart';
-import 'package:editicert/widgets/controller_widget.dart';
-import 'package:editicert/widgets/creator_widget.dart';
-import 'package:editicert/widgets/left_sidebar.dart';
-import 'package:editicert/widgets/right_sidebar.dart';
-import 'package:editicert/widgets/top_bar.dart';
+import 'package:editicert/state/state.dart';
+import 'package:editicert/util/utils.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -32,6 +22,14 @@ import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
+
+part 'widgets/canvas.dart';
+part 'widgets/controller_widget.dart';
+part 'widgets/creator_widget.dart';
+part 'widgets/selector_widget.dart';
+part 'widgets/left_sidebar.dart';
+part 'widgets/right_sidebar.dart';
+part 'widgets/top_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

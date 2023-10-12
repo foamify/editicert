@@ -1,10 +1,4 @@
-import 'package:collection/collection.dart';
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/logic/component_service.dart';
-import 'package:editicert/utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:get_it_mixin/get_it_mixin.dart';
+part of '../main.dart';
 
 class LeftSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
   LeftSidebar({super.key});

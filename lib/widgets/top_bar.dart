@@ -1,14 +1,4 @@
-import 'dart:io';
-import 'dart:math';
-
-import 'package:editicert/state/canvas_events_cubit.dart';
-import 'package:editicert/state/canvas_transform_cubit.dart';
-import 'package:editicert/state/tool_cubit.dart';
-import 'package:editicert/utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it_mixin/get_it_mixin.dart';
+part of '../main.dart';
 
 class TopBar extends StatelessWidget with GetItMixin {
   TopBar({super.key});
