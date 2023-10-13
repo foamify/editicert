@@ -13,6 +13,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
   late final TextEditingController backgroundColorController;
   late final TextEditingController backgroundWidthController;
   late final TextEditingController backgroundHeightController;
+  final flipToggle = [false, false];
 
   @override
   void initState() {
@@ -47,15 +48,23 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
     final component = selected.firstOrNull == null
         ? null
         // ignore: avoid-unsafe-collection-methods
-        : componentsNotifier.state.value[selected.first].component;
+        : watchX((ComponentService componentService) => componentService.state)[
+                // ignore: avoid-unsafe-collection-methods
+                selected.first]
+            .component;
     final textTheme = Theme.of(context).textTheme;
 
     final controls = component == null
         ? null
         : [
-            (
+            _InputGroup(
               children: [
-                (
+                _InputItem(
+                  tooltip: 'X-coordinate of the\n'
+                      'top-left edge of\n'
+                      'the component,\n'
+                      'relative to the canvas\n'
+                      'origin (top left)',
                   prefix: Text(
                     'X',
                     style: textTheme.bodySmall,
@@ -66,7 +75,12 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     text: component.pos.dx.toStringAsFixed(1),
                   ),
                 ),
-                (
+                _InputItem(
+                  tooltip: 'Y-coordinate of the\n'
+                      'top-left edge of\n'
+                      'the component,\n'
+                      'relative to the canvas\n'
+                      'origin (top left)',
                   prefix: Text(
                     'Y',
                     style: textTheme.bodySmall,
@@ -79,9 +93,10 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                 ),
               ],
             ),
-            (
+            _InputGroup(
               children: [
-                (
+                _InputItem(
+                  tooltip: 'Width of the component',
                   prefix: Text(
                     'W',
                     style: textTheme.bodySmall,
@@ -92,7 +107,8 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                     text: component.size.width.toStringAsFixed(1),
                   ),
                 ),
-                (
+                _InputItem(
+                  tooltip: 'Height of the component',
                   prefix: Text(
                     'H',
                     style: textTheme.bodySmall,
@@ -105,11 +121,12 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                 ),
               ],
             ),
-            (
+            _InputGroup(
               children: [
-                (
+                _InputItem(
+                  tooltip: 'Rotation angle of the component',
                   prefix: Transform.translate(
-                    offset: const Offset(0, -1),
+                    offset: const Offset(-1, -1),
                     child: const Icon(size: 14, CupertinoIcons.rotate_right),
                   ),
                   keyboardType: TextInputType.number,
@@ -118,7 +135,8 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                         '${((component.angle % (pi * 2)) / pi * 180).toStringAsFixed(1)}°',
                   ),
                 ),
-                (
+                _InputItem(
+                  tooltip: 'Corner radii of the component',
                   prefix: Transform.translate(
                     offset: const Offset(0, 1),
                     child: const Icon(
@@ -131,29 +149,64 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                 ),
               ],
             ),
-            (
+            _InputGroup(
+              isSelected: [component.flipX, component.flipY],
+              onPressed: (index) {
+                final center = component.rect.center;
+                final angle = component.angle;
+
+                final isFlipX = index == 0;
+                final isFlipY = index == 1;
+
+                final width =
+                    isFlipX ? -component.rect.width : component.rect.width;
+                final height =
+                    isFlipY ? -component.rect.height : component.rect.height;
+
+                final newRect = Rect.fromCenter(
+                  center: center,
+                  width: width,
+                  height: height,
+                );
+
+                final newComponent = Component(
+                  newRect.topLeft,
+                  newRect.size,
+                  angle,
+                  width < 0,
+                  height < 0,
+                );
+
+                setState(() {
+                  componentsNotifier.replace(
+                    // ignore: avoid-unsafe-collection-methods
+                    selected.first,
+                    transform: newComponent,
+                  );
+                  // ignore: avoid-unsafe-collection-methods
+                  final currentSelected = selected.first;
+                  selectedNotifier.state.value = {currentSelected};
+                });
+              },
               children: [
-                (
-                  prefix: Text(
-                    'FlipX',
-                    style: textTheme.bodySmall,
-                    textAlign: TextAlign.center,
+                _InputItem(
+                  tooltip: 'Is the component\nflipped horizontally',
+                  prefix: Transform.translate(
+                    offset: const Offset(1, 1),
+                    child: const Icon(size: 14, Icons.flip),
                   ),
-                  keyboardType: TextInputType.number,
-                  controller: TextEditingController(
-                    text: component.flipX.toString(),
-                  ),
+                  suffix: const Text('Horizontal'),
                 ),
-                (
-                  prefix: Text(
-                    'FlipY',
-                    style: textTheme.bodySmall,
-                    textAlign: TextAlign.center,
+                _InputItem(
+                  tooltip: 'Is the component\nflipped vertically',
+                  prefix: Transform.translate(
+                    offset: const Offset(0, 1),
+                    child: Transform.rotate(
+                      angle: pi / 2,
+                      child: const Icon(size: 14, Icons.flip),
+                    ),
                   ),
-                  keyboardType: TextInputType.number,
-                  controller: TextEditingController(
-                    text: component.flipY.toString(),
-                  ),
+                  suffix: const Text('Vertical'),
                 ),
               ],
             ),
@@ -279,40 +332,43 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
     ];
 
     final canvasSizeControl = canvasSizeControlData.map(
-      (control) => SizedBox(
-        height: 32,
-        child: Row(
-          children: [
-            ...control.children.map(
-              (controlInner) => SizedBox(
-                width: textFieldWidth,
-                child: Row(
-                  children: [
-                    // w: 24
-                    Container(
-                      width: 16,
-                      height: 16,
-                      margin: const EdgeInsets.only(right: 6),
-                      child: controlInner.prefix,
-                    ),
-                    // w: 72
-                    Expanded(
-                      child: TextField(
-                        onChanged: controlInner.onChanged,
-                        cursorHeight: 12,
-                        style: textTheme.bodySmall,
-                        decoration: const InputDecoration.collapsed(
-                          hintText: '',
-                        ),
-                        keyboardType: controlInner.keyboardType,
-                        controller: controlInner.controller,
+      (control) => Padding(
+        padding: sidebarPaddingHorizontal,
+        child: SizedBox(
+          height: 32,
+          child: Row(
+            children: [
+              ...control.children.map(
+                (controlInner) => SizedBox(
+                  width: textFieldWidth,
+                  child: Row(
+                    children: [
+                      // w: 24
+                      Container(
+                        width: 16,
+                        height: 16,
+                        margin: const EdgeInsets.only(right: 6),
+                        child: controlInner.prefix,
                       ),
-                    ),
-                  ],
+                      // w: 72
+                      Expanded(
+                        child: TextField(
+                          onChanged: controlInner.onChanged,
+                          cursorHeight: 12,
+                          style: textTheme.bodySmall,
+                          decoration: const InputDecoration.collapsed(
+                            hintText: '',
+                          ),
+                          keyboardType: controlInner.keyboardType,
+                          controller: controlInner.controller,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -328,7 +384,10 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             (
               title: Text('Background', style: textTheme.labelMedium),
               contents: [
-                backgroundControl,
+                Padding(
+                  padding: sidebarPaddingHorizontal,
+                  child: backgroundControl,
+                ),
                 const SizedBox(height: 8),
                 ...canvasSizeControl,
               ],
@@ -337,62 +396,102 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
               (
                 title: Text('Component', style: textTheme.labelMedium),
                 contents: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ...controls!.mapIndexed(
-                        (i, outerContent) => Padding(
-                          padding: EdgeInsets.only(
-                            bottom: i == controls.length - 1 ? 8 : 16.0,
-                          ),
-                          child: SizedBox(
-                            height: 16,
-                            child: Row(
-                              children: [
-                                ...outerContent.children.map(
-                                  (innerContent) => SizedBox(
-                                    width: textFieldWidth,
-                                    child: Row(
-                                      children: [
-                                        // w: 24
-                                        Container(
-                                          width: 16,
-                                          height: 16,
-                                          margin:
-                                              const EdgeInsets.only(right: 6),
-                                          child: innerContent.prefix,
-                                        ),
-                                        // w: 72
-                                        Expanded(
-                                          child: TextField(
-                                            cursorHeight: 12,
-                                            style: textTheme.bodySmall,
-                                            decoration:
-                                                const InputDecoration.collapsed(
-                                              hintText: '',
-                                            ),
-                                            keyboardType:
-                                                innerContent.keyboardType,
-                                            controller: innerContent.controller,
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: sidebarPaddingSize - sidebarPaddingStep,
+                      right: 16,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ...controls!.mapIndexed(
+                          (i, outerContent) => Padding(
+                            padding: EdgeInsets.only(
+                              bottom: i == controls.length - 1 ? 0 : 8.0,
+                            ),
+                            child: SizedBox(
+                              height: 24,
+                              child: ToggleButtons(
+                                isSelected:
+                                    outerContent.isSelected ?? [true, true],
+                                onPressed: outerContent.onPressed,
+                                disabledBorderColor: Colors.transparent,
+                                // borderColor: Colors.transparent,
+                                borderWidth: 0,
+                                // color: Colors.transparent,
+                                // fillColor: Colors.transparent,
+                                disabledColor: Colors.white,
+                                textStyle: textTheme.bodySmall,
+                                children: [
+                                  ...outerContent.children.mapIndexed(
+                                    (index, innerContent) => Padding(
+                                      padding: index == 0
+                                          ? const EdgeInsets.only(
+                                              left: sidebarPaddingStep,
+                                            )
+                                          : i == 3
+                                              ? const EdgeInsets.only(
+                                                  left: sidebarPaddingStep,
+                                                )
+                                              : EdgeInsets.zero,
+                                      child: Tooltip(
+                                        waitDuration:
+                                            const Duration(milliseconds: 1500),
+                                        message: innerContent.tooltip,
+                                        child: SizedBox(
+                                          width: textFieldWidth -
+                                              (i == 3 && index == 0 ? 4 : 0),
+                                          child: Row(
+                                            children: [
+                                              // w: 24
+                                              Container(
+                                                width: 16,
+                                                height: 16,
+                                                margin: const EdgeInsets.only(
+                                                  right: 6,
+                                                ),
+                                                child: innerContent.prefix,
+                                              ),
+                                              // w: 72
+                                              if (innerContent.controller !=
+                                                  null)
+                                                Expanded(
+                                                  child: TextField(
+                                                    cursorHeight: 12,
+                                                    style: textTheme.bodySmall,
+                                                    decoration:
+                                                        const InputDecoration
+                                                            .collapsed(
+                                                      hintText: '',
+                                                    ),
+                                                    keyboardType: innerContent
+                                                        .keyboardType,
+                                                    controller:
+                                                        innerContent.controller,
+                                                  ),
+                                                ),
+                                              if (innerContent.suffix != null)
+                                                innerContent.suffix!,
+                                            ],
                                           ),
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
           ].map((content) {
             final title = content.title;
             return Container(
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(
@@ -404,7 +503,10 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: 32, child: title),
+                  Padding(
+                    padding: sidebarPaddingHorizontal,
+                    child: SizedBox(height: 32, child: title),
+                  ),
                   ...content.contents.map((content2) => content2),
                 ],
               ),
@@ -414,4 +516,34 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
       ),
     );
   }
+}
+
+class _InputItem {
+  const _InputItem({
+    required this.tooltip,
+    required this.prefix,
+    this.suffix,
+    this.keyboardType,
+    this.controller,
+    this.toggleCallback,
+  });
+
+  final String tooltip;
+  final Widget prefix;
+  final Widget? suffix;
+  final TextInputType? keyboardType;
+  final TextEditingController? controller;
+  final void Function(bool toggled)? toggleCallback;
+}
+
+class _InputGroup {
+  const _InputGroup({
+    required this.children,
+    this.isSelected,
+    this.onPressed,
+  });
+
+  final List<_InputItem> children;
+  final List<bool>? isSelected;
+  final void Function(int index)? onPressed;
 }

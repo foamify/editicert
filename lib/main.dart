@@ -8,6 +8,7 @@ import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
 import 'package:editicert/models/component.dart';
 import 'package:editicert/state/state.dart';
+import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/utils.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -21,6 +22,7 @@ import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
+import 'package:vector_math/vector_math_geometry.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'widgets/canvas.dart';
