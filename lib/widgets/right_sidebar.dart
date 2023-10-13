@@ -217,7 +217,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
       child: Row(
         children: [
           SizedBox(
-            width: textFieldWidth,
+            width: kGextFieldWidth,
             child: Row(
               children: [
                 Container(
@@ -340,7 +340,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             children: [
               ...control.children.map(
                 (controlInner) => SizedBox(
-                  width: textFieldWidth,
+                  width: kGextFieldWidth,
                   child: Row(
                     children: [
                       // w: 24
@@ -374,7 +374,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
     );
 
     return Container(
-      width: sidebarWidth,
+      width: kSidebarWidth,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
       ),
@@ -439,7 +439,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                                             const Duration(milliseconds: 1500),
                                         message: innerContent.tooltip,
                                         child: SizedBox(
-                                          width: textFieldWidth -
+                                          width: kGextFieldWidth -
                                               (i == 3 && index == 0 ? 4 : 0),
                                           child: Row(
                                             children: [

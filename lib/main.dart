@@ -22,7 +22,6 @@ import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
-import 'package:vector_math/vector_math_geometry.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'widgets/canvas.dart';

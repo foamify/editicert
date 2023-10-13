@@ -60,7 +60,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     final tController = context.read<CanvasTransformCubit>().state;
 
     oPosition.value = tController
-        .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
+        .toScene(event.position + const Offset(-kSidebarWidth, -kTopbarHeight));
     oComponent.value = Component(oPosition.value, Size.zero, 0, false, false);
 
     final index = componentsNotifier.state.value.length;
@@ -92,7 +92,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       ..add(index);
 
     final pos = tController
-        .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
+        .toScene(event.position + const Offset(-kSidebarWidth, -kTopbarHeight));
     final deltaX = (oPosition.value.dx - pos.dx) > 0;
     final deltaY = (oPosition.value.dy - pos.dy) > 0;
 

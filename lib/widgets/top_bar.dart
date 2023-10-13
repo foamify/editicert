@@ -12,7 +12,7 @@ class TopBar extends StatelessWidget with GetItMixin {
     final canvasEvents = context.watch<CanvasEventsCubit>();
 
     return Container(
-      height: topbarHeight,
+      height: kTopbarHeight,
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(

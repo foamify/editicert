@@ -271,11 +271,15 @@ class _ControllerWidgetState extends State<ControllerWidget>
   void handlePointerUp(PointerUpEvent event) {
     if (event.buttons == kMiddleMouseButton) return;
     print('UP');
+    removeResizeEvents();
     context.read<CanvasEventsCubit>()
       ..remove(CanvasEvent.draggingComponent)
       ..remove(CanvasEvent.resizingComponent)
       ..remove(CanvasEvent.rotatingComponent);
     _component.value = _visualComponent.value;
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      removeResizeEvents();
+    });
   }
 
   /// Builds the edge resize and rotate control
@@ -307,7 +311,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _ => Offset.zero,
     };
 
-    final edgeScale = rotate ? 2 : 1;
+    final edgeScale = rotate ? 4 : 1;
 
     return Positioned(
       // this is for the whole widget
@@ -315,7 +319,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
       top: rotatedEdge.dy,
       child: Transform.translate(
         // this is for the widget inside the widget
-        offset: -const Offset(gestureSize, gestureSize) / (rotate ? 1 : 2),
+        offset: -const Offset(kGestureSize, kGestureSize) / (rotate ? .5 : 2),
         child: Transform.rotate(
           angle: component.angle,
           child: Transform.translate(
@@ -323,6 +327,23 @@ class _ControllerWidgetState extends State<ControllerWidget>
             child: Listener(
               onPointerDown: (event) {
                 if (event.buttons == kMiddleMouseButton) return;
+                final canvasEvent = switch (alignment) {
+                  Alignment.topLeft => CanvasEvent.resizeControllerTopLeft,
+                  Alignment.topRight => CanvasEvent.resizeControllerTopRight,
+                  Alignment.bottomLeft =>
+                    CanvasEvent.resizeControllerBottomLeft,
+                  Alignment.bottomRight =>
+                    CanvasEvent.resizeControllerBottomRight,
+                  _ => null,
+                };
+                if (canvasEvent != null) {
+                  context.read<CanvasEventsCubit>().add(canvasEvent);
+                }
+                if (rotate) {
+                  context
+                      .read<CanvasEventsCubit>()
+                      .add(CanvasEvent.rotateCursor);
+                }
                 (context.read<CanvasEventsCubit>()).add(
                   (rotate
                       ? CanvasEvent.rotatingComponent
@@ -345,15 +366,30 @@ class _ControllerWidgetState extends State<ControllerWidget>
               },
               onPointerUp: handlePointerUp,
               child: MouseRegion(
-                cursor: resize
-                    ? SystemMouseCursors.precise
-                    : SystemMouseCursors.grabbing,
+                onEnter: (_) {
+                  if (rotate) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.rotateCursor);
+                  }
+                  handleCustomPointerEnter(alignment);
+                },
+                onExit: (_) {
+                  if (context.read<CanvasEventsCubit>().containsAny({
+                    CanvasEvent.resizingComponent,
+                    CanvasEvent.draggingComponent,
+                    CanvasEvent.rotatingComponent,
+                  })) {
+                    return;
+                  }
+                  removeResizeEvents();
+                },
                 child: Container(
                   width: alignment == Alignment.topCenter ||
                           alignment == Alignment.bottomCenter
                       ? component.size.width
-                      : gestureSize * edgeScale,
-                  height: gestureSize * edgeScale,
+                      : kGestureSize * edgeScale,
+                  height: kGestureSize * edgeScale,
                   decoration: rotate
                       ? null
                       : BoxDecoration(
@@ -369,6 +405,31 @@ class _ControllerWidgetState extends State<ControllerWidget>
         ),
       ),
     );
+  }
+
+  void handleCustomPointerEnter(Alignment? alignment) {
+    print("enterenrreretereers");
+    if (context.read<CanvasEventsCubit>().containsAny({
+      CanvasEvent.resizingComponent,
+      CanvasEvent.draggingComponent,
+      CanvasEvent.rotatingComponent,
+    })) {
+      return;
+    }
+    final canvasEvent = switch (alignment) {
+      Alignment.topLeft => CanvasEvent.resizeControllerTopLeft,
+      Alignment.topCenter => CanvasEvent.resizeControllerTopCenter,
+      Alignment.topRight => CanvasEvent.resizeControllerTopRight,
+      Alignment.centerLeft => CanvasEvent.resizeControllerCenterLeft,
+      Alignment.centerRight => CanvasEvent.resizeControllerCenterRight,
+      Alignment.bottomLeft => CanvasEvent.resizeControllerBottomLeft,
+      Alignment.bottomCenter => CanvasEvent.resizeControllerBottomCenter,
+      Alignment.bottomRight => CanvasEvent.resizeControllerBottomRight,
+      _ => null,
+    };
+    if (canvasEvent != null) {
+      context.read<CanvasEventsCubit>().add(canvasEvent);
+    }
   }
 
   /// Builds the side resizer
@@ -400,17 +461,17 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
     final offset = switch (alignment) {
       Alignment.topCenter when tSize.width < 0 =>
-        Offset(-width - margin * 2, -gestureSize / 2),
-      Alignment.topCenter => const Offset(0, -gestureSize / 2),
+        Offset(-width - margin * 2, -kGestureSize / 2),
+      Alignment.topCenter => const Offset(0, -kGestureSize / 2),
       Alignment.centerLeft when tSize.height < 0 =>
-        Offset(-gestureSize / 2, tSize.height),
-      Alignment.centerLeft => const Offset(-gestureSize / 2, 0),
+        Offset(-kGestureSize / 2, tSize.height),
+      Alignment.centerLeft => const Offset(-kGestureSize / 2, 0),
       Alignment.bottomCenter when tSize.width < 0 =>
-        Offset(-width - margin * 2, tSize.height - gestureSize / 2),
-      Alignment.bottomCenter => Offset(0, tSize.height - gestureSize / 2),
+        Offset(-width - margin * 2, tSize.height - kGestureSize / 2),
+      Alignment.bottomCenter => Offset(0, tSize.height - kGestureSize / 2),
       Alignment.centerRight when tSize.height < 0 =>
-        Offset(tSize.width - gestureSize / 2, tSize.height),
-      Alignment.centerRight => Offset(tSize.width - gestureSize / 2, 0),
+        Offset(tSize.width - kGestureSize / 2, tSize.height),
+      Alignment.centerRight => Offset(tSize.width - kGestureSize / 2, 0),
       _ => Offset.zero,
     };
     final topLeft = edges.tl;
@@ -440,6 +501,19 @@ class _ControllerWidgetState extends State<ControllerWidget>
               (context.read<CanvasEventsCubit>()).add(
                 CanvasEvent.resizingComponent,
               );
+
+              final canvasEvent = switch (alignment) {
+                Alignment.topCenter => CanvasEvent.resizeControllerTopCenter,
+                Alignment.centerLeft => CanvasEvent.resizeControllerCenterLeft,
+                Alignment.centerRight =>
+                  CanvasEvent.resizeControllerCenterRight,
+                Alignment.bottomCenter =>
+                  CanvasEvent.resizeControllerBottomCenter,
+                _ => null,
+              };
+              if (canvasEvent != null) {
+                context.read<CanvasEventsCubit>().add(canvasEvent);
+              }
             },
             onPointerMove: (event) {
               if (event.buttons == kMiddleMouseButton) return;
@@ -447,6 +521,19 @@ class _ControllerWidgetState extends State<ControllerWidget>
             },
             onPointerUp: handlePointerUp,
             child: MouseRegion(
+              onEnter: (_) {
+                handleCustomPointerEnter(alignment);
+              },
+              onExit: (_) {
+                if (context.read<CanvasEventsCubit>().containsAny({
+                  CanvasEvent.resizingComponent,
+                  CanvasEvent.draggingComponent,
+                  CanvasEvent.rotatingComponent,
+                })) {
+                  return;
+                }
+                removeResizeEvents();
+              },
               cursor: SystemMouseCursors.grab,
               child: Container(
                 margin: const EdgeInsets.all(margin),
@@ -459,6 +546,20 @@ class _ControllerWidgetState extends State<ControllerWidget>
         ),
       ),
     );
+  }
+
+  void removeResizeEvents() {
+    context.read<CanvasEventsCubit>().removeAll([
+      CanvasEvent.rotateCursor,
+      CanvasEvent.resizeControllerTopLeft,
+      CanvasEvent.resizeControllerTopCenter,
+      CanvasEvent.resizeControllerTopRight,
+      CanvasEvent.resizeControllerCenterLeft,
+      CanvasEvent.resizeControllerCenterRight,
+      CanvasEvent.resizeControllerBottomLeft,
+      CanvasEvent.resizeControllerBottomCenter,
+      CanvasEvent.resizeControllerBottomRight,
+    ]);
   }
 
   /// Handles movement
@@ -477,12 +578,12 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _originalComponent.value.rect.center,
     );
     final originalAngle = atan2(
-      _originalPosition.value.dx - sidebarWidth - center.dx,
-      _originalPosition.value.dy - topbarHeight - center.dy,
+      _originalPosition.value.dx - kSidebarWidth - center.dx,
+      _originalPosition.value.dy - kTopbarHeight - center.dy,
     );
     final newAngle = atan2(
-      event.position.dx - sidebarWidth - center.dx,
-      event.position.dy - topbarHeight - center.dy,
+      event.position.dx - kSidebarWidth - center.dx,
+      event.position.dy - kTopbarHeight - center.dy,
     );
     final deltaAngle = newAngle - originalAngle;
 

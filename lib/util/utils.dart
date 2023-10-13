@@ -18,10 +18,10 @@ Hovered get hoveredNotifier => _get<Hovered>();
 
 CanvasService get canvasStateNotifier => _get<CanvasService>();
 
-const sidebarWidth = 240.0;
-const topbarHeight = 52.0;
-const gestureSize = 8.0;
-const textFieldWidth = 96.0;
+const kSidebarWidth = 240.0;
+const kTopbarHeight = 52.0;
+const kGestureSize = 8.0;
+const kGextFieldWidth = 96.0;
 
 typedef Edges = ({Offset bl, Offset br, Offset tl, Offset tr});
 

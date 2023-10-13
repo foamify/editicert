@@ -18,7 +18,7 @@ class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      width: sidebarWidth,
+      width: kSidebarWidth,
       color: colorScheme.surface,
       child: ListView(
         children: components
