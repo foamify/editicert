@@ -40,6 +40,8 @@ part 'widgets/top_bar.dart';
 
 part 'widgets/home_page.dart';
 
+part 'widgets/custom_cursor_widget.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await windowManager.ensureInitialized();

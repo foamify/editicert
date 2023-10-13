@@ -330,68 +330,79 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                               CanvasEvent.leftClick,
                             );
                       },
-                      child: Listener(
-                        onPointerHover: (event) {
-                          context
-                              .read<CanvasEventsCubit>()
-                              .remove(CanvasEvent.normalCursor);
-                          context.read<PointerCubit>().update(event.position);
+                      onPointerHover: (event) {
+                        context
+                            .read<CanvasEventsCubit>()
+                            .remove(CanvasEvent.normalCursor);
+                        context.read<PointerCubit>().update(event.position);
+                      },
+                      onPointerMove: (event) {
+                        context
+                            .read<CanvasEventsCubit>()
+                            .remove(CanvasEvent.normalCursor);
+                        context.read<PointerCubit>().update(event.position);
+                      },
+                      child: MouseRegion(
+                        cursor:
+                            tool == ToolType.frame || tool == ToolType.rectangle
+                                ? SystemMouseCursors.precise
+                                : isToolHand
+                                    ? Platform.isWindows
+                                        ? SystemMouseCursors.click
+                                        : canvasEvents.state.contains(
+                                            CanvasEvent.panningCanvas,
+                                          )
+                                            ? SystemMouseCursors.grabbing
+                                            : SystemMouseCursors.grab
+                                    : SystemMouseCursors.none,
+                        onExit: (event) {
+                          print('$mounted onExitCalled');
+                          WidgetsBinding.instance
+                              .addPostFrameCallback((timeStamp) {
+                            context
+                                .read<CanvasEventsCubit>()
+                                .add(CanvasEvent.normalCursor);
+                          });
                         },
-                        child: MouseRegion(
-                          cursor: SystemMouseCursors.none,
-                          onExit: (event) {
-                            print('$mounted onExitCalled');
-                            WidgetsBinding.instance
-                                .addPostFrameCallback((timeStamp) {
-                              context
-                                  .read<CanvasEventsCubit>()
-                                  .add(CanvasEvent.normalCursor);
-                            });
+                        child: InteractiveViewer.builder(
+                          transformationController: transformationController,
+                          panEnabled: (isToolHand &&
+                                  (!isNotCanvasTooling || isCanvasTooling)) ||
+                              (isCanvasTooling && !leftClick && !isZooming),
+                          onInteractionStart: (details) {
+                            if (pressedMeta) {
+                              context.read<CanvasEventsCubit>().add(
+                                    CanvasEvent.zoomingCanvas,
+                                  );
+                            } else {
+                              context.read<CanvasEventsCubit>().add(
+                                    CanvasEvent.panningCanvas,
+                                  );
+                            }
                           },
-                          child: InteractiveViewer.builder(
-                            transformationController: transformationController,
-                            panEnabled: (isToolHand &&
-                                    (!isNotCanvasTooling || isCanvasTooling)) ||
-                                (isCanvasTooling && !leftClick && !isZooming),
-                            onInteractionStart: (details) {
-                              if (pressedMeta) {
-                                context.read<CanvasEventsCubit>().add(
-                                      CanvasEvent.zoomingCanvas,
-                                    );
-                              } else if (isToolHand || middleClick) {
-                                context.read<CanvasEventsCubit>().add(
-                                      CanvasEvent.panningCanvas,
-                                    );
-                              }
-                            },
-                            onInteractionUpdate: (details) {
-                              context
-                                  .read<PointerCubit>()
-                                  .update(details.focalPoint);
-                              context
-                                  .read<CanvasTransformCubit>()
-                                  .update(transformationController.value);
-                              if (details.scale == 1 && !pressedMeta) {
-                                context.read<CanvasEventsCubit>().add(
-                                      CanvasEvent.panningCanvas,
-                                    );
-                              }
-                            },
-                            onInteractionEnd: (details) =>
-                                context.read<CanvasEventsCubit>()
-                                  ..remove(CanvasEvent.panningCanvas)
-                                  ..remove(CanvasEvent.zoomingCanvas),
-                            maxScale: 256,
-                            minScale: .01,
-                            trackpadScrollCausesScale: (pressedMeta ||
-                                    isZooming) &&
-                                !canvasEvents
-                                    .containsAny({CanvasEvent.panningCanvas}),
-                            interactionEndFrictionCoefficient: 0.000135,
-                            boundaryMargin:
-                                const EdgeInsets.all(double.infinity),
-                            builder: (_, viewport) => const SizedBox(),
-                          ),
+                          onInteractionUpdate: (details) {
+                            context
+                                .read<CanvasTransformCubit>()
+                                .update(transformationController.value);
+                            if (details.scale == 1 && !pressedMeta) {
+                              context.read<CanvasEventsCubit>().add(
+                                    CanvasEvent.panningCanvas,
+                                  );
+                            }
+                          },
+                          onInteractionEnd: (details) =>
+                              context.read<CanvasEventsCubit>()
+                                ..remove(CanvasEvent.panningCanvas)
+                                ..remove(CanvasEvent.zoomingCanvas),
+                          maxScale: 256,
+                          minScale: .01,
+                          trackpadScrollCausesScale:
+                              (pressedMeta || isZooming) &&
+                                  !canvasEvents
+                                      .containsAny({CanvasEvent.panningCanvas}),
+                          interactionEndFrictionCoefficient: 0.000135,
+                          boundaryMargin: const EdgeInsets.all(double.infinity),
+                          builder: (_, viewport) => const SizedBox(),
                         ),
                       ),
                     ),
@@ -750,170 +761,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
           ),
         ),
       ),
-    );
-  }
-}
-
-// ignore: prefer-single-widget-per-file
-class CustomCursorWidget extends StatelessWidget {
-  const CustomCursorWidget({
-    super.key,
-    required this.isToolHand,
-    required this.isNotCanvasTooling,
-    required this.isCanvasTooling,
-  });
-
-  final bool isToolHand;
-  final bool isNotCanvasTooling;
-  final bool isCanvasTooling;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: Listenable.merge([
-        componentsNotifier.state,
-        selectedNotifier.state,
-      ]),
-      builder: (context2, child) {
-        var canvasEvents = context2.watch<CanvasEventsCubit>();
-        final stateContains = canvasEvents.state.contains;
-
-        if (stateContains(CanvasEvent.normalCursor)) {
-          return const SizedBox.shrink();
-        }
-
-        final stateContainsAny = canvasEvents.containsAny;
-
-        final enabled = stateContainsAny({
-          CanvasEvent.rotatingComponent,
-          CanvasEvent.resizingComponent,
-        });
-
-        var angle = 0.0;
-        if (selectedNotifier.state.value.isNotEmpty) {
-          // ignore: avoid-unsafe-collection-methods
-          angle = componentsNotifier
-              .state
-              // ignore: avoid-unsafe-collection-methods
-              .value[selectedNotifier.state.value.first]
-              .component
-              .angle;
-        }
-
-        final alignments = {
-          Alignment.topLeft: CanvasEvent.resizeControllerTopLeft,
-          Alignment.topCenter: CanvasEvent.resizeControllerTopCenter,
-          Alignment.topRight: CanvasEvent.resizeControllerTopRight,
-          Alignment.centerLeft: CanvasEvent.resizeControllerCenterLeft,
-          Alignment.centerRight: CanvasEvent.resizeControllerCenterRight,
-          Alignment.bottomLeft: CanvasEvent.resizeControllerBottomLeft,
-          Alignment.bottomCenter: CanvasEvent.resizeControllerBottomCenter,
-          Alignment.bottomRight: CanvasEvent.resizeControllerBottomRight,
-        };
-
-        Alignment? alignment = null;
-        for (var MapEntry(:key, :value) in alignments.entries) {
-          if (context2.read<CanvasEventsCubit>().state.contains(value)) {
-            alignment = key;
-            break;
-          }
-        }
-        print(alignment);
-
-        final grab = switch ((
-          context
-              .read<CanvasEventsCubit>()
-              .state
-              .contains(CanvasEvent.leftClick),
-          isToolHand && (!isNotCanvasTooling || isCanvasTooling),
-        )) {
-          (false, true) => SystemMouseCursors.grab,
-          (true, true) => SystemMouseCursors.grabbing,
-          _ => MouseCursor.defer,
-        };
-
-        Widget child = const SizedBox.shrink();
-
-        if (alignment != null) {
-          final rotations = {
-            Alignment.topLeft: 45.0,
-            Alignment.topCenter: 90,
-            Alignment.topRight: 135,
-            Alignment.centerLeft: 0,
-            // Alignment.center: ,
-            Alignment.centerRight: 0,
-            Alignment.bottomRight: 225,
-            Alignment.bottomCenter: 90,
-            Alignment.bottomLeft: 315,
-          };
-
-          final rotate = stateContains(CanvasEvent.rotateCursor);
-
-          final icon =
-              rotate ? Icons.rotate_right : CupertinoIcons.arrow_left_right;
-
-          child = Transform.translate(
-            offset: const Offset(-6, -6),
-            child: Transform.rotate(
-              angle: angle + rotations[alignment]! / 180 * pi,
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: Icon(
-                  icon,
-                  size: 14,
-                  color: Colors.black,
-                  shadows: [
-                    Shadow(
-                      color: Colors.white,
-                      blurRadius: 1,
-                    )
-                  ],
-                  // color: colorScheme.onPrimary,
-                ),
-              ),
-            ),
-          );
-        } else {
-          child = Transform.rotate(
-            angle: -pi / 5,
-            alignment: const Alignment(-0.2, 0.3),
-            child: Stack(
-              children: [
-                const Icon(
-                  Icons.navigation,
-                  size: 18,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 2,
-                      color: Colors.black45,
-                      offset: Offset(-.5, 0),
-                    ),
-                  ],
-                ),
-                Transform.translate(
-                  offset: const Offset(2, 2),
-                  child: const Icon(
-                    Icons.navigation,
-                    size: 14,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return BlocBuilder<PointerCubit, Offset>(
-          builder: (context, state) {
-            return Transform.translate(
-              offset: state + const Offset(-4, -5),
-              child: child,
-            );
-          },
-        );
-      },
     );
   }
 }
