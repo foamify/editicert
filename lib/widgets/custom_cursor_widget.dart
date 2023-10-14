@@ -24,11 +24,11 @@ class CustomCursorWidget extends StatelessWidget {
         final stateContains = canvasEvents.state.contains;
 
         final tool = context.watch<ToolCubit>().state;
-        if (stateContains(CanvasEvent.normalCursor) || tool != ToolType.move) {
+        if ((stateContains(CanvasEvent.normalCursor) ||
+            tool != ToolType.move)) {
+          print('normalcursor');
           return const SizedBox.shrink();
         }
-
-        final stateContainsAny = canvasEvents.containsAny;
 
         // final enabled = stateContainsAny({
         //   CanvasEvent.rotatingComponent,
@@ -105,7 +105,8 @@ class CustomCursorWidget extends StatelessWidget {
             Alignment.bottomLeft: 315,
           };
 
-          final rotate = stateContains(CanvasEvent.rotateCursor);
+          final rotate = stateContains(CanvasEvent.rotateCursor) ||
+              stateContains(CanvasEvent.rotatingComponent);
 
           final icon =
               rotate ? Icons.rotate_right : CupertinoIcons.arrow_left_right;

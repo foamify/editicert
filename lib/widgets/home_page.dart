@@ -355,6 +355,14 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                                             ? SystemMouseCursors.grabbing
                                             : SystemMouseCursors.grab
                                     : SystemMouseCursors.none,
+                        onEnter: (event) {
+                          WidgetsBinding.instance
+                              .addPostFrameCallback((timeStamp) {
+                            context
+                                .read<CanvasEventsCubit>()
+                                .remove(CanvasEvent.normalCursor);
+                          });
+                        },
                         onExit: (event) {
                           print('$mounted onExitCalled');
                           WidgetsBinding.instance
@@ -486,29 +494,67 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                 ),
               ),
 
-            /// Custom pointer handler
-            // Positioned(
-            //   left: kSidebarWidth,
-            //   right: kSidebarWidth,
-            //   top: kTopbarHeight,
-            //   bottom: 0,
-            //   child: TransparentPointer(
-            //     child: Builder(
-            //       builder: (context2) {
-            //         return MouseRegion(
-            //           cursor: SystemMouseCursors.none,
-            //           onHover: (event) {
-            //             print('${DateTime.now()} update');
-            //             context2
-            //                 .read<CanvasEventsCubit>()
-            //                 .remove(CanvasEvent.normalCursor);
-            //             context2.read<PointerCubit>().update(event.position);
-            //           },
-            //         );
-            //       },
-            //     ),
-            //   ),
-            // ),
+            /// Handle pointer outside canvas
+            Positioned(
+              left: 0,
+              width: kSidebarWidth,
+              top: 0,
+              bottom: 0,
+              child: TransparentPointer(
+                child: MouseRegion(
+                  onEnter: (event) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.normalCursor);
+                  },
+                  onHover: (event) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.normalCursor);
+                  },
+                ),
+              ),
+            ),
+            Positioned(
+              right: kSidebarWidth,
+              left: kSidebarWidth,
+              top: 0,
+              height: kTopbarHeight,
+              child: TransparentPointer(
+                child: MouseRegion(
+                  onEnter: (event) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.normalCursor);
+                  },
+                  onHover: (event) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.normalCursor);
+                  },
+                ),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              width: kSidebarWidth,
+              top: 0,
+              bottom: 0,
+              child: TransparentPointer(
+                child: MouseRegion(
+                  onEnter: (event) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.normalCursor);
+                  },
+                  onHover: (event) {
+                    context
+                        .read<CanvasEventsCubit>()
+                        .add(CanvasEvent.normalCursor);
+                  },
+                ),
+              ),
+            ),
 
             /// Custom pointer
             IgnorePointer(

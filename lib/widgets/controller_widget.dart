@@ -311,7 +311,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _ => Offset.zero,
     };
 
-    final edgeScale = rotate ? 4 : 1;
+    final edgeScale = rotate ? 2 : 1;
 
     return Positioned(
       // this is for the whole widget
@@ -319,7 +319,10 @@ class _ControllerWidgetState extends State<ControllerWidget>
       top: rotatedEdge.dy,
       child: Transform.translate(
         // this is for the widget inside the widget
-        offset: -const Offset(kGestureSize, kGestureSize) / (rotate ? .5 : 2),
+        offset: -const Offset(kGestureSize, kGestureSize) / (rotate ? 1 : 2) +
+            (rotate && alignment != null
+                ? Offset(alignment.x, alignment.y) * kGestureSize / 2
+                : Offset.zero),
         child: Transform.rotate(
           angle: component.angle,
           child: Transform.translate(
@@ -367,6 +370,13 @@ class _ControllerWidgetState extends State<ControllerWidget>
               onPointerUp: handlePointerUp,
               child: MouseRegion(
                 onEnter: (_) {
+                  if (context.read<CanvasEventsCubit>().containsAny({
+                    CanvasEvent.resizingComponent,
+                    CanvasEvent.draggingComponent,
+                    CanvasEvent.rotatingComponent,
+                  })) {
+                    return;
+                  }
                   if (rotate) {
                     context
                         .read<CanvasEventsCubit>()
@@ -391,7 +401,23 @@ class _ControllerWidgetState extends State<ControllerWidget>
                       : kGestureSize * edgeScale,
                   height: kGestureSize * edgeScale,
                   decoration: rotate
-                      ? null
+                      ? BoxDecoration(
+                          borderRadius: switch (alignment) {
+                            Alignment.topLeft => const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                              ),
+                            Alignment.topRight => const BorderRadius.only(
+                                topRight: Radius.circular(12),
+                              ),
+                            Alignment.bottomLeft => const BorderRadius.only(
+                                bottomLeft: Radius.circular(12),
+                              ),
+                            Alignment.bottomRight => const BorderRadius.only(
+                                bottomRight: Radius.circular(12),
+                              ),
+                            _ => null,
+                          },
+                        )
                       : BoxDecoration(
                           color: Colors.white,
                           border:
