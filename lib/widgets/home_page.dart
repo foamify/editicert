@@ -343,7 +343,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         context.read<PointerCubit>().update(event.position);
                       },
                       child: MouseRegion(
-                        cursor: isToolHand
+                        cursor: isToolHand || middleClick
                             ? Platform.isWindows
                                 ? SystemMouseCursors.click
                                 : canvasEvents.state.contains(
