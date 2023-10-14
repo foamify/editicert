@@ -24,8 +24,9 @@ class CustomCursorWidget extends StatelessWidget {
         final stateContains = canvasEvents.state.contains;
 
         final tool = context.watch<ToolCubit>().state;
+        print(tool);
         if ((stateContains(CanvasEvent.normalCursor) ||
-            tool != ToolType.move)) {
+            tool == ToolType.hand)) {
           print('normalcursor');
           return const SizedBox.shrink();
         }
@@ -79,20 +80,7 @@ class CustomCursorWidget extends StatelessWidget {
 
         Widget child = const SizedBox.shrink();
 
-        if (tool == ToolType.text) {
-          child = const Icon(
-            Icons.abc,
-            size: 18,
-            color: Colors.red,
-            shadows: [
-              Shadow(
-                blurRadius: 2,
-                color: Colors.black45,
-                offset: Offset(-.5, 0),
-              ),
-            ],
-          );
-        } else if (alignment != null) {
+        if (alignment != null) {
           final rotations = {
             Alignment.topLeft: 45.0,
             Alignment.topCenter: 90,
@@ -133,6 +121,13 @@ class CustomCursorWidget extends StatelessWidget {
             ),
           );
         } else {
+          final toolIcon = switch (tool) {
+            ToolType.frame => CupertinoIcons.grid,
+            ToolType.rectangle => CupertinoIcons.square,
+            ToolType.text => CupertinoIcons.textbox,
+            _ => null,
+          };
+
           child = Transform.rotate(
             angle: -pi / 5,
             alignment: const Alignment(-0.2, 0.3),
@@ -158,6 +153,54 @@ class CustomCursorWidget extends StatelessWidget {
                     color: Colors.black,
                   ),
                 ),
+                if (toolIcon != null) ...[
+                  Transform.translate(
+                    offset: const Offset(4 - .5, 16 + .75),
+                    child: Transform.rotate(
+                      angle: pi / 5,
+                      child: Icon(toolIcon, size: 14, color: Colors.white),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(4 + .75, 16 - .5),
+                    child: Transform.rotate(
+                      angle: pi / 5,
+                      child: Icon(toolIcon, size: 14, color: Colors.white),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(4 + .75, 16 + .75),
+                    child: Transform.rotate(
+                      angle: pi / 5,
+                      child: Icon(toolIcon, size: 14, color: Colors.white),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(4 - .5, 16 - .5),
+                    child: Transform.rotate(
+                      angle: pi / 5,
+                      child: Icon(toolIcon, size: 14, color: Colors.white),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(4, 16),
+                    child: Transform.rotate(
+                      angle: pi / 5,
+                      child: Icon(
+                        toolIcon,
+                        size: 14,
+                        color: Colors.black,
+                        shadows: const [
+                          Shadow(
+                            blurRadius: 2,
+                            color: Colors.black45,
+                            offset: Offset(-.5, 0),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           );
@@ -166,7 +209,11 @@ class CustomCursorWidget extends StatelessWidget {
         return BlocBuilder<PointerCubit, Offset>(
           builder: (_, state) {
             return Transform.translate(
-              offset: state + const Offset(-4, -5),
+              offset: Offset(
+                    state.dx.truncateToDouble(),
+                    state.dy.truncateToDouble(),
+                  ) +
+                  const Offset(-4, -5),
               child: child,
             );
           },

@@ -343,18 +343,15 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         context.read<PointerCubit>().update(event.position);
                       },
                       child: MouseRegion(
-                        cursor:
-                            tool == ToolType.frame || tool == ToolType.rectangle
-                                ? SystemMouseCursors.precise
-                                : isToolHand
-                                    ? Platform.isWindows
-                                        ? SystemMouseCursors.click
-                                        : canvasEvents.state.contains(
-                                            CanvasEvent.panningCanvas,
-                                          )
-                                            ? SystemMouseCursors.grabbing
-                                            : SystemMouseCursors.grab
-                                    : SystemMouseCursors.none,
+                        cursor: isToolHand
+                            ? Platform.isWindows
+                                ? SystemMouseCursors.click
+                                : canvasEvents.state.contains(
+                                    CanvasEvent.panningCanvas,
+                                  )
+                                    ? SystemMouseCursors.grabbing
+                                    : SystemMouseCursors.grab
+                            : SystemMouseCursors.none,
                         onEnter: (event) {
                           WidgetsBinding.instance
                               .addPostFrameCallback((timeStamp) {
