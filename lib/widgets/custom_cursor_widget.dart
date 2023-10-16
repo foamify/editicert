@@ -82,6 +82,33 @@ class CustomCursorWidget extends StatelessWidget {
         Widget child = const SizedBox.shrink();
 
         if (alignment != null) {
+          final component = componentsNotifier.state.value
+              .elementAtOrNull(selectedNotifier.state.value.first)
+              ?.component;
+          final flipX = component?.flipX ?? false;
+          final flipY = component?.flipY ?? false;
+          if (flipX) {
+            alignment = switch (alignment) {
+              Alignment.topLeft => Alignment.topRight,
+              Alignment.topRight => Alignment.topLeft,
+              Alignment.bottomLeft => Alignment.bottomRight,
+              Alignment.bottomRight => Alignment.bottomLeft,
+              Alignment.centerLeft => Alignment.centerRight,
+              Alignment.centerRight => Alignment.centerLeft,
+              _ => alignment,
+            };
+          }
+          if (flipY) {
+            alignment = switch (alignment) {
+              Alignment.topLeft => Alignment.bottomLeft,
+              Alignment.topRight => Alignment.bottomRight,
+              Alignment.bottomLeft => Alignment.topLeft,
+              Alignment.bottomRight => Alignment.topRight,
+              Alignment.centerLeft => Alignment.centerRight,
+              Alignment.centerRight => Alignment.centerLeft,
+              _ => alignment,
+            };
+          }
           final rotations = {
             Alignment.topLeft: 45.0,
             Alignment.topCenter: 90,
