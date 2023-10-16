@@ -385,20 +385,28 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                               context.read<CanvasEventsCubit>().add(
                                     CanvasEvent.zoomingCanvas,
                                   );
-                            } else {
+                            } else if (middleClick ||
+                                (isToolHand &&
+                                    (!isNotCanvasTooling || isCanvasTooling)) ||
+                                (isCanvasTooling && !leftClick && !isZooming)) {
                               context.read<CanvasEventsCubit>().add(
                                     CanvasEvent.panningCanvas,
                                   );
                             }
                           },
                           onInteractionUpdate: (details) {
-                            context
-                                .read<CanvasTransformCubit>()
-                                .update(transformationController.value);
-                            if (details.scale == 1 && !pressedMeta) {
-                              context.read<CanvasEventsCubit>().add(
-                                    CanvasEvent.panningCanvas,
-                                  );
+                            if (middleClick ||
+                                (isToolHand &&
+                                    (!isNotCanvasTooling || isCanvasTooling)) ||
+                                (isCanvasTooling && !leftClick && !isZooming)) {
+                              context
+                                  .read<CanvasTransformCubit>()
+                                  .update(transformationController.value);
+                              if (details.scale == 1 && !pressedMeta) {
+                                context.read<CanvasEventsCubit>().add(
+                                      CanvasEvent.panningCanvas,
+                                    );
+                              }
                             }
                           },
                           onInteractionEnd: (details) =>
