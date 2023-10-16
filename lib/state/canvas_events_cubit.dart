@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CanvasEventsCubit extends Cubit<Set<CanvasEvent>> {
-  CanvasEventsCubit() : super({CanvasEvent.middleClickUp});
+  CanvasEventsCubit() : super({});
 
   void replaceAll(Set<CanvasEvent> events) {
     state.clear();
@@ -43,8 +43,7 @@ enum CanvasEvent {
   //
   leftClick,
   rightClick,
-  middleClickDown,
-  middleClickUp,
+  middleClick,
   panningCanvas,
   zoomingCanvas,
   //

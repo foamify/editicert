@@ -26,7 +26,7 @@ class CustomCursorWidget extends StatelessWidget {
         final tool = context.watch<ToolCubit>().state;
         print(tool);
         if ((stateContains(CanvasEvent.normalCursor) ||
-            stateContains(CanvasEvent.middleClickDown) ||
+            stateContains(CanvasEvent.middleClick) ||
             tool == ToolType.hand)) {
           print('normalcursor');
           return const SizedBox.shrink();

@@ -26,8 +26,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
     final leftClick = canvasEvents.state.contains(CanvasEvent.leftClick);
 
-    final middleClick =
-        canvasEvents.state.contains(CanvasEvent.middleClickDown);
+    final middleClick = canvasEvents.state.contains(CanvasEvent.middleClick);
 
     final isCreateTooling = canvasEvents.containsAny({
       CanvasEvent.creatingRectangle,
@@ -318,21 +317,17 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       onPointerDown: (event) {
                         final state = (event.kind == PointerDeviceKind.mouse &&
                                 event.buttons == kMiddleMouseButton)
-                            ? CanvasEvent.middleClickDown
+                            ? CanvasEvent.middleClick
                             : CanvasEvent.leftClick;
-                        if (state == CanvasEvent.middleClickDown) {
+                        if (state == CanvasEvent.middleClick) {
                           context.read<CanvasEventsCubit>().add(state);
-                          context
-                              .read<CanvasEventsCubit>()
-                              .remove(CanvasEvent.middleClickUp);
                         }
                       },
                       onPointerUp: (event) {
                         final canvasEvent =
                             context.read<CanvasEventsCubit>().state;
-                        if (canvasEvent.contains(CanvasEvent.middleClickDown)) {
-                          canvasEvent.remove(CanvasEvent.middleClickDown);
-                          canvasEvent.add(CanvasEvent.middleClickUp);
+                        if (canvasEvent.contains(CanvasEvent.middleClick)) {
+                          canvasEvent.remove(CanvasEvent.middleClick);
                         }
                       },
                       onPointerHover: (event) {
