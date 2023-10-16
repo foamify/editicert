@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches-ignore:
+      - gh-pages
 
 jobs:
   build:
@@ -19,6 +20,9 @@ jobs:
 
       - run: flutter clean
       - run: flutter pub get
+      - uses: bluefireteam/flutter-gh-pages@v7
+        with:
+         baseHref: /editicert/
       - run: flutter build web --release
 
       # Web deploy now is contained in build/web directory
@@ -38,7 +42,7 @@ jobs:
           git fetch origin gh-pages
           git switch gh-pages
           # copy the build that is there in ROOT/build/web into ROOT/build/web-deploy
-          cp -R ../web/* .
+          cp -R ../web/* build/web-deploy
           git status
           git add .
           # add commit of the previous commit from main
