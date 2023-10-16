@@ -1,10 +1,4 @@
-import 'dart:math';
-
-import 'package:editicert/logic/services.dart';
-import 'package:editicert/utils.dart';
-import 'package:editicert/widgets/controller_widget.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+part of '../main.dart';
 
 class CreatorWidget extends StatefulWidget {
   const CreatorWidget({super.key});
@@ -14,9 +8,17 @@ class CreatorWidget extends StatefulWidget {
 }
 
 class _CreatorWidgetState extends State<CreatorWidget> {
-  final oTriangle = ValueNotifier(const Triangle(Offset.zero, Size.zero, 0));
+  final oComponent =
+      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
 
   final oPosition = ValueNotifier(Offset.zero);
+
+  @override
+  void dispose() {
+    oComponent.dispose();
+    oPosition.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,22 +38,51 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   }
 
   void handlePointerDown(PointerDownEvent event) {
-    globalStateNotifier
-        .update(globalStateNotifier.state.value + GlobalStates.creating);
-    final tController = canvasTransform.state.value;
+    if (event.buttons == kMiddleMouseButton) return;
+
+    final componentType = {
+      ToolType.frame: ComponentType.frame,
+      ToolType.rectangle: ComponentType.rectangle,
+      ToolType.text: ComponentType.text,
+      ToolType.hand: null,
+      ToolType.move: null,
+    };
+    final componentName = {
+      ToolType.frame: 'Frame',
+      ToolType.rectangle: 'Rectangle',
+      ToolType.text: 'Text',
+      ToolType.hand: null,
+      ToolType.move: null,
+    };
+
+    final canvasEvents = context.read<CanvasEventsCubit>();
+
+    canvasEvents.add(CanvasEvent.creatingRectangle);
+
+    final tController = context.read<CanvasTransformCubit>().state;
+
     oPosition.value = tController
-        .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
-    oTriangle.value = Triangle(oPosition.value, Size.zero, 0);
+        .toScene(event.position + const Offset(-kSidebarWidth, -kTopbarHeight));
+    oComponent.value = Component(oPosition.value, Size.zero, 0, false, false);
+
     final index = componentsNotifier.state.value.length;
+
+    final currentTool = context.read<ToolCubit>().state;
+
     componentsNotifier.add(ComponentData(
-      triangle: oTriangle.value,
-      name: 'Rectangle ${index + 1}',
+      component: oComponent.value,
+      name: '${componentName[currentTool] ?? '[Error CompType]'} ${index + 1}',
+      type: componentType[currentTool] ?? ComponentType.other,
+      color: currentTool == ToolType.text
+          ? Colors.transparent
+          : const Color(0xFF9E9E9E),
     ));
   }
 
   void handlePointerMove(PointerMoveEvent event) {
-    final tController = canvasTransform.state.value;
-    final keys = keysNotifier.state.value;
+    if (event.buttons == kMiddleMouseButton) return;
+    final tController = context.read<CanvasTransformCubit>().state;
+    final keys = context.read<KeysCubit>().state;
     final shift = keys.contains(LogicalKeyboardKey.shiftLeft) ||
         keys.contains(LogicalKeyboardKey.shiftRight);
     final alt = keys.contains(LogicalKeyboardKey.altLeft) ||
@@ -64,7 +95,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       ..add(index);
 
     final pos = tController
-        .toScene(event.position + const Offset(-sidebarWidth, -topbarHeight));
+        .toScene(event.position + const Offset(-kSidebarWidth, -kTopbarHeight));
     final deltaX = (oPosition.value.dx - pos.dx) > 0;
     final deltaY = (oPosition.value.dy - pos.dy) > 0;
 
@@ -87,21 +118,13 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     final newRect = Rect.fromPoints(
       oPosition.value,
       shift
-          ? oPosition.value +
-              Offset(
-                longestSide * xScale,
-                longestSide * yScale,
-              )
-          : Offset(
-              pos.dx,
-              pos.dy,
-            ),
+          ? oPosition.value + Offset(longestSide * xScale, longestSide * yScale)
+          : Offset(pos.dx, pos.dy),
     );
-    final newTriangle = oTriangle.value.copyWith(
+    final newComponent = oComponent.value.copyWith(
       pos: (alt
           ? newRect.topLeft -
               switch ((deltaX, deltaY)) {
-                _ when shift => newRect.size.bottomRight(Offset.zero),
                 (false, false) => newRect.size.bottomRight(Offset.zero),
                 (true, false) => newRect.size.bottomLeft(Offset.zero),
                 (false, true) => newRect.size.topRight(Offset.zero),
@@ -110,27 +133,35 @@ class _CreatorWidgetState extends State<CreatorWidget> {
           : newRect.topLeft),
       size: (alt ? newRect.size * 2 : newRect.size),
     );
-    componentsNotifier.replace(index, triangle: newTriangle);
+    componentsNotifier.replace(index, transform: newComponent);
   }
 
-  void handlePointerUp(PointerUpEvent _) {
-    globalStateNotifier
-        .update(globalStateNotifier.state.value - GlobalStates.creating);
+  void handlePointerUp(PointerUpEvent event) {
+    if (context
+        .read<CanvasEventsCubit>()
+        .state
+        .contains(CanvasEvent.middleClickUp)) {
+      return;
+    }
+    context.read<CanvasEventsCubit>().remove(CanvasEvent.creatingRectangle);
 
     final components = componentsNotifier.state.value;
     final index = components.length - 1;
-    final triangle = components[index].triangle;
-    if (triangle.size.width == 0 || triangle.size.height == 0) {
+    // ignore: avoid-unsafe-collection-methods
+    final component = components[index].component;
+    if (component.size.width == 0 || component.size.height == 0) {
       componentsNotifier.replace(
         index,
-        triangle: Triangle(
-          oTriangle.value.pos - const Offset(50, 50),
+        transform: Component(
+          oComponent.value.pos - const Offset(50, 50),
           const Size(100, 100),
           0,
+          false,
+          false,
         ),
       );
     }
-    toolNotifier.setMove();
+    context.read<ToolCubit>().setMove();
     selectedNotifier
       ..clear()
       ..add(index);

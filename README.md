@@ -66,4 +66,5 @@ Certificate Editor & Batch Exporter
   - Without showing the controls
 - Touch bar (personal feature)
 - Recenter button
+- Canvas Guides (like lunacy)
 - TBA
