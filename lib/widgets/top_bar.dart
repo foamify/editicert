@@ -21,7 +21,7 @@ class TopBar extends StatelessWidget with GetItMixin {
       ),
       padding: EdgeInsets.only(
         left: 8 +
-            (Platform.isMacOS &&
+            (!kIsWeb && Platform.isMacOS &&
                     !canvasEvents.state.contains(CanvasEvent.fullscreen)
                 ? 80
                 : 0),

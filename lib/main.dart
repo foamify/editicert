@@ -44,39 +44,45 @@ part 'widgets/custom_cursor_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
+  if (!kIsWeb) {
+    await windowManager.ensureInitialized();
+  }
 
   setup();
 
-  if (Platform.isMacOS) {
-    await WindowManipulator.initialize(enableWindowDelegate: true);
-    final delegate = _MyDelegate();
-    WindowManipulator.addNSWindowDelegate(delegate);
-    final options = NSAppPresentationOptions.from({
-      NSAppPresentationOption.fullScreen,
-      NSAppPresentationOption.autoHideToolbar,
-      NSAppPresentationOption.autoHideMenuBar,
-      NSAppPresentationOption.autoHideDock,
-    });
+  if (!kIsWeb) {
+    if (Platform.isMacOS) {
+      await WindowManipulator.initialize(enableWindowDelegate: true);
+      final delegate = _MyDelegate();
+      WindowManipulator.addNSWindowDelegate(delegate);
+      final options = NSAppPresentationOptions.from({
+        NSAppPresentationOption.fullScreen,
+        NSAppPresentationOption.autoHideToolbar,
+        NSAppPresentationOption.autoHideMenuBar,
+        NSAppPresentationOption.autoHideDock,
+      });
 
-    options.applyAsFullScreenPresentationOptions();
+      options.applyAsFullScreenPresentationOptions();
 
-    await Future.wait([
-      WindowManipulator.makeTitlebarTransparent(),
-      WindowManipulator.enableFullSizeContentView(),
-      WindowManipulator.hideTitle(),
-      WindowManipulator.addToolbar(),
-      WindowManipulator.setToolbarStyle(
-        toolbarStyle: NSWindowToolbarStyle.unified,
-      ),
-    ]);
+      await Future.wait([
+        WindowManipulator.makeTitlebarTransparent(),
+        WindowManipulator.enableFullSizeContentView(),
+        WindowManipulator.hideTitle(),
+        WindowManipulator.addToolbar(),
+        WindowManipulator.setToolbarStyle(
+          toolbarStyle: NSWindowToolbarStyle.unified,
+        ),
+      ]);
+    }
   }
 
   runApp(Main());
-  await windowManager.waitUntilReadyToShow();
+  if (!kIsWeb) {
+    await windowManager.waitUntilReadyToShow();
 
-  unawaited(windowManager.show());
-  unawaited(windowManager.focus());
+    unawaited(windowManager.show());
+    unawaited(windowManager.focus());
+  }
 }
 
 class _MyDelegate extends NSWindowDelegate {
@@ -112,137 +118,147 @@ class Main extends StatelessWidget with GetItMixin {
     final selected = selectedProvider.isEmpty;
 
     return PlatformMenuBar(
-      menus: Platform.isWindows
+      menus: kIsWeb
           ? []
-          : [
-              const PlatformMenu(
-                label: 'Application',
-                menus: [
-                  PlatformMenuItemGroup(members: [
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.about,
-                    ),
+          : Platform.isWindows
+              ? []
+              : [
+                  const PlatformMenu(
+                    label: 'Application',
+                    menus: [
+                      PlatformMenuItemGroup(members: [
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType.about,
+                        ),
+                      ]),
+                      PlatformMenuItemGroup(members: [
+                        PlatformMenuItem(label: 'Preferences'),
+                      ]),
+                      PlatformMenuItemGroup(members: [
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType.minimizeWindow,
+                        ),
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType.zoomWindow,
+                        ),
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType.hide,
+                        ),
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType
+                              .hideOtherApplications,
+                        ),
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType.toggleFullScreen,
+                        ),
+                        PlatformProvidedMenuItem(
+                          type: PlatformProvidedMenuItemType.quit,
+                        ),
+                      ]),
+                    ],
+                  ),
+                  const PlatformMenu(
+                    label: 'File',
+                    menus: [
+                      PlatformMenuItem(
+                        label: 'New Project',
+                        shortcut: SingleActivator(LogicalKeyboardKey.keyN,
+                            meta: true),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Open Project',
+                        shortcut: SingleActivator(LogicalKeyboardKey.keyO,
+                            meta: true),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Save',
+                        shortcut: SingleActivator(LogicalKeyboardKey.keyS,
+                            meta: true),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Save As',
+                        shortcut: SingleActivator(
+                          LogicalKeyboardKey.keyS,
+                          meta: true,
+                          shift: true,
+                        ),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Close Project',
+                        shortcut: SingleActivator(LogicalKeyboardKey.keyW,
+                            meta: true),
+                      ),
+                    ],
+                  ),
+                  const PlatformMenu(label: 'Assets', menus: [
+                    PlatformMenu(label: 'Import', menus: [
+                      PlatformMenuItem(label: 'File'),
+                    ]),
                   ]),
-                  PlatformMenuItemGroup(members: [
-                    PlatformMenuItem(label: 'Preferences'),
-                  ]),
-                  PlatformMenuItemGroup(members: [
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.minimizeWindow,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.zoomWindow,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.hide,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.hideOtherApplications,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.toggleFullScreen,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.quit,
-                    ),
-                  ]),
-                ],
-              ),
-              const PlatformMenu(
-                label: 'File',
-                menus: [
-                  PlatformMenuItem(
-                    label: 'New Project',
-                    shortcut:
-                        SingleActivator(LogicalKeyboardKey.keyN, meta: true),
+                  PlatformMenu(
+                    label: 'Tools',
+                    menus: [
+                      PlatformMenuItem(
+                        label: 'Move',
+                        shortcut:
+                            const SingleActivator(LogicalKeyboardKey.keyV),
+                        onSelected: () => context.read<ToolCubit>().setMove(),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Frame',
+                        shortcut:
+                            const SingleActivator(LogicalKeyboardKey.keyF),
+                        onSelected: () => context.read<ToolCubit>().setFrame(),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Rectangle',
+                        shortcut:
+                            const SingleActivator(LogicalKeyboardKey.keyR),
+                        onSelected: () =>
+                            context.read<ToolCubit>().setRectangle(),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Hand',
+                        shortcut:
+                            const SingleActivator(LogicalKeyboardKey.keyH),
+                        onSelected: () => context.read<ToolCubit>().setHand(),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Text',
+                        shortcut:
+                            const SingleActivator(LogicalKeyboardKey.keyT),
+                        onSelected: () => context.read<ToolCubit>().setText(),
+                      ),
+                    ],
                   ),
-                  PlatformMenuItem(
-                    label: 'Open Project',
-                    shortcut:
-                        SingleActivator(LogicalKeyboardKey.keyO, meta: true),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Save',
-                    shortcut:
-                        SingleActivator(LogicalKeyboardKey.keyS, meta: true),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Save As',
-                    shortcut: SingleActivator(
-                      LogicalKeyboardKey.keyS,
-                      meta: true,
-                      shift: true,
-                    ),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Close Project',
-                    shortcut:
-                        SingleActivator(LogicalKeyboardKey.keyW, meta: true),
-                  ),
-                ],
-              ),
-              const PlatformMenu(label: 'Assets', menus: [
-                PlatformMenu(label: 'Import', menus: [
-                  PlatformMenuItem(label: 'File'),
-                ]),
-              ]),
-              PlatformMenu(
-                label: 'Tools',
-                menus: [
-                  PlatformMenuItem(
-                    label: 'Move',
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyV),
-                    onSelected: () => context.read<ToolCubit>().setMove(),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Frame',
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyF),
-                    onSelected: () => context.read<ToolCubit>().setFrame(),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Rectangle',
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyR),
-                    onSelected: () => context.read<ToolCubit>().setRectangle(),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Hand',
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyH),
-                    onSelected: () => context.read<ToolCubit>().setHand(),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Text',
-                    shortcut: const SingleActivator(LogicalKeyboardKey.keyT),
-                    onSelected: () => context.read<ToolCubit>().setText(),
+                  PlatformMenu(
+                    label: 'Shortcuts',
+                    menus: [
+                      PlatformMenuItem(
+                        label: 'Remove Selected',
+                        shortcut: Platform.isMacOS
+                            ? const SingleActivator(
+                                LogicalKeyboardKey.backspace)
+                            : const SingleActivator(LogicalKeyboardKey.delete),
+                        onSelected: selected
+                            ? null
+                            : () => componentsNotifier.removeSelected(),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Bring Backward',
+                        shortcut: const SingleActivator(
+                            LogicalKeyboardKey.bracketLeft),
+                        onSelected: selected ? null : () => handleGoBackward(),
+                      ),
+                      PlatformMenuItem(
+                        label: 'Bring Forward',
+                        shortcut: const SingleActivator(
+                            LogicalKeyboardKey.bracketRight),
+                        onSelected: selected ? null : () => handleGoForward(),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-              PlatformMenu(
-                label: 'Shortcuts',
-                menus: [
-                  PlatformMenuItem(
-                    label: 'Remove Selected',
-                    shortcut: Platform.isMacOS
-                        ? const SingleActivator(LogicalKeyboardKey.backspace)
-                        : const SingleActivator(LogicalKeyboardKey.delete),
-                    onSelected: selected
-                        ? null
-                        : () => componentsNotifier.removeSelected(),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Bring Backward',
-                    shortcut:
-                        const SingleActivator(LogicalKeyboardKey.bracketLeft),
-                    onSelected: selected ? null : () => handleGoBackward(),
-                  ),
-                  PlatformMenuItem(
-                    label: 'Bring Forward',
-                    shortcut:
-                        const SingleActivator(LogicalKeyboardKey.bracketRight),
-                    onSelected: selected ? null : () => handleGoForward(),
-                  ),
-                ],
-              ),
-            ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Editicert',
