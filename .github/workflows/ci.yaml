@@ -1,4 +1,4 @@
-name: Flutter macOS and Windows build
+name: Flutter build
 
 on:
   push:
@@ -7,38 +7,34 @@ jobs:
   build-macos:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4.1.0
     - uses: subosito/flutter-action@v2.11.0
       with:
         flutter-version: "3.13.7"
         channel: "stable"
-    - name: Enable macOS desktop
-      run: flutter config --enable-macos-desktop
     - name: Get dependencies
       run: flutter pub get
     - name: Build macOS executable
       run: flutter build macos --release
     - name: Upload macOS executable
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.3
       with:
         name: macos-executable
         path: build/macos/Build/Products/Release/*
   build-windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4.1.0
     - uses: subosito/flutter-action@v2.11.0
       with:
         flutter-version: "3.13.7"
         channel: "stable"
-    - name: Enable Windows desktop
-      run: flutter config --enable-windows-desktop
     - name: Get dependencies
       run: flutter pub get
     - name: Build Windows executable
       run: flutter build windows --release
     - name: Upload Windows executable
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3.1.3
       with:
         name: windows-executable
         path: build/windows/runner/Release/*
