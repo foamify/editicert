@@ -1,7 +1,8 @@
 name: Deploy to GitHub Pages
 
 on:
-  push: [main]
+  push:
+    branches: [main]
 
 jobs:
   build:

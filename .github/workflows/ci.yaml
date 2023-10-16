@@ -1,7 +1,8 @@
 name: Flutter build
 
 on:
-  push: [main]
+  push:
+    branches: [main]
 
 jobs:
   build-macos:
