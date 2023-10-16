@@ -1,7 +1,7 @@
 name: Flutter build
 
 on:
-  push:
+  push: [main]
 
 jobs:
   build-macos:
