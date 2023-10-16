@@ -2,8 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches-ignore:
-      - gh-pages
+    branches: [main]
 
 jobs:
   build:
@@ -20,34 +19,6 @@ jobs:
 
       - run: flutter clean
       - run: flutter pub get
-      - uses: bluefireteam/flutter-gh-pages@v7
+      - uses: bluefireteam/flutter-gh-pages@v8
         with:
          baseHref: /editicert/
-      - run: flutter build web --release
-
-      # Web deploy now is contained in build/web directory
-      - run: |
-          cd build
-          mkdir web-deploy
-          cd web-deploy
-          #! Update with your Email ID associated with GitHub
-          git config --global user.email ${{secrets.EMAIL}}
-          #! Update with your username associated with GitHub
-          git config --global user.name damywise
-          git config --global init.defaultBranch main
-          git init
-          # the repository to push the deploy into
-          #! Update the following with your username and repository
-          git remote add origin https://${{secrets.ACCESS_TOKEN}}@github.com/foamify/editicert.git
-          git fetch origin gh-pages
-          git switch gh-pages
-          # copy the build that is there in ROOT/build/web into ROOT/build/web-deploy
-          cp -R ../web/* build/web-deploy
-          git status
-          git add .
-          # add commit of the previous commit from main
-          echo ""
-          echo "Committing to gh-pages: ${{ github.event.head_commit.message }}"
-          echo ""
-          git commit -m "${{ github.event.head_commit.message }}"
-          git push origin gh-pages

@@ -2,8 +2,7 @@ name: Flutter build
 
 on:
   push:
-    branches-ignore:
-      - gh-pages
+    branches: [main]
 
 jobs:
   build-macos:
