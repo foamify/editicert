@@ -38,6 +38,8 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   }
 
   void handlePointerDown(PointerDownEvent event) {
+    if (event.buttons == kMiddleMouseButton) return;
+
     final componentType = {
       ToolType.frame: ComponentType.frame,
       ToolType.rectangle: ComponentType.rectangle,
@@ -78,6 +80,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
   }
 
   void handlePointerMove(PointerMoveEvent event) {
+    if (event.buttons == kMiddleMouseButton) return;
     final tController = context.read<CanvasTransformCubit>().state;
     final keys = context.read<KeysCubit>().state;
     final shift = keys.contains(LogicalKeyboardKey.shiftLeft) ||
@@ -133,7 +136,13 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     componentsNotifier.replace(index, transform: newComponent);
   }
 
-  void handlePointerUp(PointerUpEvent _) {
+  void handlePointerUp(PointerUpEvent event) {
+    if (context
+        .read<CanvasEventsCubit>()
+        .state
+        .contains(CanvasEvent.middleClickUp)) {
+      return;
+    }
     context.read<CanvasEventsCubit>().remove(CanvasEvent.creatingRectangle);
 
     final components = componentsNotifier.state.value;

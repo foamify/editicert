@@ -43,7 +43,8 @@ enum CanvasEvent {
   //
   leftClick,
   rightClick,
-  middleClick,
+  middleClickDown,
+  middleClickUp,
   panningCanvas,
   zoomingCanvas,
   //

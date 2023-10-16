@@ -41,7 +41,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               icon: Transform.rotate(
                 angle: -pi / 5,
                 alignment: const Alignment(-0.2, 0.3),
-                child: const Icon(Icons.navigation_outlined, size: 18),
+                child: const Icon(Icons.navigation_outlined, size: 20),
               ),
             ),
             (
@@ -51,7 +51,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setFrame();
               },
-              icon: const Icon(CupertinoIcons.grid, size: 18),
+              icon: const Icon(CupertinoIcons.grid, size: 20),
             ),
             (
               text: 'Rectangle',
@@ -60,7 +60,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setRectangle();
               },
-              icon: const Icon(CupertinoIcons.square, size: 18),
+              icon: const Icon(CupertinoIcons.square, size: 20),
             ),
             (
               text: 'Hand',
@@ -69,7 +69,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setHand();
               },
-              icon: const Icon(CupertinoIcons.hand_raised, size: 18),
+              icon: const Icon(CupertinoIcons.hand_raised, size: 20),
             ),
             (
               text: 'Text',
@@ -78,7 +78,7 @@ class TopBar extends StatelessWidget with GetItMixin {
               onTap: () {
                 context.read<ToolCubit>().setText();
               },
-              icon: const Icon(CupertinoIcons.textbox, size: 18),
+              icon: const Icon(CupertinoIcons.textbox, size: 20),
             ),
           ].map(
             (e) => Tooltip(

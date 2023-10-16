@@ -26,7 +26,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
     final leftClick = canvasEvents.state.contains(CanvasEvent.leftClick);
 
-    final middleClick = canvasEvents.state.contains(CanvasEvent.middleClick);
+    final middleClick =
+        canvasEvents.state.contains(CanvasEvent.middleClickDown);
 
     final isCreateTooling = canvasEvents.containsAny({
       CanvasEvent.creatingRectangle,
@@ -304,8 +305,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
                   //
 
-                  if (tool == ToolType.rectangle ||
-                      isCreateTooling ||
+                  if (isCreateTooling ||
+                      tool == ToolType.rectangle ||
                       tool == ToolType.frame ||
                       tool == ToolType.text)
                     const CreatorWidget(),
@@ -317,18 +318,22 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       onPointerDown: (event) {
                         final state = (event.kind == PointerDeviceKind.mouse &&
                                 event.buttons == kMiddleMouseButton)
-                            ? CanvasEvent.middleClick
+                            ? CanvasEvent.middleClickDown
                             : CanvasEvent.leftClick;
-                        context.read<CanvasEventsCubit>().add(state);
+                        if (state == CanvasEvent.middleClickDown) {
+                          context.read<CanvasEventsCubit>().add(state);
+                          context
+                              .read<CanvasEventsCubit>()
+                              .remove(CanvasEvent.middleClickUp);
+                        }
                       },
                       onPointerUp: (event) {
-                        (event.kind == PointerDeviceKind.mouse &&
-                                event.buttons == kMiddleMouseButton)
-                            ? CanvasEvent.middleClick
-                            : CanvasEvent.leftClick;
-                        context.read<CanvasEventsCubit>().remove(
-                              CanvasEvent.leftClick,
-                            );
+                        final canvasEvent =
+                            context.read<CanvasEventsCubit>().state;
+                        if (canvasEvent.contains(CanvasEvent.middleClickDown)) {
+                          canvasEvent.remove(CanvasEvent.middleClickDown);
+                          canvasEvent.add(CanvasEvent.middleClickUp);
+                        }
                       },
                       onPointerHover: (event) {
                         context
@@ -371,7 +376,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         },
                         child: InteractiveViewer.builder(
                           transformationController: transformationController,
-                          panEnabled: (isToolHand &&
+                          panEnabled: middleClick ||
+                              (isToolHand &&
                                   (!isNotCanvasTooling || isCanvasTooling)) ||
                               (isCanvasTooling && !leftClick && !isZooming),
                           onInteractionStart: (details) {
