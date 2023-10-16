@@ -141,29 +141,29 @@ class _CreatorWidgetState extends State<CreatorWidget> {
         .read<CanvasEventsCubit>()
         .state
         .contains(CanvasEvent.middleClickUp)) {
+      context.read<CanvasEventsCubit>().remove(CanvasEvent.creatingRectangle);
+
+      final components = componentsNotifier.state.value;
+      final index = components.length - 1;
+      // ignore: avoid-unsafe-collection-methods
+      final component = components[index].component;
+      if (component.size.width == 0 || component.size.height == 0) {
+        componentsNotifier.replace(
+          index,
+          transform: Component(
+            oComponent.value.pos - const Offset(50, 50),
+            const Size(100, 100),
+            0,
+            false,
+            false,
+          ),
+        );
+      }
+      context.read<ToolCubit>().setMove();
+      selectedNotifier
+        ..clear()
+        ..add(index);
       return;
     }
-    context.read<CanvasEventsCubit>().remove(CanvasEvent.creatingRectangle);
-
-    final components = componentsNotifier.state.value;
-    final index = components.length - 1;
-    // ignore: avoid-unsafe-collection-methods
-    final component = components[index].component;
-    if (component.size.width == 0 || component.size.height == 0) {
-      componentsNotifier.replace(
-        index,
-        transform: Component(
-          oComponent.value.pos - const Offset(50, 50),
-          const Size(100, 100),
-          0,
-          false,
-          false,
-        ),
-      );
-    }
-    context.read<ToolCubit>().setMove();
-    selectedNotifier
-      ..clear()
-      ..add(index);
   }
 }
