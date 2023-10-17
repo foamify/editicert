@@ -7,6 +7,8 @@ import 'package:editicert/logic/canvas_service.dart';
 import 'package:editicert/logic/component_index_service.dart';
 import 'package:editicert/logic/component_service.dart';
 import 'package:editicert/models/component.dart';
+import 'package:editicert/models/component_data.dart';
+import 'package:editicert/models/component_type.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/utils.dart';
