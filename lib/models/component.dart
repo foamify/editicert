@@ -21,7 +21,7 @@ class Component {
   }) =>
       Component(edges.tl, edges.size, edges.angle, flipX, flipY);
 
-  static fromEdgesOld(
+  static Component fromEdgesOld(
     ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
     bool flipX = false,
     bool flipY = false,
