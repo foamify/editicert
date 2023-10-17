@@ -351,11 +351,11 @@ class _ControllerWidgetState extends State<ControllerWidget>
             (rotate && alignment != null
                 ? Offset(alignment.x, alignment.y) * kGestureSize / 2
                 : Offset.zero),
-        child: Transform.flip(
-          flipX: flipX,
-          flipY: flipY,
-          child: Transform.rotate(
-            angle: component.angle,
+        child: Transform.rotate(
+          angle: component.angle,
+          child: Transform.flip(
+            flipX: flipX,
+            flipY: flipY,
             child: Transform.translate(
               offset: rotateOffset,
               child: Listener(

@@ -342,6 +342,16 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             .remove(CanvasEvent.normalCursor);
                         context.read<PointerCubit>().update(event.position);
                       },
+                      onPointerPanZoomStart: (event) {
+                        context
+                            .read<CanvasEventsCubit>()
+                            .add(CanvasEvent.panningCanvas);
+                      },
+                      onPointerPanZoomEnd: (event) {
+                        context
+                            .read<CanvasEventsCubit>()
+                            .remove(CanvasEvent.panningCanvas);
+                      },
                       child: MouseRegion(
                         cursor: isToolHand || middleClick
                             ? Platform.isWindows
