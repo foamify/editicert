@@ -64,6 +64,22 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     final mqSize = MediaQuery.sizeOf(context);
     final colorScheme = Theme.of(context).colorScheme;
 
+    late final SystemMouseCursor mouseCursor;
+
+    if (isToolHand || middleClick) {
+      if (kIsWeb || !Platform.isWindows) {
+        if (canvasEvents.state.contains(CanvasEvent.panningCanvas)) {
+          mouseCursor = SystemMouseCursors.grabbing;
+        } else {
+          mouseCursor = SystemMouseCursors.grab;
+        }
+      } else {
+        mouseCursor = SystemMouseCursors.click;
+      }
+    } else {
+      mouseCursor = SystemMouseCursors.none;
+    }
+
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -343,25 +359,22 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         context.read<PointerCubit>().update(event.position);
                       },
                       onPointerPanZoomStart: (event) {
-                        context
-                            .read<CanvasEventsCubit>()
-                            .add(CanvasEvent.panningCanvas);
+                        late final CanvasEvent canvasEvent;
+                        if (pressedMeta) {
+                          canvasEvent = CanvasEvent.zoomingCanvas;
+                        } else {
+                          canvasEvent = CanvasEvent.panningCanvas;
+                        }
+                        context.read<CanvasEventsCubit>().add(canvasEvent);
                       },
                       onPointerPanZoomEnd: (event) {
-                        context
-                            .read<CanvasEventsCubit>()
-                            .remove(CanvasEvent.panningCanvas);
+                        context.read<CanvasEventsCubit>().removeAll([
+                          CanvasEvent.zoomingCanvas,
+                          CanvasEvent.panningCanvas,
+                        ]);
                       },
                       child: MouseRegion(
-                        cursor: isToolHand || middleClick
-                            ? Platform.isWindows
-                                ? SystemMouseCursors.click
-                                : canvasEvents.state.contains(
-                                    CanvasEvent.panningCanvas,
-                                  )
-                                    ? SystemMouseCursors.grabbing
-                                    : SystemMouseCursors.grab
-                            : SystemMouseCursors.none,
+                        cursor: mouseCursor,
                         onEnter: (event) {
                           WidgetsBinding.instance
                               .addPostFrameCallback((timeStamp) {
