@@ -136,7 +136,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     componentsNotifier.replace(index, transform: newComponent);
   }
 
-  void handlePointerUp(PointerUpEvent event) {
+  void handlePointerUp(PointerUpEvent _) {
     final canvasEvent = context.read<CanvasEventsCubit>();
     if (!canvasEvent.state.contains(CanvasEvent.creatingRectangle)) return;
     canvasEvent.remove(CanvasEvent.creatingRectangle);

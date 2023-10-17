@@ -83,8 +83,10 @@ class CustomCursorWidget extends StatelessWidget {
         late final Widget child;
 
         if (alignment != null) {
+          final selected = selectedNotifier.state.value.firstOrNull;
+          if (selected == null) return const SizedBox.shrink();
           final component = componentsNotifier.state.value
-              .elementAtOrNull(selectedNotifier.state.value.first)
+              .elementAtOrNull(selectedNotifier.state.value.firstOrNull!)
               ?.component;
           final flipX = component?.flipX ?? false;
           final flipY = component?.flipY ?? false;
