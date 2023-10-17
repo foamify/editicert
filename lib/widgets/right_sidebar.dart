@@ -300,7 +300,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             ),
             keyboardType: TextInputType.number,
             controller: backgroundWidthController,
-            onChanged: (text) {
+            onChanged: (String text) {
               print('test');
               print(canvasStateProvider.size);
               canvasStateNotifier.update(
@@ -320,7 +320,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             ),
             keyboardType: TextInputType.number,
             controller: backgroundHeightController,
-            onChanged: (text) => canvasStateNotifier.update(
+            onChanged: (String text) => canvasStateNotifier.update(
                   backgroundSize: Size(
                     canvasStateProvider.size.width,
                     double.parse(text),

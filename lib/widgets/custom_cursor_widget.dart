@@ -38,7 +38,7 @@ class CustomCursorWidget extends StatelessWidget {
         //   CanvasEvent.resizingComponent,
         // });
 
-        late final angle;
+        late final double angle;
         if (selectedNotifier.state.value.isNotEmpty) {
           // ignore: avoid-unsafe-collection-methods
           angle = componentsNotifier
@@ -110,7 +110,7 @@ class CustomCursorWidget extends StatelessWidget {
               _ => alignment,
             };
           }
-          final rotations = {
+          final rotations = <Alignment, double>{
             Alignment.topLeft: 45.0,
             Alignment.topCenter: 90,
             Alignment.topRight: 135,
