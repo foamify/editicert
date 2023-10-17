@@ -325,10 +325,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
     final flipX = component.flipX;
     final flipY = component.flipY;
 
-    final rotateFlipXTransform =
-        !rotate ? 0.0 : kGestureSize * edgeScale * (flipX ? .5 : 0);
-    final rotateFlipYTransform =
-        !rotate ? 0.0 : kGestureSize * edgeScale * (flipY ? .5 : 0);
+    final rotateFlipXTransform = !rotate ? 0.0 : kGestureSize * edgeScale * .25;
+    final rotateFlipYTransform = !rotate ? 0.0 : kGestureSize * edgeScale * .25;
 
     final rotateOffset = switch (alignment) {
       Alignment.topLeft => Offset(-rotateFlipXTransform, -rotateFlipYTransform),
@@ -341,125 +339,128 @@ class _ControllerWidgetState extends State<ControllerWidget>
       _ => Offset.zero,
     };
 
+    final edgeSize =
+        const Offset(kGestureSize, kGestureSize) * (rotate ? 2 : 1);
+
     return Positioned(
       // this is for the whole widget
       left: rotatedEdge.dx,
       top: rotatedEdge.dy,
       child: Transform.translate(
-        // this is for the widget inside the widget
-        offset: -const Offset(kGestureSize, kGestureSize) / (rotate ? 1 : 2) +
-            (rotate && alignment != null
-                ? Offset(alignment.x, alignment.y) * kGestureSize / 2
-                : Offset.zero),
+        offset: -edgeSize / 2,
         child: Transform.rotate(
           angle: component.angle,
           child: Transform.flip(
-            flipX: flipX,
-            flipY: flipY,
+            flipX: rotate ? flipX : false,
+            flipY: rotate ? flipY : false,
             child: Transform.translate(
               offset: rotateOffset,
-              child: Listener(
-                onPointerDown: (event) {
-                  if (event.buttons == kMiddleMouseButton) return;
-                  final canvasEvent = switch (alignment) {
-                    Alignment.topLeft => CanvasEvent.resizeControllerTopLeft,
-                    Alignment.topRight => CanvasEvent.resizeControllerTopRight,
-                    Alignment.bottomLeft =>
-                      CanvasEvent.resizeControllerBottomLeft,
-                    Alignment.bottomRight =>
-                      CanvasEvent.resizeControllerBottomRight,
-                    _ => null,
-                  };
-                  if (canvasEvent != null) {
-                    context.read<CanvasEventsCubit>().add(canvasEvent);
-                  }
-                  if (rotate) {
-                    context
-                        .read<CanvasEventsCubit>()
-                        .add(CanvasEvent.rotateCursor);
-                  }
-                  (context.read<CanvasEventsCubit>()).add(
-                    (rotate
-                        ? CanvasEvent.rotatingComponent
-                        : CanvasEvent.resizingComponent),
-                  );
-                  handlePointerDownGlobal(event);
-                },
-                onPointerMove: (event) {
-                  if (event.buttons == kMiddleMouseButton) return;
-                  (context.read<CanvasEventsCubit>()).add(
-                    (rotate
-                        ? CanvasEvent.rotatingComponent
-                        : CanvasEvent.resizingComponent),
-                  );
-                  if (resize && alignment != null) {
-                    handleResize(event, alignment, selected);
-                  } else if (rotate) {
-                    handleRotate(event);
-                  }
-                },
-                onPointerUp: handlePointerUp,
-                child: MouseRegion(
-                  onEnter: (_) {
-                    if (context.read<CanvasEventsCubit>().containsAny({
-                      CanvasEvent.resizingComponent,
-                      CanvasEvent.draggingComponent,
-                      CanvasEvent.rotatingComponent,
-                    })) {
-                      return;
-                    }
-                    if (rotate) {
-                      context
-                          .read<CanvasEventsCubit>()
-                          .add(CanvasEvent.rotateCursor);
-                    }
-                    handleCustomPointerEnter(alignment);
-                  },
-                  onExit: (_) {
-                    if (context.read<CanvasEventsCubit>().containsAny({
-                      CanvasEvent.resizingComponent,
-                      CanvasEvent.draggingComponent,
-                      CanvasEvent.rotatingComponent,
-                    })) {
-                      return;
-                    }
-                    removeResizeEvents();
-                  },
-                  child: Container(
-                    width: alignment == Alignment.topCenter ||
-                            alignment == Alignment.bottomCenter
-                        ? component.size.width
-                        : kGestureSize * edgeScale,
-                    height: kGestureSize * edgeScale,
-                    decoration: rotate
-                        ? BoxDecoration(
-                            borderRadius: switch (alignment) {
-                              Alignment.topLeft => const BorderRadius.only(
-                                  topLeft: Radius.circular(12),
-                                ),
-                              Alignment.topRight => const BorderRadius.only(
-                                  topRight: Radius.circular(12),
-                                ),
-                              Alignment.bottomLeft => const BorderRadius.only(
-                                  bottomLeft: Radius.circular(12),
-                                ),
-                              Alignment.bottomRight => const BorderRadius.only(
-                                  bottomRight: Radius.circular(12),
-                                ),
-                              _ => null,
-                            },
-                          )
-                        : BoxDecoration(
-                            color: Colors.white,
-                            border:
-                                Border.all(width: 1, color: Colors.blueAccent),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                  ),
-                ),
+              child: buildEdgeResizeRotateHandle(
+                alignment,
+                rotate,
+                resize,
+                selected,
+                edgeScale,
+                debugEdgeColor,
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Listener buildEdgeResizeRotateHandle(Alignment? alignment, bool rotate,
+      bool resize, Offset selected, int edgeScale, Color debugEdgeColor) {
+    return Listener(
+      onPointerDown: (event) {
+        if (event.buttons == kMiddleMouseButton) return;
+        final canvasEvent = switch (alignment) {
+          Alignment.topLeft => CanvasEvent.resizeControllerTopLeft,
+          Alignment.topRight => CanvasEvent.resizeControllerTopRight,
+          Alignment.bottomLeft => CanvasEvent.resizeControllerBottomLeft,
+          Alignment.bottomRight => CanvasEvent.resizeControllerBottomRight,
+          _ => null,
+        };
+        if (canvasEvent != null) {
+          context.read<CanvasEventsCubit>().add(canvasEvent);
+        }
+        if (rotate) {
+          context.read<CanvasEventsCubit>().add(CanvasEvent.rotateCursor);
+        }
+        (context.read<CanvasEventsCubit>()).add(
+          (rotate
+              ? CanvasEvent.rotatingComponent
+              : CanvasEvent.resizingComponent),
+        );
+        handlePointerDownGlobal(event);
+      },
+      onPointerMove: (event) {
+        if (event.buttons == kMiddleMouseButton) return;
+        (context.read<CanvasEventsCubit>()).add(
+          (rotate
+              ? CanvasEvent.rotatingComponent
+              : CanvasEvent.resizingComponent),
+        );
+        if (resize && alignment != null) {
+          handleResize(event, alignment, selected);
+        } else if (rotate) {
+          handleRotate(event);
+        }
+      },
+      onPointerUp: handlePointerUp,
+      child: MouseRegion(
+        onEnter: (_) {
+          if (context.read<CanvasEventsCubit>().containsAny({
+            CanvasEvent.resizingComponent,
+            CanvasEvent.draggingComponent,
+            CanvasEvent.rotatingComponent,
+          })) {
+            return;
+          }
+          if (rotate) {
+            context.read<CanvasEventsCubit>().add(CanvasEvent.rotateCursor);
+          }
+          handleCustomPointerEnter(alignment);
+        },
+        onExit: (_) {
+          if (context.read<CanvasEventsCubit>().containsAny({
+            CanvasEvent.resizingComponent,
+            CanvasEvent.draggingComponent,
+            CanvasEvent.rotatingComponent,
+          })) {
+            return;
+          }
+          removeResizeEvents();
+        },
+        child: Container(
+          width: kGestureSize * edgeScale,
+          height: kGestureSize * edgeScale,
+          decoration: rotate
+              ? BoxDecoration(
+                  color: debugEdgeColor,
+                  borderRadius: switch (alignment) {
+                    Alignment.topLeft => const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                      ),
+                    Alignment.topRight => const BorderRadius.only(
+                        topRight: Radius.circular(12),
+                      ),
+                    Alignment.bottomLeft => const BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                      ),
+                    Alignment.bottomRight => const BorderRadius.only(
+                        bottomRight: Radius.circular(12),
+                      ),
+                    _ => null,
+                  },
+                )
+              : BoxDecoration(
+                  // color: Colors.white,
+                  color: debugEdgeColor,
+                  border: Border.all(width: 1, color: Colors.blueAccent),
+                  borderRadius: BorderRadius.circular(2),
+                ),
         ),
       ),
     );

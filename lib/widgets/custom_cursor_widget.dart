@@ -20,7 +20,7 @@ class CustomCursorWidget extends StatelessWidget {
         selectedNotifier.state,
       ]),
       builder: (context2, _) {
-        var canvasEvents = context2.watch<CanvasEventsCubit>();
+        final canvasEvents = context2.watch<CanvasEventsCubit>();
         final stateContains = canvasEvents.state.contains;
 
         final tool = context.watch<ToolCubit>().state;
@@ -28,16 +28,17 @@ class CustomCursorWidget extends StatelessWidget {
         if ((stateContains(CanvasEvent.normalCursor) ||
             stateContains(CanvasEvent.middleClick) ||
             tool == ToolType.hand)) {
-          print('normalcursor');
+          canvasEvents.add(CanvasEvent.normalCursor);
           return const SizedBox.shrink();
         }
+        canvasEvents.remove(CanvasEvent.normalCursor);
 
         // final enabled = stateContainsAny({
         //   CanvasEvent.rotatingComponent,
         //   CanvasEvent.resizingComponent,
         // });
 
-        var angle = 0.0;
+        late final angle;
         if (selectedNotifier.state.value.isNotEmpty) {
           // ignore: avoid-unsafe-collection-methods
           angle = componentsNotifier
@@ -60,7 +61,7 @@ class CustomCursorWidget extends StatelessWidget {
         };
 
         Alignment? alignment;
-        for (var MapEntry(:key, :value) in alignments.entries) {
+        for (final MapEntry(:key, :value) in alignments.entries) {
           if (context2.read<CanvasEventsCubit>().state.contains(value)) {
             alignment = key;
             break;
@@ -79,7 +80,7 @@ class CustomCursorWidget extends StatelessWidget {
         //   _ => MouseCursor.defer,
         // };
 
-        Widget child = const SizedBox.shrink();
+        late final Widget child;
 
         if (alignment != null) {
           final component = componentsNotifier.state.value
