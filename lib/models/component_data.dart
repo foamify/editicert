@@ -1,4 +1,4 @@
-import 'package:editicert/models/component.dart';
+import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_type.dart';
 import 'package:flutter/widgets.dart';
 

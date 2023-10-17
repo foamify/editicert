@@ -1,5 +1,5 @@
 import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/models/component.dart';
+import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_data.dart';
 import 'package:editicert/models/component_type.dart';
 import 'package:editicert/util/utils.dart';
