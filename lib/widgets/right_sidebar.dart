@@ -169,7 +169,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                   height: height,
                 );
 
-                final newComponent = Component(
+                final newComponent = ComponentTransform(
                   newRect.topLeft,
                   newRect.size,
                   angle,

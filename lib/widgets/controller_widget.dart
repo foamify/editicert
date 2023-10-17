@@ -51,13 +51,13 @@ class _ControllerWidgetState extends State<ControllerWidget>
   final _originalTransform = ValueNotifier(Matrix4.identity());
 
   final _originalComponent =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
+      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
 
   final _component =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
+      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
 
   final _visualComponent =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
+      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
 
   final stopwatch = Stopwatch();
 
@@ -839,7 +839,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
     var topLeft = resizedRect.topLeft;
     var size = resizedRect.size;
 
-    _component.value = Component(topLeft, size, angle, flipX, flipY);
+    _component.value = ComponentTransform(topLeft, size, angle, flipX, flipY);
   }
 
   Size getSize() => _visualComponent.value.size / getScale();

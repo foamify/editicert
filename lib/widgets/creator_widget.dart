@@ -9,7 +9,7 @@ class CreatorWidget extends StatefulWidget {
 
 class _CreatorWidgetState extends State<CreatorWidget> {
   final oComponent =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
+      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
 
   final oPosition = ValueNotifier(Offset.zero);
 
@@ -63,7 +63,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
 
     oPosition.value = tController
         .toScene(event.position + const Offset(-kSidebarWidth, -kTopbarHeight));
-    oComponent.value = Component(oPosition.value, Size.zero, 0, false, false);
+    oComponent.value = ComponentTransform(oPosition.value, Size.zero, 0, false, false);
 
     final index = componentsNotifier.state.value.length;
 
@@ -148,7 +148,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     if (component.size.width == 0 || component.size.height == 0) {
       componentsNotifier.replace(
         index,
-        transform: Component(
+        transform: ComponentTransform(
           oComponent.value.pos - const Offset(50, 50),
           const Size(100, 100),
           0,

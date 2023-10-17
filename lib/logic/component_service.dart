@@ -40,7 +40,7 @@ class ComponentService {
   void replace(
     int index, {
     String? name,
-    Component? transform,
+    ComponentTransform? transform,
     Color? color,
     BorderRadius? borderRadius,
     Border? border,

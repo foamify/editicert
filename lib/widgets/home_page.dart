@@ -780,7 +780,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
                         componentsNotifier.replace(
                           index,
-                          transform: Component(
+                          transform: ComponentTransform(
                             newRect.unrotated.topLeft,
                             Size(component.size.width, newHeight),
                             component.angle,

@@ -8,7 +8,7 @@ class ComponentData {
   // ignore: public_member_api_docs
   const ComponentData({
     this.name = 'Component',
-    this.component = const Component(
+    this.component = const ComponentTransform(
       Offset.zero,
       Size(100, 100),
       0,
@@ -27,7 +27,7 @@ class ComponentData {
   });
 
   final String name;
-  final Component component;
+  final ComponentTransform component;
   final Color color;
   final BorderRadius borderRadius;
   final Border border;
@@ -40,7 +40,7 @@ class ComponentData {
 
   ComponentData copyWith({
     required String? name,
-    required Component? component,
+    required ComponentTransform? component,
     required Color? color,
     required BorderRadius? borderRadius,
     required Border? border,
