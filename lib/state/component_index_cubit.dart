@@ -13,13 +13,10 @@ base class ComponentIndexCubit extends Cubit<Set<int>> {
   bool contains(int index) => state.contains(index);
 
   void reorder(int oldIndex, int newIndex) {
-    if (oldIndex < 0 || oldIndex >= state.length || newIndex < 0 || newIndex >= state.length) {
-      // TODO(damywise): Handle this better
-      return;
-    }
-
-    final components = List.of(state)
-      ..swap(oldIndex, newIndex);
+    final components = state
+        .map((componentIndex) =>
+            (componentIndex == oldIndex) ? newIndex : componentIndex)
+        .toSet();
 
     emit(components.toSet());
   }
