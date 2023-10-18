@@ -1,10 +1,11 @@
 import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_type.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 
 @immutable
 // ignore: public_member_api_docs
-class ComponentData {
+class ComponentData extends Equatable {
   // ignore: public_member_api_docs
   const ComponentData({
     this.name = 'Component',
@@ -64,4 +65,20 @@ class ComponentData {
         type: type ?? this.type,
         textController: textController ?? this.textController,
       );
+
+  @override
+  // TODO: implement props
+  List<Object?> get props => [
+        name,
+        component,
+        color,
+        borderRadius,
+        border,
+        shadow,
+        content,
+        hidden,
+        locked,
+        type,
+        textController?.text,
+      ];
 }

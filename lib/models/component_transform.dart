@@ -4,8 +4,9 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:editicert/util/utils.dart';
+import 'package:equatable/equatable.dart';
 
-class ComponentTransform {
+class ComponentTransform extends Equatable {
   final Offset pos;
   final Size size;
   final double angle;
@@ -13,7 +14,12 @@ class ComponentTransform {
   final bool flipY;
 
   const ComponentTransform(
-      this.pos, this.size, this.angle, this.flipX, this.flipY);
+    this.pos,
+    this.size,
+    this.angle,
+    this.flipX,
+    this.flipY,
+  );
 
   static ComponentTransform fromEdges(
     Edges edges, {
@@ -111,16 +117,5 @@ class ComponentTransform {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is ComponentTransform &&
-          runtimeType == other.runtimeType &&
-          pos == other.pos &&
-          size == other.size &&
-          angle == other.angle &&
-          flipX == other.flipX &&
-          flipY == other.flipY;
-
-  @override
-  int get hashCode => pos.hashCode ^ size.hashCode ^ angle.hashCode;
+  List<Object?> get props => [pos, size, angle, flipX, flipY];
 }
