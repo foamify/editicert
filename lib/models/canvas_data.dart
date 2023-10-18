@@ -1,6 +1,8 @@
 import 'dart:ui';
 
-class CanvasData {
+import 'package:equatable/equatable.dart';
+
+class CanvasData extends Equatable {
   CanvasData({
     required this.color,
     required this.hidden,
@@ -26,4 +28,12 @@ class CanvasData {
       size: size ?? this.size,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        color,
+        hidden,
+        opacity,
+        size,
+      ];
 }
