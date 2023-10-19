@@ -7,9 +7,7 @@ class SelectorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Listener(
-      child: Stack(
-        children: [],
-      ),
+      child: Stack(),
     );
   }
 }

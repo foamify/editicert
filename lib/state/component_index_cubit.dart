@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 base class ComponentIndexCubit extends Cubit<Set<int>> {
@@ -22,8 +21,10 @@ base class ComponentIndexCubit extends Cubit<Set<int>> {
 
   void reorder(int oldIndex, int newIndex) {
     final components = state
-        .map((componentIndex) =>
-            (componentIndex == oldIndex) ? newIndex : componentIndex)
+        .map(
+          (componentIndex) =>
+              (componentIndex == oldIndex) ? newIndex : componentIndex,
+        )
         .toSet();
 
     emit(components.toSet());

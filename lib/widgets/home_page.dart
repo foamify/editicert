@@ -472,12 +472,12 @@ class _HomePageState extends State<HomePage> {
             Column(
               children: [
                 /// Top bar
-                TopBar(),
+                const TopBar(),
                 Expanded(
                   child: Row(
                     children: [
                       /// Left Sidebar
-                      LeftSidebar(),
+                      const LeftSidebar(),
                       const Expanded(child: SizedBox.shrink()),
                       RightSidebar(
                         toggleColorPicker: () {

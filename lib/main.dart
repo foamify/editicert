@@ -3,12 +3,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_data.dart';
+import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_type.dart';
-import 'package:editicert/state/canvas_cubit.dart';
-import 'package:editicert/state/component_index_cubit.dart';
-import 'package:editicert/state/components_cubit.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/extensions.dart';
@@ -26,22 +23,14 @@ import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'widgets/canvas.dart';
-
 part 'widgets/controller_widget.dart';
-
 part 'widgets/creator_widget.dart';
-
-part 'widgets/selector_widget.dart';
-
-part 'widgets/left_sidebar.dart';
-
-part 'widgets/right_sidebar.dart';
-
-part 'widgets/top_bar.dart';
-
-part 'widgets/home_page.dart';
-
 part 'widgets/custom_cursor_widget.dart';
+part 'widgets/home_page.dart';
+part 'widgets/left_sidebar.dart';
+part 'widgets/right_sidebar.dart';
+part 'widgets/selector_widget.dart';
+part 'widgets/top_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,7 +83,7 @@ void main() async {
           create: (_) => ComponentsCubit([]),
         ),
       ],
-      child: Main(),
+      child: const Main(),
     ),
   );
   if (!kIsWeb) {
@@ -120,7 +109,7 @@ class _MyDelegate extends NSWindowDelegate {
 }
 
 class Main extends StatelessWidget {
-  Main({super.key});
+  const Main({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -134,34 +123,41 @@ class Main extends StatelessWidget {
               const PlatformMenu(
                 label: 'Application',
                 menus: [
-                  PlatformMenuItemGroup(members: [
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.about,
-                    ),
-                  ]),
-                  PlatformMenuItemGroup(members: [
-                    PlatformMenuItem(label: 'Preferences'),
-                  ]),
-                  PlatformMenuItemGroup(members: [
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.minimizeWindow,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.zoomWindow,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.hide,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.hideOtherApplications,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.toggleFullScreen,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.quit,
-                    ),
-                  ]),
+                  PlatformMenuItemGroup(
+                    members: [
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.about,
+                      ),
+                    ],
+                  ),
+                  PlatformMenuItemGroup(
+                    members: [
+                      PlatformMenuItem(label: 'Preferences'),
+                    ],
+                  ),
+                  PlatformMenuItemGroup(
+                    members: [
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.minimizeWindow,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.zoomWindow,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.hide,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type:
+                            PlatformProvidedMenuItemType.hideOtherApplications,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.toggleFullScreen,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.quit,
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const PlatformMenu(
@@ -197,11 +193,17 @@ class Main extends StatelessWidget {
                   ),
                 ],
               ),
-              const PlatformMenu(label: 'Assets', menus: [
-                PlatformMenu(label: 'Import', menus: [
-                  PlatformMenuItem(label: 'File'),
-                ]),
-              ]),
+              const PlatformMenu(
+                label: 'Assets',
+                menus: [
+                  PlatformMenu(
+                    label: 'Import',
+                    menus: [
+                      PlatformMenuItem(label: 'File'),
+                    ],
+                  ),
+                ],
+              ),
               PlatformMenu(
                 label: 'Tools',
                 menus: [
@@ -281,7 +283,7 @@ class Main extends StatelessWidget {
             //
             BlocProvider(create: (_) => DebugPointCubit()),
           ],
-          child: HomePage(),
+          child: const HomePage(),
         ),
       ),
     );

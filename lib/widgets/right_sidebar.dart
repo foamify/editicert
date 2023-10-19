@@ -1,7 +1,7 @@
 part of '../main.dart';
 
 class RightSidebar extends StatefulWidget {
-  RightSidebar({super.key, required this.toggleColorPicker});
+  const RightSidebar({required this.toggleColorPicker, super.key});
 
   final VoidCallback toggleColorPicker;
 
@@ -20,10 +20,7 @@ class _RightSidebarState extends State<RightSidebar> {
     super.initState();
     final canvasData = context.canvasCubit.state;
     backgroundColorController = TextEditingController(
-      text: canvasData.color.value
-          .toRadixString(16)
-          .toUpperCase()
-          .substring(2),
+      text: canvasData.color.value.toRadixString(16).toUpperCase().substring(2),
     );
     backgroundWidthController = TextEditingController(
       text: canvasData.size.width.toString(),
@@ -258,7 +255,7 @@ class _RightSidebarState extends State<RightSidebar> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               '${(canvasStateProvider.color.opacity * 100).truncate()}%',
               style: textTheme.bodySmall,
@@ -500,7 +497,6 @@ class _RightSidebarState extends State<RightSidebar> {
                 border: Border(
                   bottom: BorderSide(
                     color: Colors.grey.withOpacity(.5),
-                    width: 1,
                   ),
                 ),
               ),
@@ -529,7 +525,6 @@ class _InputItem {
     this.suffix,
     this.keyboardType,
     this.controller,
-    this.toggleCallback,
   });
 
   final String tooltip;
@@ -537,7 +532,6 @@ class _InputItem {
   final Widget? suffix;
   final TextInputType? keyboardType;
   final TextEditingController? controller;
-  final void Function(bool toggled)? toggleCallback;
 }
 
 class _InputGroup {

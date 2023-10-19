@@ -1,13 +1,13 @@
 part of '../main.dart';
 
-class LeftSidebar extends StatefulWidget  {
-  LeftSidebar({super.key});
+class LeftSidebar extends StatefulWidget {
+  const LeftSidebar({super.key});
 
   @override
   State<LeftSidebar> createState() => _LeftSidebarState();
 }
 
-class _LeftSidebarState extends State<LeftSidebar>  {
+class _LeftSidebarState extends State<LeftSidebar> {
   @override
   Widget build(BuildContext context) {
     final components = context.componentsCubitWatch.state;
@@ -29,7 +29,6 @@ class _LeftSidebarState extends State<LeftSidebar>  {
                   color:
                       selected.contains(i) ? colorScheme.surfaceVariant : null,
                   border: Border.all(
-                    strokeAlign: BorderSide.strokeAlignInside,
                     color: !hovered.contains(i) || selected.contains(i)
                         ? Colors.transparent
                         : Colors.blueAccent.withOpacity(.5),
@@ -48,7 +47,7 @@ class _LeftSidebarState extends State<LeftSidebar>  {
                     child: Row(
                       children: [
                         const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          padding: EdgeInsets.symmetric(horizontal: 8),
                           child: Icon(Icons.rectangle_outlined, size: 12),
                         ),
                         Expanded(
@@ -77,7 +76,8 @@ class _LeftSidebarState extends State<LeftSidebar>  {
                                       double.infinity,
                                     ),
                                   ),
-                                  onPressed: () => context.componentsCubit.replace(
+                                  onPressed: () =>
+                                      context.componentsCubit.replace(
                                     i,
                                     e.copyWith(locked: !e.locked),
                                   ),
@@ -97,7 +97,8 @@ class _LeftSidebarState extends State<LeftSidebar>  {
                                   constraints: BoxConstraints.tight(
                                     const Size(18, double.infinity),
                                   ),
-                                  onPressed: () => context.componentsCubit.replace(
+                                  onPressed: () =>
+                                      context.componentsCubit.replace(
                                     i,
                                     e.copyWith(hidden: !e.hidden),
                                   ),

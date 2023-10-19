@@ -7,12 +7,6 @@ import 'package:editicert/util/utils.dart';
 import 'package:equatable/equatable.dart';
 
 class ComponentTransform extends Equatable {
-  final Offset pos;
-  final Size size;
-  final double angle;
-  final bool flipX;
-  final bool flipY;
-
   const ComponentTransform(
     this.pos,
     this.size,
@@ -20,6 +14,11 @@ class ComponentTransform extends Equatable {
     this.flipX,
     this.flipY,
   );
+  final Offset pos;
+  final Size size;
+  final double angle;
+  final bool flipX;
+  final bool flipY;
 
   static ComponentTransform fromEdges(
     Edges edges, {

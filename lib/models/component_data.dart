@@ -65,7 +65,7 @@ class ComponentData extends Equatable {
         type: type ?? this.type,
         textController: textController ?? this.textController,
       );
-  
+
   ComponentData copyWithRequired({
     required String? name,
     required ComponentTransform? transform,

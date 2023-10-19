@@ -19,11 +19,13 @@ class CanvasCubit extends Cubit<CanvasData> {
     double? backgroundOpacity,
     Size? backgroundSize,
   }) {
-    emit(state.copyWith(
-      color: backgroundColor,
-      hidden: backgroundHidden,
-      opacity: backgroundOpacity,
-      size: backgroundSize,
-    ));
+    emit(
+      state.copyWith(
+        color: backgroundColor,
+        hidden: backgroundHidden,
+        opacity: backgroundOpacity,
+        size: backgroundSize,
+      ),
+    );
   }
 }

@@ -3,10 +3,10 @@ part of '../main.dart';
 /// Widget that handles the cursor on the canvas
 class CustomCursorWidget extends StatelessWidget {
   const CustomCursorWidget({
-    super.key,
     required this.isToolHand,
     required this.isNotCanvasTooling,
     required this.isCanvasTooling,
+    super.key,
   });
 
   final bool isToolHand;

@@ -79,7 +79,8 @@ extension BuildContextExt on BuildContext {
       select<CanvasEventsCubit, R>(function);
 
   R canvasTransformCubitSelect<R>(
-          R Function(CanvasTransformCubit value) function) =>
+    R Function(CanvasTransformCubit value) function,
+  ) =>
       select<CanvasTransformCubit, R>(function);
 
   R selectedCubitSelect<R>(R Function(SelectedCubit value) function) =>

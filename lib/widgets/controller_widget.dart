@@ -3,7 +3,7 @@
 part of '../main.dart';
 
 class ControllerWidget extends StatefulWidget {
-  ControllerWidget(this.index, {super.key});
+  const ControllerWidget(this.index, {super.key});
 
   final int index;
 
@@ -92,10 +92,9 @@ class _ControllerWidgetState extends State<ControllerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final components =
-    context.componentsCubitSelect((value) => value.state);
-    final selected = context
-        .selectedCubitSelect((value) => value.contains(widget.index));
+    final components = context.componentsCubitSelect((value) => value.state);
+    final selected =
+        context.selectedCubitSelect((value) => value.contains(widget.index));
 
     return BlocListener<ComponentsCubit, List<ComponentData>>(
       listener: (context, state) {
@@ -471,7 +470,7 @@ class _ControllerWidgetState extends State<ControllerWidget> {
               : BoxDecoration(
                   // color: Colors.white,
                   color: debugEdgeColor,
-                  border: Border.all(width: 1, color: Colors.blueAccent),
+                  border: Border.all(color: Colors.blueAccent),
                   borderRadius: BorderRadius.circular(2),
                 ),
         ),
@@ -480,7 +479,7 @@ class _ControllerWidgetState extends State<ControllerWidget> {
   }
 
   void handleCustomPointerEnter(Alignment? alignment) {
-    print("enterenrreretereers");
+    print('enterenrreretereers');
     if (context.read<CanvasEventsCubit>().containsAny({
       CanvasEvent.resizingComponent,
       CanvasEvent.draggingComponent,
@@ -784,15 +783,15 @@ class _ControllerWidgetState extends State<ControllerWidget> {
     //   rotatedCursorDelta(),
     // ]);
 
-    var flipX = resizedRect.edges.tr.dx < resizedRect.edges.tl.dx;
-    var flipY = resizedRect.edges.tr.dy > resizedRect.edges.br.dy;
+    final flipX = resizedRect.edges.tr.dx < resizedRect.edges.tl.dx;
+    final flipY = resizedRect.edges.tr.dy > resizedRect.edges.br.dy;
 
     if (pressedShift) {
       // handle aspect ratio resize
 
       final aspectRatio = originalRect.size.aspectRatio;
       // ignore: move-variable-closer-to-its-usage
-      var newAspectRatio = resizedRect.size.aspectRatio;
+      final newAspectRatio = resizedRect.size.aspectRatio;
       // print('old: $aspectRatio');
       // print('new: $newAspectRatio');
 
@@ -835,7 +834,7 @@ class _ControllerWidgetState extends State<ControllerWidget> {
       if (!pressedAlt) {
         // non-mirrored
         final rotatedResizedRect = rotateRect(resizedRect, angle, center);
-        var rotatedResizedOpposingOffset =
+        final rotatedResizedOpposingOffset =
             getOffset(alignment, rotatedResizedRect, opposite: true);
 
         final ratioOpposingOffset =
@@ -849,8 +848,8 @@ class _ControllerWidgetState extends State<ControllerWidget> {
       resizedRect = aspectRatioRect;
     }
 
-    var topLeft = resizedRect.topLeft;
-    var size = resizedRect.size;
+    final topLeft = resizedRect.topLeft;
+    final size = resizedRect.size;
 
     _component.value = ComponentTransform(topLeft, size, angle, flipX, flipY);
   }
