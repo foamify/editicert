@@ -12,7 +12,6 @@ import 'package:editicert/state/components_cubit.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/extensions.dart';
-import 'package:editicert/util/get_it.dart';
 import 'package:editicert/util/utils.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
