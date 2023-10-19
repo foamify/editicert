@@ -8,6 +8,14 @@ base class ComponentIndexCubit extends Cubit<Set<int>> {
 
   void remove(int index) => emit({...state..remove(index)});
 
+  void removeAll(List<int> indexes) {
+    emit({...state..removeWhere((index) => indexes.contains(index))});
+  }
+
+  void replaceAll(Set<int> indexes) {
+    emit(Set.of(indexes));
+  }
+
   void clear() => emit({});
 
   bool contains(int index) => state.contains(index);
@@ -22,6 +30,6 @@ base class ComponentIndexCubit extends Cubit<Set<int>> {
   }
 }
 
-final class Selected extends ComponentIndexCubit {}
+final class SelectedCubit extends ComponentIndexCubit {}
 
-final class Hovered extends ComponentIndexCubit {}
+final class HoveredCubit extends ComponentIndexCubit {}

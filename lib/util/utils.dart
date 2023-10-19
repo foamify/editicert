@@ -1,22 +1,11 @@
 // ignore_for_file: prefer-match-file-name
 
 import 'dart:math';
-import 'package:editicert/logic/canvas_service.dart';
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/logic/component_service.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 
 final _get = GetIt.I.get;
-
-ComponentService get componentsNotifier => _get<ComponentService>();
-
-Selected get selectedNotifier => _get<Selected>();
-
-Hovered get hoveredNotifier => _get<Hovered>();
-
-CanvasService get canvasStateNotifier => _get<CanvasService>();
 
 const kSidebarWidth = 240.0;
 const kTopbarHeight = 52.0;

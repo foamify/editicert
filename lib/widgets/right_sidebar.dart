@@ -1,6 +1,6 @@
 part of '../main.dart';
 
-class RightSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
+class RightSidebar extends StatefulWidget {
   RightSidebar({super.key, required this.toggleColorPicker});
 
   final VoidCallback toggleColorPicker;
@@ -9,7 +9,7 @@ class RightSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
   State<RightSidebar> createState() => _RightSidebarState();
 }
 
-class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
+class _RightSidebarState extends State<RightSidebar> {
   late final TextEditingController backgroundColorController;
   late final TextEditingController backgroundWidthController;
   late final TextEditingController backgroundHeightController;
@@ -18,17 +18,18 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
   @override
   void initState() {
     super.initState();
+    final canvasData = context.canvasCubit.state;
     backgroundColorController = TextEditingController(
-      text: canvasStateNotifier.state.value.color.value
+      text: canvasData.color.value
           .toRadixString(16)
           .toUpperCase()
           .substring(2),
     );
     backgroundWidthController = TextEditingController(
-      text: canvasStateNotifier.state.value.size.width.toString(),
+      text: canvasData.size.width.toString(),
     );
     backgroundHeightController = TextEditingController(
-      text: canvasStateNotifier.state.value.size.height.toString(),
+      text: canvasData.size.height.toString(),
     );
   }
 
@@ -42,16 +43,17 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final selected = watchX((Selected selectedState) => selectedState.state);
-    final canvasStateProvider =
-        watchX((CanvasService canvasState) => canvasState.state);
+    final selected = context.selectedCubitWatch.state;
+    final canvasStateProvider = context.canvasCubitWatch.state;
     final component = selected.firstOrNull == null
         ? null
         // ignore: avoid-unsafe-collection-methods
-        : watchX((ComponentService componentService) => componentService.state)[
+        : context
+            .componentsCubitWatch
+            .state[
                 // ignore: avoid-unsafe-collection-methods
                 selected.first]
-            .component;
+            .transform;
     final textTheme = Theme.of(context).textTheme;
 
     final controls = component == null
@@ -178,14 +180,16 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                 );
 
                 setState(() {
-                  componentsNotifier.replace(
+                  context.componentsCubit.replace(
                     // ignore: avoid-unsafe-collection-methods
                     selected.first,
-                    transform: newComponent,
+                    context
+                        .componentAt(index)
+                        .copyWith(transform: newComponent),
                   );
                   // ignore: avoid-unsafe-collection-methods
                   final currentSelected = selected.first;
-                  selectedNotifier.state.value = {currentSelected};
+                  context.selectedCubit.replaceAll({currentSelected});
                 });
               },
               children: [
@@ -237,7 +241,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                 Expanded(
                   child: TextField(
                     maxLength: 6,
-                    onChanged: (value) => canvasStateNotifier.update(
+                    onChanged: (value) => context.canvasCubit.update(
                       backgroundColor: value.toColor,
                     ),
                     controller: backgroundColorController,
@@ -272,7 +276,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
                   padding: EdgeInsets.zero,
                   constraints:
                       BoxConstraints.tight(const Size(18, double.infinity)),
-                  onPressed: () => canvasStateNotifier.update(
+                  onPressed: () => context.canvasCubit.update(
                     backgroundHidden: !canvasStateProvider.hidden,
                   ),
                   icon: Icon(
@@ -303,7 +307,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             onChanged: (String text) {
               print('test');
               print(canvasStateProvider.size);
-              canvasStateNotifier.update(
+              context.canvasCubit.update(
                 backgroundSize: Size(
                   double.parse(text),
                   canvasStateProvider.size.height,
@@ -320,7 +324,7 @@ class _RightSidebarState extends State<RightSidebar> with GetItStateMixin {
             ),
             keyboardType: TextInputType.number,
             controller: backgroundHeightController,
-            onChanged: (String text) => canvasStateNotifier.update(
+            onChanged: (String text) => context.canvasCubit.update(
                   backgroundSize: Size(
                     canvasStateProvider.size.width,
                     double.parse(text),

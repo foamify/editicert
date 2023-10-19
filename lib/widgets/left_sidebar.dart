@@ -1,19 +1,18 @@
 part of '../main.dart';
 
-class LeftSidebar extends StatefulWidget with GetItStatefulWidgetMixin {
+class LeftSidebar extends StatefulWidget  {
   LeftSidebar({super.key});
 
   @override
   State<LeftSidebar> createState() => _LeftSidebarState();
 }
 
-class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
+class _LeftSidebarState extends State<LeftSidebar>  {
   @override
   Widget build(BuildContext context) {
-    final components =
-        watchX((ComponentService componentsState) => componentsState.state);
-    final selected = watchX((Selected selectedState) => selectedState.state);
-    final hovered = watchX((Hovered hoveredState) => hoveredState.state);
+    final components = context.componentsCubitWatch.state;
+    final selected = context.selectedCubitWatch.state;
+    final hovered = context.hoveredCubitWatch.state;
 
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -38,11 +37,11 @@ class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
                 ),
                 // color: Colors.transparent,
                 child: MouseRegion(
-                  onEnter: (event) => hoveredNotifier.add(i),
-                  onExit: (event) => hoveredNotifier.remove(i),
+                  onEnter: (event) => context.hoveredCubit.add(i),
+                  onExit: (event) => context.hoveredCubit.remove(i),
                   child: InkWell(
                     onTap: () {
-                      selectedNotifier
+                      context.selectedCubit
                         ..clear()
                         ..add(i);
                     },
@@ -78,9 +77,9 @@ class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
                                       double.infinity,
                                     ),
                                   ),
-                                  onPressed: () => componentsNotifier.replace(
+                                  onPressed: () => context.componentsCubit.replace(
                                     i,
-                                    locked: !e.locked,
+                                    e.copyWith(locked: !e.locked),
                                   ),
                                   icon: Icon(
                                     e.locked
@@ -98,9 +97,9 @@ class _LeftSidebarState extends State<LeftSidebar> with GetItStateMixin {
                                   constraints: BoxConstraints.tight(
                                     const Size(18, double.infinity),
                                   ),
-                                  onPressed: () => componentsNotifier.replace(
+                                  onPressed: () => context.componentsCubit.replace(
                                     i,
-                                    hidden: !e.hidden,
+                                    e.copyWith(hidden: !e.hidden),
                                   ),
                                   icon: Icon(
                                     e.hidden

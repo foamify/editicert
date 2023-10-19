@@ -1,6 +1,6 @@
 part of '../main.dart';
 
-class TopBar extends StatelessWidget with GetItMixin {
+class TopBar extends StatelessWidget {
   TopBar({super.key});
 
   @override

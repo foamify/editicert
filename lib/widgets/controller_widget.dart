@@ -2,7 +2,7 @@
 
 part of '../main.dart';
 
-class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
+class ControllerWidget extends StatefulWidget {
   ControllerWidget(this.index, {super.key});
 
   final int index;
@@ -11,16 +11,15 @@ class ControllerWidget extends StatefulWidget with GetItStatefulWidgetMixin {
   State<ControllerWidget> createState() => _ControllerWidgetState();
 }
 
-class _ControllerWidgetState extends State<ControllerWidget>
-    with GetItStateMixin {
+class _ControllerWidgetState extends State<ControllerWidget> {
   Offset toScene(Offset offset) => tControl().toScene(offset);
 
   TransformationController tControl() =>
-      (context.read<CanvasTransformCubit>().state);
+      context.read<CanvasTransformCubit>().state;
 
-  ({Offset bl, Offset br, Offset tl, Offset tr}) getRotatedEdges() {
-    final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
-        (componentsNotifier.state.value[widget.index]).component.rotatedEdges;
+  Edges getRotatedEdges() {
+    final edge =
+        context.componentsCubit.state[widget.index].transform.rotatedEdges;
 
     final transform = tControl().value;
 
@@ -32,9 +31,8 @@ class _ControllerWidgetState extends State<ControllerWidget>
     );
   }
 
-  ({Offset bl, Offset br, Offset tl, Offset tr}) getEdges() {
-    final ({Offset bl, Offset br, Offset tl, Offset tr}) edge =
-        (componentsNotifier.state.value[widget.index]).component.edges;
+  Edges getEdges() {
+    final edge = context.componentsCubit.state[widget.index].transform.edges;
 
     final transform = tControl().value;
 
@@ -50,14 +48,17 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   final _originalTransform = ValueNotifier(Matrix4.identity());
 
-  final _originalComponent =
-      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
+  final _originalComponent = ValueNotifier(
+    const ComponentTransform(Offset.zero, Size.zero, 0, false, false),
+  );
 
-  final _component =
-      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
+  final _component = ValueNotifier(
+    const ComponentTransform(Offset.zero, Size.zero, 0, false, false),
+  );
 
-  final _visualComponent =
-      ValueNotifier(const ComponentTransform(Offset.zero, Size.zero, 0, false, false));
+  final _visualComponent = ValueNotifier(
+    const ComponentTransform(Offset.zero, Size.zero, 0, false, false),
+  );
 
   final stopwatch = Stopwatch();
 
@@ -67,10 +68,11 @@ class _ControllerWidgetState extends State<ControllerWidget>
   void initState() {
     super.initState();
     _componentListener = () {
-      (componentsNotifier).replace(widget.index, transform: _component.value);
+      context.componentsCubit
+          .replaceCopyWith(widget.index, transform: _component.value);
       _visualComponent.value = _component.value;
     };
-    final component = (componentsNotifier.state.value[widget.index]).component;
+    final component = context.componentsCubit.state[widget.index].transform;
     _component.value = component;
     _visualComponent.value = component;
     _component.addListener(_componentListener);
@@ -78,8 +80,9 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   @override
   void dispose() {
-    _component.removeListener(_componentListener);
-    _component.dispose();
+    _component
+      ..removeListener(_componentListener)
+      ..dispose();
     _visualComponent.dispose();
     _originalComponent.dispose();
     _originalPosition.dispose();
@@ -89,165 +92,169 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   @override
   Widget build(BuildContext context) {
-    final hovereds = watchX((Hovered hovered) => hovered.state);
     final components =
-        watchX((ComponentService componentsService) => componentsService.state);
-    //
-    final hovered = hovereds.contains(widget.index);
-    final component = components[widget.index];
-    //
-    final hidden = component.hidden;
-    final locked = component.locked;
-    //
-    final moving = (context.read<CanvasEventsCubit>().state)
-        .contains(CanvasEvent.draggingComponent);
+    context.componentsCubitSelect((value) => value.state);
+    final selected = context
+        .selectedCubitSelect((value) => value.contains(widget.index));
 
-    registerHandler(
-      (ComponentService componentsService) => componentsService.state,
-      (_, next, __) {
-        if (next.length <= widget.index) return;
-        if (next[widget.index].component != _component.value) {
-          _visualComponent.value = next[widget.index].component;
+    return BlocListener<ComponentsCubit, List<ComponentData>>(
+      listener: (context, state) {
+        if (state.length <= widget.index) return;
+        if (state[widget.index].transform != _component.value) {
+          _visualComponent.value = state[widget.index].transform;
         }
       },
-    );
+      child: AnimatedBuilder(
+        animation: Listenable.merge([
+          _visualComponent,
+        ]),
+        builder: (context2, child) {
+          final hovers = context.hoveredCubitWatch;
+          //
+          final hovered = hovers.contains(widget.index);
+          final component = components[widget.index];
+          //
+          final hidden = component.hidden;
+          final locked = component.locked;
+          //
+          final moving = context
+              .read<CanvasEventsCubit>()
+              .state
+              .contains(CanvasEvent.draggingComponent);
 
-    return AnimatedBuilder(
-      animation: Listenable.merge([
-        _visualComponent,
-        (context.read<CanvasTransformCubit>().state),
-        selectedNotifier.state,
-      ]),
-      builder: (context2, child) {
-        final pos = getPos();
-        final tSize = getSize();
-        final tAngle = _visualComponent.value.angle;
-        final selected = selectedNotifier.state.value.contains(widget.index);
-        final selectedValue = selected && !moving;
-        final borderWidth = selectedValue ? 1.0 : 2.0;
-        final flipX = _visualComponent.value.flipX;
-        final flipY = _visualComponent.value.flipY;
+          final pos = getPos();
+          final tSize = getSize();
+          final tAngle = _visualComponent.value.angle;
+          final selectedValue = selected && !moving;
+          final borderWidth = selectedValue ? 1.0 : 2.0;
+          final flipX = _visualComponent.value.flipX;
+          final flipY = _visualComponent.value.flipY;
 
-        return Stack(
-          children: [
-            // movement control
-            Positioned(
-              left: pos.dx + (tSize.width < 0 ? tSize.width : 0),
-              top: pos.dy + (tSize.height < 0 ? tSize.height : 0),
-              child: IgnorePointer(
-                ignoring: hidden,
-                child: Transform.rotate(
-                  angle: tAngle,
-                  child: Transform.flip(
-                    flipX: flipX,
-                    flipY: flipY,
-                    child: Listener(
-                      onPointerDown: (event) {
-                        if (event.buttons == kMiddleMouseButton) return;
-                        stopwatch.start();
-                        (context2.read<CanvasEventsCubit>()).add(
-                          CanvasEvent.draggingComponent,
-                        );
-                        if (!selectedNotifier.state.value
-                            .contains(widget.index)) {
-                          selectedNotifier.clear();
-                          hoveredNotifier.clear();
-                        }
-                        handlePointerDownGlobal(event);
-                      },
-                      onPointerMove: locked
-                          ? null
-                          : (event) {
-                              if (event.buttons == kMiddleMouseButton) return;
-                              if (stopwatch.isRunning) {
-                                stopwatch
-                                  ..stop()
-                                  ..reset();
-                              }
-                              handleMove(event);
-                            },
-                      onPointerUp: (event) {
-                        if (event.buttons == kMiddleMouseButton) return;
-                        // handle text edit
-                        if (componentsNotifier.state.value[widget.index].type ==
-                                ComponentType.text &&
-                            stopwatch.isRunning &&
-                            stopwatch.elapsedMilliseconds <= 500) {
-                          print('TAPPED');
-                          (context2.read<CanvasEventsCubit>())
-                              .add(CanvasEvent.editingText);
-                          componentsNotifier.replace(
-                            widget.index,
-                            controller:
-                                TextEditingController(text: component.name),
-                          );
-                        }
-                        selectedNotifier.add(widget.index);
-                        hoveredNotifier.add(widget.index);
-                        handlePointerUp(event);
-                      },
-                      child: MouseRegion(
-                        onEnter: (_) => (hoveredNotifier).add(widget.index),
-                        onExit: (_) => (hoveredNotifier).remove(widget.index),
-                        child: Container(
-                          width: tSize.width < 0 ? -tSize.width : tSize.width,
-                          height:
-                              tSize.height < 0 ? -tSize.height : tSize.height,
-                          decoration: (hovered || selected) && !moving
-                              ? BoxDecoration(
-                                  border: Border.all(
-                                    strokeAlign: .5,
-                                    width: borderWidth,
-                                    color: Colors.blueAccent,
-                                  ),
-                                )
-                              : const BoxDecoration(),
+          return Stack(
+            children: [
+              // movement control
+              Positioned(
+                left: pos.dx + (tSize.width < 0 ? tSize.width : 0),
+                top: pos.dy + (tSize.height < 0 ? tSize.height : 0),
+                child: IgnorePointer(
+                  ignoring: hidden,
+                  child: Transform.rotate(
+                    angle: tAngle,
+                    child: Transform.flip(
+                      flipX: flipX,
+                      flipY: flipY,
+                      child: Listener(
+                        onPointerDown: (event) {
+                          if (event.buttons == kMiddleMouseButton) return;
+                          stopwatch.start();
+                          context2.read<CanvasEventsCubit>().add(
+                                CanvasEvent.draggingComponent,
+                              );
+                          if (!context.selectedCubit.state
+                              .contains(widget.index)) {
+                            context.selectedCubit.clear();
+                            context.hoveredCubit.clear();
+                          }
+                          handlePointerDownGlobal(event);
+                        },
+                        onPointerMove: locked
+                            ? null
+                            : (event) {
+                                if (event.buttons == kMiddleMouseButton) return;
+                                if (stopwatch.isRunning) {
+                                  stopwatch
+                                    ..stop()
+                                    ..reset();
+                                }
+                                handleMove(event);
+                              },
+                        onPointerUp: (event) {
+                          if (event.buttons == kMiddleMouseButton) return;
+                          // handle text edit
+                          if (context.componentsCubit.state[widget.index]
+                                      .type ==
+                                  ComponentType.text &&
+                              stopwatch.isRunning &&
+                              stopwatch.elapsedMilliseconds <= 500) {
+                            print('TAPPED');
+                            context2
+                                .read<CanvasEventsCubit>()
+                                .add(CanvasEvent.editingText);
+                            context.componentsCubit.replaceCopyWith(
+                              widget.index,
+                              textController:
+                                  TextEditingController(text: component.name),
+                            );
+                          }
+                          context.selectedCubit.add(widget.index);
+                          context.hoveredCubit.add(widget.index);
+                          handlePointerUp(event);
+                        },
+                        child: MouseRegion(
+                          onEnter: (_) =>
+                              context.hoveredCubit.add(widget.index),
+                          onExit: (_) =>
+                              context.hoveredCubit.remove(widget.index),
+                          child: Container(
+                            width: tSize.width < 0 ? -tSize.width : tSize.width,
+                            height:
+                                tSize.height < 0 ? -tSize.height : tSize.height,
+                            decoration: (hovered || selected) && !moving
+                                ? BoxDecoration(
+                                    border: Border.all(
+                                      strokeAlign: .5,
+                                      width: borderWidth,
+                                      color: Colors.blueAccent,
+                                    ),
+                                  )
+                                : const BoxDecoration(),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            IgnorePointer(
-              ignoring: locked,
-              child: Stack(
-                children: [
-                  // rotation controls
-                  if (selectedValue)
-                    ...[
-                      Alignment.topLeft,
-                      Alignment.topRight,
-                      Alignment.bottomLeft,
-                      Alignment.bottomRight,
-                    ].map(
-                      (e) => _buildEdgeControl(alignment: e, rotate: true),
-                    ),
-                  // side resize controls
-                  if (selectedValue)
-                    ...[
-                      Alignment.topCenter,
-                      Alignment.bottomCenter,
-                      Alignment.centerLeft,
-                      Alignment.centerRight,
-                    ].map((e) => _buildResizer(alignment: e)),
-                  // edge resize controls
-                  if (selectedValue)
-                    ...[
-                      Alignment.topLeft,
-                      Alignment.topRight,
-                      Alignment.bottomLeft,
-                      Alignment.bottomRight,
-                    ].map(
-                      (e) => _buildEdgeControl(alignment: e, resize: true),
-                    ),
-                ],
+              IgnorePointer(
+                ignoring: locked,
+                child: Stack(
+                  children: [
+                    // rotation controls
+                    if (selectedValue)
+                      ...[
+                        Alignment.topLeft,
+                        Alignment.topRight,
+                        Alignment.bottomLeft,
+                        Alignment.bottomRight,
+                      ].map(
+                        (e) => _buildEdgeControl(alignment: e, rotate: true),
+                      ),
+                    // side resize controls
+                    if (selectedValue)
+                      ...[
+                        Alignment.topCenter,
+                        Alignment.bottomCenter,
+                        Alignment.centerLeft,
+                        Alignment.centerRight,
+                      ].map((e) => _buildResizer(alignment: e)),
+                    // edge resize controls
+                    if (selectedValue)
+                      ...[
+                        Alignment.topLeft,
+                        Alignment.topRight,
+                        Alignment.bottomLeft,
+                        Alignment.bottomRight,
+                      ].map(
+                        (e) => _buildEdgeControl(alignment: e, resize: true),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -261,7 +268,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   /// handles the pointer down event for rotation
   void handlePointerDownGlobal(PointerDownEvent event) {
     if (event.buttons == kMiddleMouseButton) return;
-    _component.value = (componentsNotifier.state.value[widget.index].component);
+    _component.value = context.componentsCubit.state[widget.index].transform;
     _originalPosition.value = event.position;
     _originalTransform.value = tControl().value;
     _originalComponent.value = _component.value;
@@ -370,8 +377,14 @@ class _ControllerWidgetState extends State<ControllerWidget>
     );
   }
 
-  Listener buildEdgeResizeRotateHandle(Alignment? alignment, bool rotate,
-      bool resize, Offset selected, int edgeScale, Color debugEdgeColor) {
+  Listener buildEdgeResizeRotateHandle(
+    Alignment? alignment,
+    bool rotate,
+    bool resize,
+    Offset selected,
+    int edgeScale,
+    Color debugEdgeColor,
+  ) {
     return Listener(
       onPointerDown: (event) {
         if (event.buttons == kMiddleMouseButton) return;
@@ -388,20 +401,20 @@ class _ControllerWidgetState extends State<ControllerWidget>
         if (rotate) {
           context.read<CanvasEventsCubit>().add(CanvasEvent.rotateCursor);
         }
-        (context.read<CanvasEventsCubit>()).add(
-          (rotate
-              ? CanvasEvent.rotatingComponent
-              : CanvasEvent.resizingComponent),
-        );
+        context.read<CanvasEventsCubit>().add(
+              rotate
+                  ? CanvasEvent.rotatingComponent
+                  : CanvasEvent.resizingComponent,
+            );
         handlePointerDownGlobal(event);
       },
       onPointerMove: (event) {
         if (event.buttons == kMiddleMouseButton) return;
-        (context.read<CanvasEventsCubit>()).add(
-          (rotate
-              ? CanvasEvent.rotatingComponent
-              : CanvasEvent.resizingComponent),
-        );
+        context.read<CanvasEventsCubit>().add(
+              rotate
+                  ? CanvasEvent.rotatingComponent
+                  : CanvasEvent.resizingComponent,
+            );
         if (resize && alignment != null) {
           handleResize(event, alignment, selected);
         } else if (rotate) {
@@ -557,9 +570,9 @@ class _ControllerWidgetState extends State<ControllerWidget>
               if (event.buttons == kMiddleMouseButton) return;
               handlePointerDownGlobal(event);
 
-              (context.read<CanvasEventsCubit>()).add(
-                CanvasEvent.resizingComponent,
-              );
+              context.read<CanvasEventsCubit>().add(
+                    CanvasEvent.resizingComponent,
+                  );
 
               final canvasEvent = switch (alignment) {
                 Alignment.topCenter => CanvasEvent.resizeControllerTopCenter,
@@ -623,7 +636,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
 
   /// Handles movement
   void handleMove(PointerMoveEvent event) {
-    (context.read<CanvasEventsCubit>()).add(CanvasEvent.draggingComponent);
+    context.read<CanvasEventsCubit>().add(CanvasEvent.draggingComponent);
     final delta = event.position - _originalPosition.value;
     _component.value = _originalComponent.value.copyWith(
       pos: _originalComponent.value.pos + delta * getScale(),
@@ -633,7 +646,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
   /// Handles rotation from the center of the widget to the pointer
   void handleRotate(PointerMoveEvent event) {
     final center = MatrixUtils.transformPoint(
-      (context.read<CanvasTransformCubit>().state.value),
+      context.read<CanvasTransformCubit>().state.value,
       _originalComponent.value.rect.center,
     );
     final originalAngle = atan2(
@@ -708,7 +721,7 @@ class _ControllerWidgetState extends State<ControllerWidget>
       angle,
     );
 
-    var cursorDelta = (rotatedCursorPoint - rotatedOriginalPoint);
+    var cursorDelta = rotatedCursorPoint - rotatedOriginalPoint;
     Offset rotatedCursorDelta() => rotatePoint(cursorDelta, Offset.zero, angle);
 
     // handle resizing from sides, not edges

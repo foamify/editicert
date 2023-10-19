@@ -3,14 +3,16 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:editicert/logic/canvas_service.dart';
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/logic/component_service.dart';
 import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_data.dart';
 import 'package:editicert/models/component_type.dart';
+import 'package:editicert/state/canvas_cubit.dart';
+import 'package:editicert/state/component_index_cubit.dart';
+import 'package:editicert/state/components_cubit.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
+import 'package:editicert/util/extensions.dart';
+import 'package:editicert/util/get_it.dart';
 import 'package:editicert/util/utils.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -19,8 +21,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
-import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
@@ -50,8 +50,6 @@ void main() async {
     await windowManager.ensureInitialized();
   }
 
-  setup();
-
   if (!kIsWeb) {
     if (Platform.isMacOS) {
       await WindowManipulator.initialize(enableWindowDelegate: true);
@@ -78,7 +76,28 @@ void main() async {
     }
   }
 
-  runApp(Main());
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => SelectedCubit(),
+        ),
+        BlocProvider(
+          create: (_) => HoveredCubit(),
+        ),
+        BlocProvider(
+          create: (_) => ComponentIndexCubit(),
+        ),
+        BlocProvider(
+          create: (_) => CanvasCubit(),
+        ),
+        BlocProvider(
+          create: (_) => ComponentsCubit([]),
+        ),
+      ],
+      child: Main(),
+    ),
+  );
   if (!kIsWeb) {
     await windowManager.waitUntilReadyToShow();
 
@@ -101,23 +120,13 @@ class _MyDelegate extends NSWindowDelegate {
   }
 }
 
-void setup() {
-  final register = GetIt.I.registerSingleton;
-
-  register<ComponentService>(ComponentService());
-  register<Selected>(Selected());
-  register<Hovered>(Hovered());
-  register<CanvasService>(CanvasService());
-}
-
-class Main extends StatelessWidget with GetItMixin {
+class Main extends StatelessWidget {
   Main({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final selectedProvider = watchX((Selected selected) => selected.state);
-
-    final selected = selectedProvider.isEmpty;
+    final isSelectedEmpty =
+        context.select((SelectedCubit selected) => selected.state.isEmpty);
 
     return PlatformMenuBar(
       menus: kIsWeb || !Platform.isMacOS
@@ -232,21 +241,23 @@ class Main extends StatelessWidget with GetItMixin {
                     shortcut: Platform.isMacOS
                         ? const SingleActivator(LogicalKeyboardKey.backspace)
                         : const SingleActivator(LogicalKeyboardKey.delete),
-                    onSelected: selected
+                    onSelected: isSelectedEmpty
                         ? null
-                        : () => componentsNotifier.removeSelected(),
+                        : context.deleteSelectedComponent,
                   ),
                   PlatformMenuItem(
                     label: 'Bring Backward',
                     shortcut:
                         const SingleActivator(LogicalKeyboardKey.bracketLeft),
-                    onSelected: selected ? null : () => handleGoBackward(),
+                    onSelected:
+                        isSelectedEmpty ? null : context.handleGoBackward,
                   ),
                   PlatformMenuItem(
                     label: 'Bring Forward',
                     shortcut:
                         const SingleActivator(LogicalKeyboardKey.bracketRight),
-                    onSelected: selected ? null : () => handleGoForward(),
+                    onSelected:
+                        isSelectedEmpty ? null : context.handleGoForward,
                   ),
                 ],
               ),
@@ -276,18 +287,4 @@ class Main extends StatelessWidget with GetItMixin {
       ),
     );
   }
-}
-
-void handleGoBackward() {
-  final index = selectedNotifier.state.value.singleOrNull;
-  if (index == null || index == 0) return;
-  componentsNotifier.reorder(index, index - 1);
-}
-
-void handleGoForward() {
-  final index = selectedNotifier.state.value.singleOrNull;
-  if (index == null || index == componentsNotifier.state.value.length - 1) {
-    return;
-  }
-  componentsNotifier.reorder(index, index + 1);
 }

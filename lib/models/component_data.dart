@@ -9,7 +9,7 @@ class ComponentData extends Equatable {
   // ignore: public_member_api_docs
   const ComponentData({
     this.name = 'Component',
-    this.component = const ComponentTransform(
+    this.transform = const ComponentTransform(
       Offset.zero,
       Size(100, 100),
       0,
@@ -28,7 +28,7 @@ class ComponentData extends Equatable {
   });
 
   final String name;
-  final ComponentTransform component;
+  final ComponentTransform transform;
   final Color color;
   final BorderRadius borderRadius;
   final Border border;
@@ -40,8 +40,35 @@ class ComponentData extends Equatable {
   final TextEditingController? textController;
 
   ComponentData copyWith({
+    String? name,
+    ComponentTransform? transform,
+    Color? color,
+    BorderRadius? borderRadius,
+    Border? border,
+    List<BoxShadow>? shadow,
+    Widget? content,
+    bool? hidden,
+    bool? locked,
+    ComponentType? type,
+    TextEditingController? textController,
+  }) =>
+      ComponentData(
+        name: name ?? this.name,
+        transform: transform ?? this.transform,
+        color: color ?? this.color,
+        borderRadius: borderRadius ?? this.borderRadius,
+        border: border ?? this.border,
+        shadow: shadow ?? this.shadow,
+        content: content ?? this.content,
+        hidden: hidden ?? this.hidden,
+        locked: locked ?? this.locked,
+        type: type ?? this.type,
+        textController: textController ?? this.textController,
+      );
+  
+  ComponentData copyWithRequired({
     required String? name,
-    required ComponentTransform? component,
+    required ComponentTransform? transform,
     required Color? color,
     required BorderRadius? borderRadius,
     required Border? border,
@@ -54,7 +81,7 @@ class ComponentData extends Equatable {
   }) =>
       ComponentData(
         name: name ?? this.name,
-        component: component ?? this.component,
+        transform: transform ?? this.transform,
         color: color ?? this.color,
         borderRadius: borderRadius ?? this.borderRadius,
         border: border ?? this.border,
@@ -67,10 +94,9 @@ class ComponentData extends Equatable {
       );
 
   @override
-  // TODO: implement props
   List<Object?> get props => [
         name,
-        component,
+        transform,
         color,
         borderRadius,
         border,
