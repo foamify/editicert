@@ -4,24 +4,30 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:editicert/util/utils.dart';
+import 'package:equatable/equatable.dart';
 
-class Component {
+class ComponentTransform extends Equatable {
+  const ComponentTransform(
+    this.pos,
+    this.size,
+    this.angle,
+    this.flipX,
+    this.flipY,
+  );
   final Offset pos;
   final Size size;
   final double angle;
   final bool flipX;
   final bool flipY;
 
-  const Component(this.pos, this.size, this.angle, this.flipX, this.flipY);
-
-  static Component fromEdges(
+  static ComponentTransform fromEdges(
     Edges edges, {
     bool flipX = false,
     bool flipY = false,
   }) =>
-      Component(edges.tl, edges.size, edges.angle, flipX, flipY);
+      ComponentTransform(edges.tl, edges.size, edges.angle, flipX, flipY);
 
-  static fromEdgesOld(
+  static ComponentTransform fromEdgesOld(
     ({Offset bl, Offset br, Offset tl, Offset tr}) edges, {
     bool flipX = false,
     bool flipY = false,
@@ -44,7 +50,7 @@ class Component {
             0,
             Offset.zero,
           );
-    var newComponent = Component(
+    var newComponent = ComponentTransform(
       newEdges.tl,
       size,
       angle + (flipX ? pi : 0),
@@ -53,7 +59,7 @@ class Component {
     );
     if (keepOrigin) {
       final difference = topLeft - newComponent.rotatedEdges.tl;
-      newComponent = Component(
+      newComponent = ComponentTransform(
         newEdges.tl + difference,
         size,
         angle + (flipX ? pi : 0),
@@ -88,14 +94,14 @@ class Component {
         pos,
       );
 
-  Component copyWith({
+  ComponentTransform copyWith({
     Offset? pos,
     Size? size,
     double? angle,
     bool? flipX,
     bool? flipY,
   }) {
-    return Component(
+    return ComponentTransform(
       pos ?? this.pos,
       size ?? this.size,
       angle ?? this.angle,
@@ -110,16 +116,5 @@ class Component {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Component &&
-          runtimeType == other.runtimeType &&
-          pos == other.pos &&
-          size == other.size &&
-          angle == other.angle &&
-          flipX == other.flipX &&
-          flipY == other.flipY;
-
-  @override
-  int get hashCode => pos.hashCode ^ size.hashCode ^ angle.hashCode;
+  List<Object?> get props => [pos, size, angle, flipX, flipY];
 }

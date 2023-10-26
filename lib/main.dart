@@ -3,12 +3,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:editicert/logic/canvas_service.dart';
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/logic/component_service.dart';
-import 'package:editicert/models/component.dart';
+import 'package:editicert/models/component_data.dart';
+import 'package:editicert/models/component_transform.dart';
+import 'package:editicert/models/component_type.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
+import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/utils.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
@@ -17,38 +17,26 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
-import 'package:get_it_mixin/get_it_mixin.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
 part 'widgets/canvas.dart';
-
 part 'widgets/controller_widget.dart';
-
 part 'widgets/creator_widget.dart';
-
-part 'widgets/selector_widget.dart';
-
-part 'widgets/left_sidebar.dart';
-
-part 'widgets/right_sidebar.dart';
-
-part 'widgets/top_bar.dart';
-
-part 'widgets/home_page.dart';
-
 part 'widgets/custom_cursor_widget.dart';
+part 'widgets/home_page.dart';
+part 'widgets/left_sidebar.dart';
+part 'widgets/right_sidebar.dart';
+part 'widgets/selector_widget.dart';
+part 'widgets/top_bar.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
     await windowManager.ensureInitialized();
   }
-
-  setup();
 
   if (!kIsWeb) {
     if (Platform.isMacOS) {
@@ -76,7 +64,28 @@ void main() async {
     }
   }
 
-  runApp(Main());
+  runApp(
+    MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => SelectedCubit(),
+        ),
+        BlocProvider(
+          create: (_) => HoveredCubit(),
+        ),
+        BlocProvider(
+          create: (_) => ComponentIndexCubit(),
+        ),
+        BlocProvider(
+          create: (_) => CanvasCubit(),
+        ),
+        BlocProvider(
+          create: (_) => ComponentsCubit([]),
+        ),
+      ],
+      child: const Main(),
+    ),
+  );
   if (!kIsWeb) {
     await windowManager.waitUntilReadyToShow();
 
@@ -99,23 +108,13 @@ class _MyDelegate extends NSWindowDelegate {
   }
 }
 
-void setup() {
-  final register = GetIt.I.registerSingleton;
-
-  register<ComponentService>(ComponentService());
-  register<Selected>(Selected());
-  register<Hovered>(Hovered());
-  register<CanvasService>(CanvasService());
-}
-
-class Main extends StatelessWidget with GetItMixin {
-  Main({super.key});
+class Main extends StatelessWidget {
+  const Main({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final selectedProvider = watchX((Selected selected) => selected.state);
-
-    final selected = selectedProvider.isEmpty;
+    final isSelectedEmpty =
+        context.select((SelectedCubit selected) => selected.state.isEmpty);
 
     return PlatformMenuBar(
       menus: kIsWeb || !Platform.isMacOS
@@ -124,34 +123,41 @@ class Main extends StatelessWidget with GetItMixin {
               const PlatformMenu(
                 label: 'Application',
                 menus: [
-                  PlatformMenuItemGroup(members: [
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.about,
-                    ),
-                  ]),
-                  PlatformMenuItemGroup(members: [
-                    PlatformMenuItem(label: 'Preferences'),
-                  ]),
-                  PlatformMenuItemGroup(members: [
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.minimizeWindow,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.zoomWindow,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.hide,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.hideOtherApplications,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.toggleFullScreen,
-                    ),
-                    PlatformProvidedMenuItem(
-                      type: PlatformProvidedMenuItemType.quit,
-                    ),
-                  ]),
+                  PlatformMenuItemGroup(
+                    members: [
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.about,
+                      ),
+                    ],
+                  ),
+                  PlatformMenuItemGroup(
+                    members: [
+                      PlatformMenuItem(label: 'Preferences'),
+                    ],
+                  ),
+                  PlatformMenuItemGroup(
+                    members: [
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.minimizeWindow,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.zoomWindow,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.hide,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type:
+                            PlatformProvidedMenuItemType.hideOtherApplications,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.toggleFullScreen,
+                      ),
+                      PlatformProvidedMenuItem(
+                        type: PlatformProvidedMenuItemType.quit,
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const PlatformMenu(
@@ -187,11 +193,17 @@ class Main extends StatelessWidget with GetItMixin {
                   ),
                 ],
               ),
-              const PlatformMenu(label: 'Assets', menus: [
-                PlatformMenu(label: 'Import', menus: [
-                  PlatformMenuItem(label: 'File'),
-                ]),
-              ]),
+              const PlatformMenu(
+                label: 'Assets',
+                menus: [
+                  PlatformMenu(
+                    label: 'Import',
+                    menus: [
+                      PlatformMenuItem(label: 'File'),
+                    ],
+                  ),
+                ],
+              ),
               PlatformMenu(
                 label: 'Tools',
                 menus: [
@@ -230,21 +242,23 @@ class Main extends StatelessWidget with GetItMixin {
                     shortcut: Platform.isMacOS
                         ? const SingleActivator(LogicalKeyboardKey.backspace)
                         : const SingleActivator(LogicalKeyboardKey.delete),
-                    onSelected: selected
+                    onSelected: isSelectedEmpty
                         ? null
-                        : () => componentsNotifier.removeSelected(),
+                        : context.deleteSelectedComponent,
                   ),
                   PlatformMenuItem(
                     label: 'Bring Backward',
                     shortcut:
                         const SingleActivator(LogicalKeyboardKey.bracketLeft),
-                    onSelected: selected ? null : () => handleGoBackward(),
+                    onSelected:
+                        isSelectedEmpty ? null : context.handleGoBackward,
                   ),
                   PlatformMenuItem(
                     label: 'Bring Forward',
                     shortcut:
                         const SingleActivator(LogicalKeyboardKey.bracketRight),
-                    onSelected: selected ? null : () => handleGoForward(),
+                    onSelected:
+                        isSelectedEmpty ? null : context.handleGoForward,
                   ),
                 ],
               ),
@@ -269,23 +283,9 @@ class Main extends StatelessWidget with GetItMixin {
             //
             BlocProvider(create: (_) => DebugPointCubit()),
           ],
-          child: HomePage(),
+          child: const HomePage(),
         ),
       ),
     );
   }
-}
-
-void handleGoBackward() {
-  final index = selectedNotifier.state.value.singleOrNull;
-  if (index == null || index == 0) return;
-  componentsNotifier.reorder(index, index - 1);
-}
-
-void handleGoForward() {
-  final index = selectedNotifier.state.value.singleOrNull;
-  if (index == null || index == componentsNotifier.state.value.length - 1) {
-    return;
-  }
-  componentsNotifier.reorder(index, index + 1);
 }

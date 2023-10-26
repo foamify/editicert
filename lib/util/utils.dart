@@ -1,22 +1,11 @@
 // ignore_for_file: prefer-match-file-name
 
 import 'dart:math';
-import 'package:editicert/logic/canvas_service.dart';
-import 'package:editicert/logic/component_index_service.dart';
-import 'package:editicert/logic/component_service.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 
 final _get = GetIt.I.get;
-
-ComponentService get componentsNotifier => _get<ComponentService>();
-
-Selected get selectedNotifier => _get<Selected>();
-
-Hovered get hoveredNotifier => _get<Hovered>();
-
-CanvasService get canvasStateNotifier => _get<CanvasService>();
 
 const kSidebarWidth = 240.0;
 const kTopbarHeight = 52.0;
@@ -56,8 +45,8 @@ Edges rotateRect(Rect rect, double angle, Offset origin) {
 }
 
 Offset rotatePoint(Offset point, Offset origin, double angle) {
-  double cosTheta = cos(angle);
-  double sinTheta = sin(angle);
+  final cosTheta = cos(angle);
+  final sinTheta = sin(angle);
 
   final oPoint = point - origin;
   final x = oPoint.dx;
@@ -75,21 +64,21 @@ Offset closestOffsetOnLine(
   Offset originalOffset,
 ) {
   // Step 1: Convert the rotation degree to radians.
-  double rotationRadians = rotationDegree * pi / 180;
+  final rotationRadians = rotationDegree * pi / 180;
 
   // Step 2: Calculate the direction vector from the original offset to the outside offset.
-  Offset directionVector = originalOffset - outsideOffset;
+  final directionVector = originalOffset - outsideOffset;
 
   // Step 3: Project the direction vector onto the line made from the original offset and the rotation degree.
-  double projectionLength = directionVector.dx * cos(rotationRadians) +
+  final projectionLength = directionVector.dx * cos(rotationRadians) +
       directionVector.dy * sin(rotationRadians);
-  Offset projectionVector = Offset(
+  final projectionVector = Offset(
     projectionLength * cos(rotationRadians),
     projectionLength * sin(rotationRadians),
   );
 
   // Step 4: Add the projection vector to the original offset to get the closest offset on the line.
-  Offset closestOffset = outsideOffset + projectionVector;
+  final closestOffset = outsideOffset + projectionVector;
 
   return closestOffset;
 }
@@ -101,8 +90,8 @@ double snap(double value, int snapValue, Set<PhysicalKeyboardKey> keys) =>
         : (value / 0.1).truncateToDouble() * 0.1;
 
 Offset getMiddleOffset(Offset offset1, Offset offset2) {
-  double middleX = (offset1.dx + offset2.dx) / 2;
-  double middleY = (offset1.dy + offset2.dy) / 2;
+  final middleX = (offset1.dx + offset2.dx) / 2;
+  final middleY = (offset1.dy + offset2.dy) / 2;
   return Offset(middleX, middleY);
 }
 
@@ -144,7 +133,7 @@ Offset getOffset(
       _ => newAlignment,
     };
   }
-  var offset = switch (newAlignment) {
+  final offset = switch (newAlignment) {
     Alignment.topLeft ||
     Alignment.centerLeft ||
     Alignment.topCenter =>

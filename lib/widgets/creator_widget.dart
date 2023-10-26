@@ -8,8 +8,9 @@ class CreatorWidget extends StatefulWidget {
 }
 
 class _CreatorWidgetState extends State<CreatorWidget> {
-  final oComponent =
-      ValueNotifier(const Component(Offset.zero, Size.zero, 0, false, false));
+  final oComponent = ValueNotifier(
+    const ComponentTransform(Offset.zero, Size.zero, 0, false, false),
+  );
 
   final oPosition = ValueNotifier(Offset.zero);
 
@@ -55,28 +56,30 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       ToolType.move: null,
     };
 
-    final canvasEvents = context.read<CanvasEventsCubit>();
-
-    canvasEvents.add(CanvasEvent.creatingRectangle);
+    context.canvasEventsCubit.add(CanvasEvent.creatingRectangle);
 
     final tController = context.read<CanvasTransformCubit>().state;
 
     oPosition.value = tController
         .toScene(event.position + const Offset(-kSidebarWidth, -kTopbarHeight));
-    oComponent.value = Component(oPosition.value, Size.zero, 0, false, false);
+    oComponent.value =
+        ComponentTransform(oPosition.value, Size.zero, 0, false, false);
 
-    final index = componentsNotifier.state.value.length;
+    final index = context.componentsCubit.state.length;
 
     final currentTool = context.read<ToolCubit>().state;
 
-    componentsNotifier.add(ComponentData(
-      component: oComponent.value,
-      name: '${componentName[currentTool] ?? '[Error CompType]'} ${index + 1}',
-      type: componentType[currentTool] ?? ComponentType.other,
-      color: currentTool == ToolType.text
-          ? Colors.transparent
-          : const Color(0xFF9E9E9E),
-    ));
+    context.componentsCubit.add(
+      ComponentData(
+        transform: oComponent.value,
+        name:
+            '${componentName[currentTool] ?? '[Error CompType]'} ${index + 1}',
+        type: componentType[currentTool] ?? ComponentType.other,
+        color: currentTool == ToolType.text
+            ? Colors.transparent
+            : const Color(0xFF9E9E9E),
+      ),
+    );
   }
 
   void handlePointerMove(PointerMoveEvent event) {
@@ -88,9 +91,9 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     final alt = keys.contains(LogicalKeyboardKey.altLeft) ||
         keys.contains(LogicalKeyboardKey.altRight);
 
-    final index = componentsNotifier.state.value.length - 1;
-    hoveredNotifier.clear();
-    selectedNotifier
+    final index = context.componentsCubit.state.length - 1;
+    context.hoveredCubit.clear();
+    context.selectedCubit
       ..clear()
       ..add(index);
 
@@ -133,22 +136,25 @@ class _CreatorWidgetState extends State<CreatorWidget> {
           : newRect.topLeft),
       size: (alt ? newRect.size * 2 : newRect.size),
     );
-    componentsNotifier.replace(index, transform: newComponent);
+    context.componentsCubit.replaceCopyWith(
+      index,
+      transform: newComponent,
+    );
   }
 
-  void handlePointerUp(PointerUpEvent event) {
+  void handlePointerUp(PointerUpEvent _) {
     final canvasEvent = context.read<CanvasEventsCubit>();
     if (!canvasEvent.state.contains(CanvasEvent.creatingRectangle)) return;
     canvasEvent.remove(CanvasEvent.creatingRectangle);
 
-    final components = componentsNotifier.state.value;
+    final components = context.componentsCubit.state;
     final index = components.length - 1;
     // ignore: avoid-unsafe-collection-methods
-    final component = components[index].component;
+    final component = components[index].transform;
     if (component.size.width == 0 || component.size.height == 0) {
-      componentsNotifier.replace(
+      context.componentsCubit.replaceCopyWith(
         index,
-        transform: Component(
+        transform: ComponentTransform(
           oComponent.value.pos - const Offset(50, 50),
           const Size(100, 100),
           0,
@@ -158,7 +164,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
       );
     }
     context.read<ToolCubit>().setMove();
-    selectedNotifier
+    context.selectedCubit
       ..clear()
       ..add(index);
     return;

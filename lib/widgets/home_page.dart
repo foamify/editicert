@@ -1,15 +1,17 @@
 part of '../main.dart';
 
-class HomePage extends StatefulWidget with GetItStatefulWidgetMixin {
-  HomePage({super.key});
+// ignore: public_member_api_docs
+class HomePage extends StatefulWidget {
+  // ignore: public_member_api_docs
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with GetItStateMixin {
+class _HomePageState extends State<HomePage> {
   final oMatrix = ValueNotifier(Matrix4.identity());
-  var isShowColorPicker = false;
+  var _isShowColorPicker = false;
 
   @override
   void dispose() {
@@ -19,41 +21,51 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final canvasStateProvider =
-        watchX((CanvasService canvasState) => canvasState.state);
+    final canvasEvents = context.canvasEventsCubitWatch;
     //
-    final canvasEvents = context.watch<CanvasEventsCubit>();
 
-    final leftClick = canvasEvents.state.contains(CanvasEvent.leftClick);
+    final leftClick = context.canvasEventsCubitSelect(
+      (value) => value.state.contains(CanvasEvent.leftClick),
+    );
 
-    final middleClick = canvasEvents.state.contains(CanvasEvent.middleClick);
+    final middleClick = context.canvasEventsCubitSelect(
+      (value) => value.state.contains(CanvasEvent.middleClick),
+    );
 
-    final isCreateTooling = canvasEvents.containsAny({
-      CanvasEvent.creatingRectangle,
-      CanvasEvent.creatingFrame,
-      CanvasEvent.creatingText,
-    });
-    final isComponentTooling = canvasEvents.containsAny({
-      CanvasEvent.draggingComponent,
-      CanvasEvent.resizingComponent,
-      CanvasEvent.rotatingComponent,
-    });
+    final isCreateTooling = context.canvasEventsCubitSelect(
+      (value) => value.containsAny({
+        CanvasEvent.creatingRectangle,
+        CanvasEvent.creatingFrame,
+        CanvasEvent.creatingText,
+      }),
+    );
+    final isComponentTooling = context.canvasEventsCubitSelect(
+      (value) => value.containsAny({
+        CanvasEvent.draggingComponent,
+        CanvasEvent.resizingComponent,
+        CanvasEvent.rotatingComponent,
+      }),
+    );
     final isNotCanvasTooling = isComponentTooling || isCreateTooling;
-    final isCanvasTooling = canvasEvents.containsAny({
-      CanvasEvent.panningCanvas,
-      CanvasEvent.zoomingCanvas,
-    });
-    final isZooming = canvasEvents.containsAny({CanvasEvent.zoomingCanvas});
+    final isCanvasTooling = context.canvasEventsCubitSelect(
+      (value) => value.containsAny({
+        CanvasEvent.panningCanvas,
+        CanvasEvent.zoomingCanvas,
+      }),
+    );
+    final isZooming = context.canvasEventsCubitSelect(
+      (value) => value.containsAny({CanvasEvent.zoomingCanvas}),
+    );
 
     final transformationController =
-        context.watch<CanvasTransformCubit>().state;
-    final tool = context.watch<ToolCubit>().state;
-    final isToolHand = tool == ToolType.hand;
+        context.canvasTransformCubitSelect((value) => value.state);
+    final tool = context.toolCubitSelect((value) => value.state);
+    final isToolHand =
+        context.toolCubitSelect((value) => value.state == ToolType.hand);
     //
-    final components =
-        watchX((ComponentService componentsState) => componentsState.state);
-    final selected = watchX((Selected selectedState) => selectedState.state);
-    // final hovered = watchX((Hovered hoveredState) => hoveredState.state);
+    final components = context.componentsCubitSelect((value) => value.state);
+    final selected = context.selectedCubitSelect((value) => value.state);
+    final hovered = context.hoveredCubitSelect((value) => value.state);
     //
     final keys = context.watch<KeysCubit>().state;
     keys;
@@ -80,6 +92,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
       mouseCursor = SystemMouseCursors.none;
     }
 
+    final canvasState = context.canvasCubitWatch.state;
+
     return RawKeyboardListener(
       focusNode: FocusNode(),
       autofocus: true,
@@ -99,20 +113,21 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
               VoidCallbackIntent(context.read<ToolCubit>().setHand),
           const SingleActivator(LogicalKeyboardKey.keyT):
               VoidCallbackIntent(context.read<ToolCubit>().setText),
-          const SingleActivator(LogicalKeyboardKey.delete):
-              VoidCallbackIntent(selected.isEmpty
-                  // ignore: no-empty-block
-                  ? () {}
-                  : () => componentsNotifier.removeSelected()),
+          const SingleActivator(LogicalKeyboardKey.delete): VoidCallbackIntent(
+            selected.isEmpty
+                // ignore: no-empty-block
+                ? () {}
+                : context.deleteSelectedComponent,
+          ),
           const SingleActivator(LogicalKeyboardKey.bracketLeft):
               VoidCallbackIntent(
             // ignore: no-empty-block
-            selected.isEmpty ? () {} : () => handleGoBackward(),
+            selected.isEmpty ? () {} : context.handleGoBackward,
           ),
           const SingleActivator(LogicalKeyboardKey.bracketRight):
               VoidCallbackIntent(
             // ignore: no-empty-block
-            selected.isEmpty ? () {} : () => handleGoForward(),
+            selected.isEmpty ? () {} : context.handleGoForward,
           ),
         };
         var i = 0;
@@ -139,12 +154,12 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                   left: transform.getTranslation().x + kSidebarWidth,
                   top: transform.getTranslation().y + kTopbarHeight,
                   child: Container(
-                    width: canvasStateProvider.size.width *
-                        transform.getMaxScaleOnAxis(),
-                    height: canvasStateProvider.size.height *
-                        transform.getMaxScaleOnAxis(),
+                    width:
+                        canvasState.size.width * transform.getMaxScaleOnAxis(),
+                    height:
+                        canvasState.size.height * transform.getMaxScaleOnAxis(),
                     foregroundDecoration: BoxDecoration(
-                      border: !canvasStateProvider.hidden
+                      border: !canvasState.hidden
                           ? null
                           : Border.all(
                               color: Colors.grey,
@@ -154,15 +169,12 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       borderRadius: BorderRadius.circular(1),
                     ),
                     decoration: BoxDecoration(
-                      color: canvasStateProvider.hidden
-                          ? null
-                          : canvasStateProvider.color,
-                      border: !canvasStateProvider.hidden
+                      color: canvasState.hidden ? null : canvasState.color,
+                      border: !canvasState.hidden
                           ? null
                           : Border.all(
                               color: Colors.grey,
                               strokeAlign: BorderSide.strokeAlignOutside,
-                              width: 1,
                             ),
                       boxShadow: const [
                         BoxShadow(
@@ -194,9 +206,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         GestureDetector(
                           onTap: () {
                             setState(() {
-                              selectedNotifier.clear();
-                              hoveredNotifier.clear();
-                              isShowColorPicker = false;
+                              context.selectedCubit.clear();
+                              context.hoveredCubit.clear();
+                              _isShowColorPicker = false;
                             });
                           },
                           child: Container(
@@ -207,12 +219,13 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         ),
                         // components label
                         ...components
-                            .where((element) =>
-                                element.type == ComponentType.frame)
+                            .where(
+                          (element) => element.type == ComponentType.frame,
+                        )
                             .map((e) {
                           return buildComponentLabel(
                             e,
-                            canvasStateProvider.color,
+                            canvasState.color,
                           );
                         }),
 
@@ -241,13 +254,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                         ),
 
                         // controller for selections
-                        AnimatedBuilder(
-                          animation: Listenable.merge([
-                            componentsNotifier.state,
-                            selectedNotifier.state,
-                          ]),
-                          builder: (_, __) => Stack(
-                            children: componentsNotifier.state.value
+                        BlocBuilder<ComponentsCubit, List<ComponentData>>(
+                          builder: (context, state) => Stack(
+                            children: state
                                 .mapIndexed((i, e) => ControllerWidget(i))
                                 .toList(),
                           ),
@@ -255,65 +264,76 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
 
                         // selected controller(s) (should be at the front of every
                         // controllers)
-                        AnimatedBuilder(
-                          animation: Listenable.merge([
-                            componentsNotifier.state,
-                            selectedNotifier.state,
-                          ]),
-                          builder: (_, __) => Stack(
-                            children: selectedNotifier.state.value
-                                .mapIndexed((i, e) => ControllerWidget(e))
-                                .toList(),
-                          ),
+                        BlocBuilder<SelectedCubit, Set<int>>(
+                          builder: (context, state) {
+                            return Stack(
+                              children: state
+                                  .mapIndexed((i, e) => ControllerWidget(e))
+                                  .toList(),
+                            );
+                          },
                         ),
                         // components
                         if (canvasEvents.containsAny({CanvasEvent.editingText}))
-                          ValueListenableBuilder(
-                            valueListenable: transformationController,
-                            builder: (_, transform2, __) => Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                ...selectedNotifier.state.value
-                                    .where((e) =>
-                                        // ignore: avoid-unsafe-collection-methods
-                                        components[e].type ==
-                                        ComponentType.text)
-                                    .mapIndexed((i, e) {
-                                  // ignore: avoid-unsafe-collection-methods
-                                  final component = components[e];
+                          BlocBuilder<ComponentsCubit, List<ComponentData>>(
+                            builder: (context, components) {
+                              return BlocBuilder<SelectedCubit, Set<int>>(
+                                builder: (context, state) {
+                                  return ValueListenableBuilder(
+                                    valueListenable: transformationController,
+                                    builder: (_, transform2, __) => Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        ...state
+                                            .where(
+                                          (e) =>
+                                              // ignore: avoid-unsafe-collection-methods
+                                              components[e].type ==
+                                              ComponentType.text,
+                                        )
+                                            .mapIndexed((i, e) {
+                                          // ignore: avoid-unsafe-collection-methods
+                                          final component = components[e];
 
-                                  return component.hidden
-                                      ? const SizedBox.shrink()
-                                      : buildComponentWidget(
-                                          e,
-                                          component,
-                                          transform2,
-                                          editText: true,
-                                        );
+                                          return component.hidden
+                                              ? const SizedBox.shrink()
+                                              : buildComponentWidget(
+                                                  e,
+                                                  component,
+                                                  transform2,
+                                                  editText: true,
+                                                );
+                                        }),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+
+                        if (kDebugMode)
+                          BlocBuilder<DebugPointCubit, List<Offset>>(
+                            builder: (_, state) => Stack(
+                              children: [
+                                ...state.map((e) {
+                                  final component = e;
+                                  final scale = transform.getMaxScaleOnAxis();
+                                  return Positioned(
+                                    left: transform.getTranslation().x +
+                                        component.dx * scale,
+                                    top: transform.getTranslation().y +
+                                        component.dy * scale,
+                                    child: Container(
+                                      width: 5,
+                                      height: 5,
+                                      color: Colors.red,
+                                    ),
+                                  );
                                 }),
                               ],
                             ),
                           ),
-
-                        if (kDebugMode)
-                          ...context2
-                              .watch<DebugPointCubit>()
-                              .state
-                              .map((e) => Builder(builder: (_) {
-                                    final component = e;
-                                    final scale = transform.getMaxScaleOnAxis();
-                                    return Positioned(
-                                      left: transform.getTranslation().x +
-                                          component.dx * scale,
-                                      top: transform.getTranslation().y +
-                                          component.dy * scale,
-                                      child: Container(
-                                        width: 5,
-                                        height: 5,
-                                        color: Colors.red,
-                                      ),
-                                    );
-                                  })),
                       ],
                     ),
                   ),
@@ -452,17 +472,17 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             Column(
               children: [
                 /// Top bar
-                TopBar(),
+                const TopBar(),
                 Expanded(
                   child: Row(
                     children: [
                       /// Left Sidebar
-                      LeftSidebar(),
+                      const LeftSidebar(),
                       const Expanded(child: SizedBox.shrink()),
                       RightSidebar(
                         toggleColorPicker: () {
                           setState(() {
-                            isShowColorPicker = !isShowColorPicker;
+                            _isShowColorPicker = !_isShowColorPicker;
                           });
                         },
                       ),
@@ -473,7 +493,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
             ),
 
             /// Color picker
-            if (isShowColorPicker)
+            if (_isShowColorPicker)
               Positioned(
                 top: kTopbarHeight + 4,
                 right: kSidebarWidth + 4,
@@ -485,14 +505,14 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8),
                     child: Column(
                       children: [
                         Expanded(
                           child: ColorPicker(
-                            color: canvasStateProvider.color,
+                            color: canvasState.color,
                             onColorChanged: (value) {
-                              canvasStateNotifier.update(
+                              context.canvasCubit.update(
                                 backgroundColor: value,
                               );
                             },
@@ -506,7 +526,6 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                             showColorCode: true,
                             enableOpacity: true,
                             enableShadesSelection: false,
-                            enableTonalPalette: false,
                             pickersEnabled: const {
                               ColorPickerType.wheel: true,
                               ColorPickerType.accent: false,
@@ -603,7 +622,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     return ValueListenableBuilder(
       valueListenable: context.read<CanvasTransformCubit>().state,
       builder: (context, matrix, child) {
-        final component = e.component;
+        final component = e.transform;
         final tWidth = component.size.width;
         final tHeight = component.size.height;
 
@@ -727,7 +746,7 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
     Matrix4 transform, {
     bool editText = false,
   }) {
-    final component = e.component;
+    final component = e.transform;
     final scale = transform.getMaxScaleOnAxis();
     final tWidth = component.size.width;
     final tHeight = component.size.height;
@@ -745,7 +764,8 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                     autofocus: true,
                     controller: e.textController,
                     onChanged: (value) {
-                      componentsNotifier.replace(index, name: value);
+                      context.componentsCubit
+                          .replaceCopyWith(index, name: value);
 
                       final textStyle = Theme.of(context).textTheme.bodyMedium;
 
@@ -757,12 +777,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                       final textPainter = TextPainter(
                         text: textSpan,
                         textDirection: TextDirection.ltr,
-                      );
-
-                      textPainter.layout(
-                        minWidth: 0,
-                        maxWidth: tWidth.abs(),
-                      );
+                      )..layout(
+                          maxWidth: tWidth.abs(),
+                        );
 
                       final newHeight = textPainter.height;
 
@@ -778,9 +795,9 @@ class _HomePageState extends State<HomePage> with GetItStateMixin {
                           component.rect.center,
                         );
 
-                        componentsNotifier.replace(
+                        context.componentsCubit.replaceCopyWith(
                           index,
-                          transform: Component(
+                          transform: ComponentTransform(
                             newRect.unrotated.topLeft,
                             Size(component.size.width, newHeight),
                             component.angle,

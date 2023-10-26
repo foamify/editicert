@@ -1,7 +1,7 @@
 part of '../main.dart';
 
-class TopBar extends StatelessWidget with GetItMixin {
-  TopBar({super.key});
+class TopBar extends StatelessWidget {
+  const TopBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,12 +16,13 @@ class TopBar extends StatelessWidget with GetItMixin {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(.375), width: 1),
+          bottom: BorderSide(color: Colors.grey.withOpacity(.375)),
         ),
       ),
       padding: EdgeInsets.only(
         left: 8 +
-            (!kIsWeb && Platform.isMacOS &&
+            (!kIsWeb &&
+                    Platform.isMacOS &&
                     !canvasEvents.state.contains(CanvasEvent.fullscreen)
                 ? 80
                 : 0),
@@ -107,7 +108,7 @@ class TopBar extends StatelessWidget with GetItMixin {
                 child: InkWell(
                   onTap: e.onTap,
                   child: Padding(
-                    padding: const EdgeInsets.all(17.0),
+                    padding: const EdgeInsets.all(17),
                     child: e.icon,
                   ),
                 ),
