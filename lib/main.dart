@@ -6,10 +6,12 @@ import 'package:collection/collection.dart';
 import 'package:editicert/models/component_data.dart';
 import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_type.dart';
+import 'package:editicert/state/event_handler_bloc.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/utils.dart';
+import 'package:editicert/widgets/main_page.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -282,8 +284,19 @@ class Main extends StatelessWidget {
             BlocProvider(create: (_) => ToolCubit(ToolType.move)),
             //
             BlocProvider(create: (_) => DebugPointCubit()),
+            //
+            BlocProvider(
+              create: (_) => EventHandlerBloc(
+                const EventHandlerState(
+                  canvasMatrix: CanvasMatrix(
+                    initialMatrix: null,
+                    currentMatrix: null,
+                  ),
+                ),
+              ),
+            ),
           ],
-          child: const HomePage(),
+          child: MainPage(),
         ),
       ),
     );

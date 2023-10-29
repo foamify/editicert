@@ -439,7 +439,7 @@ class _HomePageState extends State<HomePage> {
                                 (isCanvasTooling && !leftClick && !isZooming)) {
                               context
                                   .read<CanvasTransformCubit>()
-                                  .update(transformationController.value);
+                                  .updateValue(transformationController.value);
                               if (details.scale == 1 && !pressedMeta) {
                                 context.read<CanvasEventsCubit>().add(
                                       CanvasEvent.panningCanvas,
