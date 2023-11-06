@@ -104,132 +104,207 @@ extension BoxExtension on Box {
     );
   }
 
-  // TODO(damywise): use initialLocalPosition and localPosition for clamping
   Box resize(
-    Offset delta,
-    Alignment alignment, {
-    bool mirrored = false,
-    bool keepAspectRatio = true,
-  }) {
+    Box initialBox,
+    Offset initialLocalPosition,
+    Offset localPosition,
+    Alignment alignment,
+  ) {
+    // init vars
+    final delta = localPosition - initialLocalPosition;
+    final initialOffsets = initialBox.offsets;
+    final originalOffsets = initialOffsets;
     var rotatedDelta = rotatePoint(delta, Offset.zero, -angle);
 
+    // start handling
+
     switch (alignment) {
-      case Alignment.topCenter || Alignment.bottomCenter when keepAspectRatio:
-        rotatedDelta = Offset(rotatedDelta.dy, rotatedDelta.dy);
       case Alignment.topCenter || Alignment.bottomCenter:
         rotatedDelta = Offset(0, rotatedDelta.dy);
 
-      case Alignment.centerRight || Alignment.centerLeft when keepAspectRatio:
-        rotatedDelta = Offset(rotatedDelta.dx, rotatedDelta.dx);
       case Alignment.centerLeft || Alignment.centerRight:
         rotatedDelta = Offset(rotatedDelta.dx, 0);
     }
 
-    var originalOffsets = offsets;
-    final resizedOffsets = originalOffsets.map((offset) {
-      return offset + rotatedDelta;
-    }).toList();
+    final resizedOffsets = [...originalOffsets];
 
-    if (mirrored) {
-      originalOffsets = offsets.map((e) => e - rotatedDelta).toList();
-    }
-
-    final keepAspecRatioModifier = {
-      Alignment.topCenter: [
-        const Offset(.5, 1),
-        const Offset(-.5, 1),
-        const Offset(-.5, 0),
-        const Offset(.5, 0),
-      ],
-      Alignment.centerRight: [
-        const Offset(0, -.5),
-        const Offset(1, -.5),
-        const Offset(1, .5),
-        const Offset(0, .5),
-      ],
-      Alignment.centerLeft: [
-        const Offset(1, .5),
-        const Offset(0, .5),
-        const Offset(0, -.5),
-        const Offset(1, -.5),
-      ],
-      Alignment.bottomCenter: [
-        const Offset(-.5, 0),
-        const Offset(.5, 0),
-        const Offset(.5, 1),
-        const Offset(-.5, 1),
-      ],
-      //
-      Alignment.topLeft: [
-        const Offset(1, 1),
-        const Offset(1, 1),
-        const Offset(0, 0),
-        const Offset(1, 1),
-      ]
+    final indexes = switch (alignment) {
+      Alignment.topLeft => [0, 1, 2, 3],
+      Alignment.topRight => [1, 0, 3, 2],
+      Alignment.bottomLeft => [3, 2, 1, 0],
+      Alignment.bottomRight => [2, 3, 0, 1],
+      Alignment.topCenter => [0, 1],
+      Alignment.bottomCenter => [2, 3],
+      Alignment.centerLeft => [0, 3],
+      Alignment.centerRight => [1, 2],
+      _ => [0],
     };
 
-    void resizeOffsetAspectRatio() {
-      for (var i = 0; i < 4; i++) {
-        resizedOffsets[i] = Offset(
-          originalOffsets[i].dx +
-              rotatedDelta.dx * keepAspecRatioModifier[alignment]![i].dx,
-          originalOffsets[i].dy +
-              rotatedDelta.dy * keepAspecRatioModifier[alignment]![i].dy,
-        );
-      }
+    switch (alignment) {
+      case Alignment.topLeft ||
+            Alignment.topRight ||
+            Alignment.bottomLeft ||
+            Alignment.bottomRight:
+        {
+          final [index0, index1, _, index3] = indexes;
+
+          resizedOffsets[index0] += rotatedDelta;
+          resizedOffsets[index1] += Offset(0, rotatedDelta.dy);
+          resizedOffsets[index3] += Offset(rotatedDelta.dx, 0);
+        }
+      case Alignment.topCenter ||
+            Alignment.bottomCenter ||
+            Alignment.centerLeft ||
+            Alignment.centerRight:
+        {
+          final [index0, index2] = indexes;
+
+          resizedOffsets[index0] += rotatedDelta;
+          resizedOffsets[index2] += rotatedDelta;
+        }
     }
 
-    if (keepAspectRatio) {
-      resizeOffsetAspectRatio();
-    } else {
-      switch (alignment) {
-        // ----
-        case Alignment.topLeft:
-          // 0 is the top left
-          resizedOffsets[1] =
-              Offset(originalOffsets[1].dx, resizedOffsets[1].dy);
-          resizedOffsets[2] = originalOffsets[2];
-          resizedOffsets[3] =
-              Offset(resizedOffsets[3].dx, originalOffsets[3].dy);
-        case Alignment.topCenter:
-          // 0 and 1 is the top
-          resizedOffsets[2] = originalOffsets[2];
-          resizedOffsets[3] = originalOffsets[3];
-        case Alignment.topRight:
-          // 1 is the top right
-          resizedOffsets[0] =
-              Offset(originalOffsets[0].dx, resizedOffsets[0].dy);
-          resizedOffsets[3] = originalOffsets[3];
-          resizedOffsets[2] =
-              Offset(resizedOffsets[2].dx, originalOffsets[2].dy);
-        case Alignment.centerLeft:
-          // 0 and 3 is the left
-          resizedOffsets[1] = originalOffsets[1];
-          resizedOffsets[2] = originalOffsets[2];
-        case Alignment.centerRight:
-          // 1 and 2 is the right
-          resizedOffsets[0] = originalOffsets[0];
-          resizedOffsets[3] = originalOffsets[3];
-        case Alignment.bottomLeft:
-          // 3 is the bottom left
-          resizedOffsets[2] =
-              Offset(originalOffsets[2].dx, resizedOffsets[2].dy);
-          resizedOffsets[1] = originalOffsets[1];
-          resizedOffsets[0] =
-              Offset(resizedOffsets[0].dx, originalOffsets[0].dy);
-        case Alignment.bottomCenter:
-          // 2 and 3 is the bottom
-          resizedOffsets[0] = originalOffsets[0];
-          resizedOffsets[1] = originalOffsets[1];
-        case Alignment.bottomRight:
-          // 2 is the bottom right
-          resizedOffsets[3] =
-              Offset(originalOffsets[3].dx, resizedOffsets[3].dy);
-          resizedOffsets[0] = originalOffsets[0];
-          resizedOffsets[1] =
-              Offset(resizedOffsets[1].dx, originalOffsets[1].dy);
-      }
+    // return
+
+    return Box(
+      quad: quadFromOffsets(resizedOffsets),
+      angle: angle,
+      origin: origin,
+    );
+  }
+
+  Box resizeSymmetric(
+    Box initialBox,
+    Offset initialLocalPosition,
+    Offset localPosition,
+    Alignment alignment,
+  ) {
+    // init vars
+    final delta = localPosition - initialLocalPosition;
+    final initialOffsets = initialBox.offsets;
+    final originalOffsets = initialOffsets;
+    var rotatedDelta = rotatePoint(delta, Offset.zero, -angle);
+
+    // start handling
+
+    switch (alignment) {
+      case Alignment.topCenter || Alignment.bottomCenter:
+        rotatedDelta = Offset(0, rotatedDelta.dy);
+
+      case Alignment.centerLeft || Alignment.centerRight:
+        rotatedDelta = Offset(rotatedDelta.dx, 0);
     }
+
+    final invertedDelta = Offset(-rotatedDelta.dx, -rotatedDelta.dy);
+
+    final resizedOffsets = [...originalOffsets];
+
+    final indexes = switch (alignment) {
+      Alignment.topRight => [1, 0, 3, 2],
+      Alignment.centerRight => [2, 3, 0, 1],
+      Alignment.bottomLeft => [3, 2, 1, 0],
+      _ => [0, 1, 2, 3],
+    };
+
+    final [offset0, offset1, offset2, offset3] = indexes;
+
+    resizedOffsets[offset0] += rotatedDelta;
+
+    resizedOffsets[offset1] += Offset(invertedDelta.dx, rotatedDelta.dy);
+
+    resizedOffsets[offset2] += invertedDelta;
+
+    resizedOffsets[offset3] += Offset(rotatedDelta.dx, invertedDelta.dy);
+
+    return Box(
+      quad: quadFromOffsets(resizedOffsets),
+      angle: angle,
+      origin: origin,
+    );
+  }
+
+  /// Resize but retain aspect ratio
+  // TODO(damywise): this is calculated twice, need optimization
+  Box resizeScaled(
+    Box initialBox,
+    Offset initialLocalPosition,
+    Offset localPosition,
+    Alignment alignment,
+  ) {
+    // init vars
+    final delta = localPosition - initialLocalPosition;
+    var rotatedDelta = rotatePoint(delta, Offset.zero, -angle);
+
+    // start handling
+
+    final resizedBox =
+        resize(initialBox, initialLocalPosition, localPosition, alignment);
+    final resizedOffsets = [...resizedBox.offsets];
+
+    switch (alignment) {
+      case Alignment.topCenter || Alignment.bottomCenter:
+        if (alignment == Alignment.bottomCenter) {
+          rotatedDelta = Offset(0, -rotatedDelta.dy);
+        }
+        resizedOffsets[0] += Offset(rotatedDelta.dy, 0) / 2;
+        resizedOffsets[3] += Offset(rotatedDelta.dy, 0) / 2;
+
+        resizedOffsets[2] -= Offset(rotatedDelta.dy, 0) / 2;
+        resizedOffsets[1] -= Offset(rotatedDelta.dy, 0) / 2;
+      case Alignment.centerLeft || Alignment.centerRight:
+        if (alignment == Alignment.centerRight) {
+          rotatedDelta = Offset(-rotatedDelta.dx, 0);
+        }
+        resizedOffsets[0] += Offset(0, rotatedDelta.dx) / 2;
+        resizedOffsets[1] += Offset(0, rotatedDelta.dx) / 2;
+
+        resizedOffsets[2] -= Offset(0, rotatedDelta.dx) / 2;
+        resizedOffsets[3] -= Offset(0, rotatedDelta.dx) / 2;
+
+      case Alignment.topLeft ||
+            Alignment.topRight ||
+            Alignment.bottomLeft ||
+            Alignment.bottomRight:
+        final resizedWidth = resizedBox.rect.size.width;
+        final resizedHeight = resizedBox.rect.size.height;
+
+        final initialRatio = initialBox.rect.size.aspectRatio;
+
+        final resizedRatio = resizedBox.rect.size.aspectRatio;
+
+        final isWidthShortest = resizedRatio < initialRatio;
+
+        final goalSize = isWidthShortest
+            ? Offset(resizedHeight * initialRatio, resizedHeight)
+            : Offset(resizedWidth, resizedWidth / initialRatio);
+
+        final indexes = switch (alignment) {
+          Alignment.topLeft => [0, 1, 2, 3],
+          Alignment.topRight => [1, 0, 3, 2],
+          Alignment.bottomLeft => [3, 2, 1, 0],
+          Alignment.bottomRight => [2, 3, 0, 1],
+          _ => [0],
+        };
+
+        final negative = switch (alignment) {
+          Alignment.topLeft => const Offset(1, 1),
+          Alignment.topRight => const Offset(-1, 1),
+          Alignment.bottomLeft => const Offset(1, -1),
+          Alignment.bottomRight => const Offset(-1, -1),
+          _ => Offset.zero,
+        };
+
+        final [index0, index1, index2, index3] = indexes;
+
+        resizedOffsets[index0] =
+            resizedOffsets[index2] - goalSize.multiply(negative);
+        resizedOffsets[index1] =
+            resizedOffsets[index2] - Offset(0, goalSize.dy).multiply(negative);
+        resizedOffsets[index3] =
+            resizedOffsets[index2] - Offset(goalSize.dx, 0).multiply(negative);
+    }
+
+    // return
 
     return Box(
       quad: quadFromOffsets(resizedOffsets),
@@ -255,4 +330,8 @@ extension BoxExtension on Box {
   double getAngleFromPoints(Offset point1, Offset point2) {
     return atan2(point2.dy - point1.dy, point2.dx - point1.dx);
   }
+}
+
+extension OffsetEx on Offset {
+  Offset multiply(Offset offset) => Offset(dx * offset.dx, dy * offset.dy);
 }

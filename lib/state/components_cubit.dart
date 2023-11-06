@@ -12,8 +12,11 @@ class ComponentsCubit extends Cubit<List<ComponentData>> {
 
   void add(ComponentData component) => emit([...state, component]);
 
-  void remove(int index) =>
-      emit(state.whereIndexed((index, element) => index != index).toList());
+  void remove(int index) => emit(
+        state
+            .whereIndexed((elementIndex, element) => elementIndex != index)
+            .toList(),
+      );
 
   void clear() => emit(List.empty());
 

@@ -223,10 +223,7 @@ class _HomePageState extends State<HomePage> {
                           (element) => element.type == ComponentType.frame,
                         )
                             .map((e) {
-                          return buildComponentLabel(
-                            e,
-                            canvasState.color,
-                          );
+                          return buildComponentLabel(e, canvasState.color);
                         }),
 
                         // components
@@ -777,9 +774,7 @@ class _HomePageState extends State<HomePage> {
                       final textPainter = TextPainter(
                         text: textSpan,
                         textDirection: TextDirection.ltr,
-                      )..layout(
-                          maxWidth: tWidth.abs(),
-                        );
+                      )..layout(maxWidth: tWidth.abs());
 
                       final newHeight = textPainter.height;
 

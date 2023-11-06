@@ -136,10 +136,7 @@ class _CreatorWidgetState extends State<CreatorWidget> {
           : newRect.topLeft),
       size: (alt ? newRect.size * 2 : newRect.size),
     );
-    context.componentsCubit.replaceCopyWith(
-      index,
-      transform: newComponent,
-    );
+    context.componentsCubit.replaceCopyWith(index, transform: newComponent);
   }
 
   void handlePointerUp(PointerUpEvent _) {
@@ -167,6 +164,5 @@ class _CreatorWidgetState extends State<CreatorWidget> {
     context.selectedCubit
       ..clear()
       ..add(index);
-    return;
   }
 }

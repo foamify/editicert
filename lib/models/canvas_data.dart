@@ -30,10 +30,5 @@ class CanvasData extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-        color,
-        hidden,
-        opacity,
-        size,
-      ];
+  List<Object?> get props => [color, hidden, opacity, size];
 }

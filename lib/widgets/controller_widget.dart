@@ -104,9 +104,7 @@ class _ControllerWidgetState extends State<ControllerWidget> {
         }
       },
       child: AnimatedBuilder(
-        animation: Listenable.merge([
-          _visualComponent,
-        ]),
+        animation: Listenable.merge([_visualComponent]),
         builder: (context2, child) {
           final hovers = context.hoveredCubitWatch;
           //

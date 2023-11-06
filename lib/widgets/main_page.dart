@@ -20,6 +20,9 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final _keyboardFocus = FocusNode();
 
+  var initialBox = Box.fromRect(Rect.zero);
+  var initialPosition = Offset.zero;
+
   final box = ValueNotifier(
     Box.fromRect(
       Rect.fromCenter(
@@ -105,6 +108,8 @@ class _MainPageState extends State<MainPage> {
                           TransformationController>(
                         builder: (cubitContext, state) {
                           return InteractiveViewer.builder(
+                            boundaryMargin:
+                                const EdgeInsets.all(double.infinity),
                             clipBehavior: Clip.none,
                             scaleEnabled: false,
                             transformationController: transformControl,
@@ -270,7 +275,8 @@ class _MainPageState extends State<MainPage> {
                                       'offset2: ${box.offset2}\n'
                                       'offset3: ${box.offset3}\n'
                                       'flipX: ${box.flipX}\n'
-                                      'flipY: ${box.flipY}\n',
+                                      'flipY: ${box.flipY}\n'
+                                      'ratio: ${box.rect.size.aspectRatio.toStringAsFixed(4)}\n',
                                     ),
                                   ],
                                 ),
@@ -321,9 +327,16 @@ class _MainPageState extends State<MainPage> {
                             ('bottomRight', Alignment.bottomRight),
                           ].map(
                             (alignment) => GestureDetector(
-                              onPanUpdate: (event) {
-                                box.value = box.value.resize(
-                                  event.delta / matrix.getMaxScaleOnAxis(),
+                              onPanStart: (details) => setState(() {
+                                initialBox = box.value;
+                                initialPosition =
+                                    transform.toScene(details.localPosition);
+                              }),
+                              onPanUpdate: (details) {
+                                box.value = box.value.resizeSymmetric(
+                                  initialBox,
+                                  initialPosition,
+                                  transform.toScene(details.localPosition),
                                   alignment.$2,
                                 );
                               },

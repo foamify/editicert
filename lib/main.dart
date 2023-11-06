@@ -69,21 +69,11 @@ void main() async {
   runApp(
     MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (_) => SelectedCubit(),
-        ),
-        BlocProvider(
-          create: (_) => HoveredCubit(),
-        ),
-        BlocProvider(
-          create: (_) => ComponentIndexCubit(),
-        ),
-        BlocProvider(
-          create: (_) => CanvasCubit(),
-        ),
-        BlocProvider(
-          create: (_) => ComponentsCubit([]),
-        ),
+        BlocProvider(create: (_) => SelectedCubit()),
+        BlocProvider(create: (_) => HoveredCubit()),
+        BlocProvider(create: (_) => ComponentIndexCubit()),
+        BlocProvider(create: (_) => CanvasCubit()),
+        BlocProvider(create: (_) => ComponentsCubit([])),
       ],
       child: const Main(),
     ),
@@ -133,9 +123,7 @@ class Main extends StatelessWidget {
                     ],
                   ),
                   PlatformMenuItemGroup(
-                    members: [
-                      PlatformMenuItem(label: 'Preferences'),
-                    ],
+                    members: [PlatformMenuItem(label: 'Preferences')],
                   ),
                   PlatformMenuItemGroup(
                     members: [
@@ -200,9 +188,7 @@ class Main extends StatelessWidget {
                 menus: [
                   PlatformMenu(
                     label: 'Import',
-                    menus: [
-                      PlatformMenuItem(label: 'File'),
-                    ],
+                    menus: [PlatformMenuItem(label: 'File')],
                   ),
                 ],
               ),
