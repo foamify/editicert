@@ -1,3 +1,5 @@
+// ignore_for_file: prefer-match-file-name
+
 import 'package:editicert/models/component_data.dart';
 import 'package:editicert/state/state.dart';
 import 'package:flutter/services.dart';
