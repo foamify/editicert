@@ -275,9 +275,15 @@ extension BoxExtension on Box {
 
         final isWidthShortest = resizedRatio < initialRatio;
 
-        final goalSize = isWidthShortest
+        var goalSize = isWidthShortest
             ? Offset(resizedHeight * initialRatio, resizedHeight)
             : Offset(resizedWidth, resizedWidth / initialRatio);
+
+        final initialFlipX = initialBox.flipX;
+        final initialFlipY = initialBox.flipY;
+
+        if (initialFlipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
+        if (initialFlipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
 
         final indexes = switch (alignment) {
           Alignment.topLeft => [0, 1, 2, 3],

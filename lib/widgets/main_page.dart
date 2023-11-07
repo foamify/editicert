@@ -349,8 +349,6 @@ class _MainPageState extends State<MainPage> {
                                   LogicalKeyboardKey.altRight,
                                 ]);
 
-                                print(keys);
-
                                 if (pressedShift) {
                                   box.value = box.value.resizeScaled(
                                     initialBox,
