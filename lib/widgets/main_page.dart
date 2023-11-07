@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:editicert/state/event_handler_bloc.dart';
 import 'package:editicert/state/state.dart';
+import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -63,14 +64,15 @@ class _MainPageState extends State<MainPage> {
         child: CallbackShortcuts(
           bindings: {},
           child: RawKeyboardListener(
+            autofocus: true,
             focusNode: _keyboardFocus,
-            // onKey: (key) {
-            //   if (key is RawKeyDownEvent) {
-            //     pressedKeys.add(key.logicalKey);
-            //   } else if (key is RawKeyUpEvent) {
-            //     pressedKeys.remove(key.logicalKey);
-            //   }
-            // },
+            onKey: (key) {
+              if (key is RawKeyDownEvent) {
+                context.read<KeysCubit>().add(key.logicalKey);
+              } else if (key is RawKeyUpEvent) {
+                context.read<KeysCubit>().remove(key.logicalKey);
+              }
+            },
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -333,12 +335,44 @@ class _MainPageState extends State<MainPage> {
                                     transform.toScene(details.localPosition);
                               }),
                               onPanUpdate: (details) {
-                                box.value = box.value.resizeSymmetric(
-                                  initialBox,
-                                  initialPosition,
-                                  transform.toScene(details.localPosition),
-                                  alignment.$2,
-                                );
+                                final keys = context.read<KeysCubit>().state;
+
+                                final pressedShift = keys.containsAny([
+                                  LogicalKeyboardKey.shift,
+                                  LogicalKeyboardKey.shiftLeft,
+                                  LogicalKeyboardKey.shiftRight,
+                                ]);
+
+                                final pressedAlt = keys.containsAny([
+                                  LogicalKeyboardKey.alt,
+                                  LogicalKeyboardKey.altLeft,
+                                  LogicalKeyboardKey.altRight,
+                                ]);
+
+                                print(keys);
+
+                                if (pressedShift) {
+                                  box.value = box.value.resizeScaled(
+                                    initialBox,
+                                    initialPosition,
+                                    transform.toScene(details.localPosition),
+                                    alignment.$2,
+                                  );
+                                } else if (pressedAlt) {
+                                  box.value = box.value.resizeSymmetric(
+                                    initialBox,
+                                    initialPosition,
+                                    transform.toScene(details.localPosition),
+                                    alignment.$2,
+                                  );
+                                } else {
+                                  box.value = box.value.resize(
+                                    initialBox,
+                                    initialPosition,
+                                    transform.toScene(details.localPosition),
+                                    alignment.$2,
+                                  );
+                                }
                               },
                               child: Card(
                                 child: Padding(

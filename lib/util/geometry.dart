@@ -2,6 +2,7 @@
 
 import 'dart:math';
 
+import 'package:editicert/util/extensions.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vector_math/vector_math_64.dart';
@@ -241,25 +242,27 @@ extension BoxExtension on Box {
         resize(initialBox, initialLocalPosition, localPosition, alignment);
     final resizedOffsets = [...resizedBox.offsets];
 
+    final initialRatio = initialBox.rect.size.aspectRatio;
+
     switch (alignment) {
       case Alignment.topCenter || Alignment.bottomCenter:
         if (alignment == Alignment.bottomCenter) {
           rotatedDelta = Offset(0, -rotatedDelta.dy);
         }
-        resizedOffsets[0] += Offset(rotatedDelta.dy, 0) / 2;
-        resizedOffsets[3] += Offset(rotatedDelta.dy, 0) / 2;
+        resizedOffsets[0] += Offset(rotatedDelta.dy * initialRatio, 0) / 2;
+        resizedOffsets[3] += Offset(rotatedDelta.dy * initialRatio, 0) / 2;
 
-        resizedOffsets[2] -= Offset(rotatedDelta.dy, 0) / 2;
-        resizedOffsets[1] -= Offset(rotatedDelta.dy, 0) / 2;
+        resizedOffsets[2] -= Offset(rotatedDelta.dy * initialRatio, 0) / 2;
+        resizedOffsets[1] -= Offset(rotatedDelta.dy * initialRatio, 0) / 2;
       case Alignment.centerLeft || Alignment.centerRight:
-        if (alignment == Alignment.centerRight) {
+        if (alignment == Alignment.centerRight && !initialBox.flipY) {
           rotatedDelta = Offset(-rotatedDelta.dx, 0);
         }
-        resizedOffsets[0] += Offset(0, rotatedDelta.dx) / 2;
-        resizedOffsets[1] += Offset(0, rotatedDelta.dx) / 2;
+        resizedOffsets[0] += Offset(0, rotatedDelta.dx / initialRatio) / 2;
+        resizedOffsets[1] += Offset(0, rotatedDelta.dx / initialRatio) / 2;
 
-        resizedOffsets[2] -= Offset(0, rotatedDelta.dx) / 2;
-        resizedOffsets[3] -= Offset(0, rotatedDelta.dx) / 2;
+        resizedOffsets[2] -= Offset(0, rotatedDelta.dx / initialRatio) / 2;
+        resizedOffsets[3] -= Offset(0, rotatedDelta.dx / initialRatio) / 2;
 
       case Alignment.topLeft ||
             Alignment.topRight ||
@@ -267,8 +270,6 @@ extension BoxExtension on Box {
             Alignment.bottomRight:
         final resizedWidth = resizedBox.rect.size.width;
         final resizedHeight = resizedBox.rect.size.height;
-
-        final initialRatio = initialBox.rect.size.aspectRatio;
 
         final resizedRatio = resizedBox.rect.size.aspectRatio;
 
@@ -330,8 +331,4 @@ extension BoxExtension on Box {
   double getAngleFromPoints(Offset point1, Offset point2) {
     return atan2(point2.dy - point1.dy, point2.dx - point1.dx);
   }
-}
-
-extension OffsetEx on Offset {
-  Offset multiply(Offset offset) => Offset(dx * offset.dx, dy * offset.dy);
 }

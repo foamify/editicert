@@ -1,5 +1,6 @@
 import 'package:editicert/models/component_data.dart';
 import 'package:editicert/state/state.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -130,4 +131,12 @@ extension BuildContextExt on BuildContext {
     }
     componentsCubit.reorder(index, index + 1);
   }
+}
+
+extension OffsetEx on Offset {
+  Offset multiply(Offset offset) => Offset(dx * offset.dx, dy * offset.dy);
+}
+
+extension LogicalKeyboardKeySet on Set<LogicalKeyboardKey> {
+  bool containsAny(Iterable<LogicalKeyboardKey> keys) => any(keys.contains);
 }
