@@ -110,8 +110,6 @@ class _MainPageState extends State<MainPage> {
                           TransformationController>(
                         builder: (cubitContext, state) {
                           return InteractiveViewer.builder(
-                            boundaryMargin:
-                                const EdgeInsets.all(double.infinity),
                             clipBehavior: Clip.none,
                             scaleEnabled: false,
                             transformationController: transformControl,
