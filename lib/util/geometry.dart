@@ -245,24 +245,44 @@ extension BoxExtension on Box {
     final initialRatio = initialBox.rect.size.aspectRatio;
 
     switch (alignment) {
-      case Alignment.topCenter || Alignment.bottomCenter:
-        if (alignment == Alignment.bottomCenter) {
-          rotatedDelta = Offset(0, -rotatedDelta.dy);
-        }
-        resizedOffsets[0] += Offset(rotatedDelta.dy * initialRatio, 0) / 2;
-        resizedOffsets[3] += Offset(rotatedDelta.dy * initialRatio, 0) / 2;
+      case Alignment.topCenter ||
+            Alignment.bottomCenter ||
+            Alignment.centerLeft ||
+            Alignment.centerRight:
+        final indexes = {
+          Alignment.topCenter: [1, 2, 3, 0],
+          Alignment.bottomCenter: [1, 2, 3, 0],
+          Alignment.centerLeft: [2, 3, 0, 1],
+          Alignment.centerRight: [2, 3, 0, 1],
+        };
+        final [index0, index1, index2, index3] = indexes[alignment]!;
 
-        resizedOffsets[2] -= Offset(rotatedDelta.dy * initialRatio, 0) / 2;
-        resizedOffsets[1] -= Offset(rotatedDelta.dy * initialRatio, 0) / 2;
-      case Alignment.centerLeft || Alignment.centerRight:
-        if (alignment == Alignment.centerRight && !initialBox.flipY) {
-          rotatedDelta = Offset(-rotatedDelta.dx, 0);
-        }
-        resizedOffsets[0] += Offset(0, rotatedDelta.dx / initialRatio) / 2;
-        resizedOffsets[1] += Offset(0, rotatedDelta.dx / initialRatio) / 2;
+        final resizedSize = switch (alignment) {
+          Alignment.topCenter ||
+          Alignment.bottomCenter =>
+            resizedBox.rect.size.height,
+          Alignment.centerLeft ||
+          Alignment.centerRight =>
+            resizedBox.rect.size.width,
+          _ => 0.0,
+        };
 
-        resizedOffsets[2] -= Offset(0, rotatedDelta.dx / initialRatio) / 2;
-        resizedOffsets[3] -= Offset(0, rotatedDelta.dx / initialRatio) / 2;
+        final isHorizontal = alignment == Alignment.centerLeft ||
+            alignment == Alignment.centerRight;
+
+        final goalOtherSideSize = isHorizontal
+            ? resizedSize / initialRatio
+            : resizedSize * initialRatio;
+
+        final goalSize = isHorizontal
+            ? Offset(0, goalOtherSideSize - resizedBox.rect.size.height)
+            : Offset(goalOtherSideSize - resizedBox.rect.size.width, 0);
+
+        resizedOffsets[index0] += goalSize / 2;
+        resizedOffsets[index1] += goalSize / 2;
+
+        resizedOffsets[index2] -= goalSize / 2;
+        resizedOffsets[index3] -= goalSize / 2;
 
       case Alignment.topLeft ||
             Alignment.topRight ||
