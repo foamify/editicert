@@ -285,6 +285,12 @@ extension BoxExtension on Box {
         if (initialFlipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
         if (initialFlipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
 
+        final resizeFlipX = resizedBox.flipX;
+        final resizeFlipY = resizedBox.flipY;
+
+        if (resizeFlipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
+        if (resizeFlipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
+
         final indexes = switch (alignment) {
           Alignment.topLeft => [0, 1, 2, 3],
           Alignment.topRight => [1, 0, 3, 2],
