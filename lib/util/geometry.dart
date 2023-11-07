@@ -274,9 +274,12 @@ extension BoxExtension on Box {
             ? resizedSize / initialRatio
             : resizedSize * initialRatio;
 
-        final goalSize = isHorizontal
+        var goalSize = isHorizontal
             ? Offset(0, goalOtherSideSize - resizedBox.rect.size.height)
             : Offset(goalOtherSideSize - resizedBox.rect.size.width, 0);
+
+        if (initialBox.flipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
+        if (initialBox.flipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
 
         resizedOffsets[index0] += goalSize / 2;
         resizedOffsets[index1] += goalSize / 2;
