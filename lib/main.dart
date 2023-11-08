@@ -7,6 +7,7 @@ import 'package:editicert/models/component_data.dart';
 import 'package:editicert/models/component_transform.dart';
 import 'package:editicert/models/component_type.dart';
 import 'package:editicert/state/event_handler_bloc.dart';
+import 'package:editicert/state/pointers_cubit.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/extensions.dart';
@@ -266,6 +267,7 @@ class Main extends StatelessWidget {
             BlocProvider(create: (_) => CanvasEventsCubit()),
             BlocProvider(create: (_) => CanvasTransformCubit()),
             BlocProvider(create: (_) => KeysCubit()),
+            BlocProvider(create: (_) => PointersCubit()),
             BlocProvider(create: (_) => PointerCubit(Offset.zero)),
             BlocProvider(create: (_) => ToolCubit(ToolType.move)),
             //
@@ -282,7 +284,7 @@ class Main extends StatelessWidget {
               ),
             ),
           ],
-          child: MainPage(),
+          child: const MainPage(),
         ),
       ),
     );

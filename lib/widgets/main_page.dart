@@ -1,11 +1,14 @@
 // ignore_for_file: avoid-unsafe-collection-methods
 
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:editicert/state/event_handler_bloc.dart';
+import 'package:editicert/state/pointers_cubit.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -105,6 +108,39 @@ class _MainPageState extends State<MainPage> {
                 // ),
                 TransparentPointer(
                   child: Listener(
+                    onPointerDown: (event) {
+                      _keyboardFocus.requestFocus();
+
+                      final buttons = <PointerButton>[];
+                      if (event.kind == PointerDeviceKind.mouse) {
+                        if (event.buttons == kMiddleMouseButton) {
+                          buttons.add(PointerButton.middle);
+                        }
+                        if (event.buttons == kPrimaryMouseButton) {
+                          buttons.add(PointerButton.left);
+                        }
+                        if (event.buttons == kSecondaryMouseButton) {
+                          buttons.add(PointerButton.right);
+                        }
+                      }
+                      context.read<PointersCubit>().update(buttons);
+                    },
+                    onPointerUp: (event) {
+                      print('UP!');
+                      final buttons = <PointerButton>[];
+                      if (event.kind == PointerDeviceKind.mouse) {
+                        if (event.buttons == kMiddleMouseButton) {
+                          buttons.add(PointerButton.middle);
+                        }
+                        if (event.buttons == kPrimaryMouseButton) {
+                          buttons.add(PointerButton.left);
+                        }
+                        if (event.buttons == kSecondaryMouseButton) {
+                          buttons.add(PointerButton.right);
+                        }
+                      }
+                      context.read<PointersCubit>().update(buttons);
+                    },
                     child: MouseRegion(
                       child: BlocBuilder<CanvasTransformCubit,
                           TransformationController>(
@@ -114,11 +150,23 @@ class _MainPageState extends State<MainPage> {
                             scaleEnabled: false,
                             transformationController: transformControl,
                             onInteractionStart: (details) {
+                              final buttons =
+                                  context.read<PointersCubit>().state;
+                              if (!buttons.contains(PointerButton.middle) &&
+                                  buttons.isNotEmpty) {
+                                return;
+                              }
                               context
                                   .read<EventHandlerBloc>()
                                   .add(PanCanvasInitial());
                             },
                             onInteractionUpdate: (details) {
+                              final buttons =
+                                  context.read<PointersCubit>().state;
+                              if (!buttons.contains(PointerButton.middle) &&
+                                  buttons.isNotEmpty) {
+                                return;
+                              }
                               final eventHandlerBloc =
                                   context.read<EventHandlerBloc>();
                               if (details.focalPointDelta != Offset.zero) {
