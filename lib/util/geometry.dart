@@ -7,14 +7,33 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:vector_math/vector_math_64.dart';
 
+/// A box in 2D space.
+/// The origin is relative to the top left of the box.
+/// The angle is in degrees.
+/// Normally the quad is unrotated. To get the rotated quad, use [rotated].
 class Box extends Equatable {
+  /// A box in 2D space.
+  /// The origin is relative to the top left of the box.
+  /// The angle is in degrees.
+  /// Normally the quad is unrotated. To get the rotated quad, use [rotated].
   const Box({required this.quad, required this.origin, required this.angle});
 
+  /// The 4 points of the box in the global coordinate system in clockwise order
   final Quad quad;
+
+  /// The rotation origin of the box in the global coordinate system.
+  /// To get the origin relative to the top left of the box, use [localOrigin].
   final Offset origin;
+
+  /// The rotation angle of the box in degrees.
   final double angle;
 
-  static Box fromRect(Rect rect, {Offset? origin, double angle = 0}) {
+  @override
+  List<Object?> get props => [quad, origin, angle];
+
+  /// Create box from a rectangle
+  // ignore: prefer_constructors_over_static_methods
+  static Box fromRect(Rect rect, {Offset? boxOrigin, double boxAngle = 0}) {
     return Box(
       quad: Quad.points(
         Vector3(rect.left, rect.top, 0),
@@ -22,35 +41,46 @@ class Box extends Equatable {
         Vector3(rect.right, rect.bottom, 0),
         Vector3(rect.left, rect.bottom, 0),
       ),
-      origin: origin ?? rect.center,
-      angle: angle,
+      origin: boxOrigin ?? rect.center,
+      angle: boxAngle,
     );
   }
-
-  @override
-  // TODO: implement props
-  List<Object?> get props => [quad, origin, angle];
 }
 
+/// Extensions for [Box]
 extension BoxExtension on Box {
+  /// Whether the box is flipped horizontally
   bool get flipX => offset0.dx > offset2.dx;
 
+  /// Whether the box is flipped vertically
   bool get flipY => offset0.dy > offset2.dy;
 
+  /// Rotation origin of the box relative to the top left of the box
   Offset get localOrigin => origin - pointToOffset(quad.point0);
 
+  /// Convert quad point to offset
   Offset pointToOffset(Vector3 vector3) => Offset(vector3.x, vector3.y);
 
+  /// Top left offset of the quad points
   Offset get offset0 => pointToOffset(quad.point0);
 
+  /// Top right offset of the quad points
   Offset get offset1 => pointToOffset(quad.point1);
 
+  /// Bottom right offset of the quad points
   Offset get offset2 => pointToOffset(quad.point2);
 
+  /// Bottom left offset of the quad points
   Offset get offset3 => pointToOffset(quad.point3);
 
+  /// The offset of the quad points
+  /// 0 = top left
+  /// 1 = top right
+  /// 2 = bottom right
+  /// 3 = bottom left
   List<Offset> get offsets => [offset0, offset1, offset2, offset3];
 
+  /// The points of the quad
   List<Vector3> get points => [
         quad.point0,
         quad.point1,
@@ -58,12 +88,15 @@ extension BoxExtension on Box {
         quad.point3,
       ];
 
+  /// Convert offset to point
   Vector3 offsetToPoint(Offset offset) => Vector3(offset.dx, offset.dy, 0);
 
+  /// Convert offsets to points
   Quad quadFromPoints(List<Vector3> points) {
     return Quad.points(points[0], points[1], points[2], points[3]);
   }
 
+  /// Convert offsets to points
   Quad quadFromOffsets(List<Offset> offsets) {
     return Quad.points(
       offsetToPoint(offsets[0]),
@@ -73,8 +106,10 @@ extension BoxExtension on Box {
     );
   }
 
+  /// The rect of the quad
   Rect get rect => Rect.fromPoints(offset0, offset2);
 
+  /// The box with the quad rotated by the given angle relative to the origin
   Box get rotated {
     final rotatedPoints = offsets.map((offset) {
       return rotatePoint(offset, origin, angle);
@@ -82,21 +117,25 @@ extension BoxExtension on Box {
 
     return Box(
       quad: quadFromOffsets(rotatedPoints),
-      angle: this.angle,
+      angle: angle,
       origin: origin,
     );
   }
 
+  /// Adds the given angle to the box without rotating the quad
   Box rotate(double angle) {
     return Box(quad: quad, angle: this.angle + angle, origin: origin);
   }
 
+  /// Adds the angle, which is determined by the given offset relative to origin
+  /// to the box without rotating the quad
   Box rotateByPan(Offset offset) {
     final rotation = getAngleFromPoints(offset, origin) + pi;
 
     return Box(quad: quad, angle: rotation / pi * 180, origin: origin);
   }
 
+  /// Translate the quad by the given offset
   Box translate(Offset offset) {
     return Box(
       quad: quad..translate(offsetToPoint(offset)),
@@ -105,6 +144,7 @@ extension BoxExtension on Box {
     );
   }
 
+  /// Resizes the box normally
   Box resize(
     Box initialBox,
     Offset initialLocalPosition,
@@ -174,6 +214,7 @@ extension BoxExtension on Box {
     );
   }
 
+  /// Resize but symmetric to the given alignment
   Box resizeSymmetric(
     Box initialBox,
     Offset initialLocalPosition,
@@ -225,17 +266,12 @@ extension BoxExtension on Box {
   }
 
   /// Resize but retain aspect ratio
-  // TODO(damywise): this is calculated twice, need optimization
   Box resizeScaled(
     Box initialBox,
     Offset initialLocalPosition,
     Offset localPosition,
     Alignment alignment,
   ) {
-    // init vars
-    final delta = localPosition - initialLocalPosition;
-    var rotatedDelta = rotatePoint(delta, Offset.zero, -angle);
-
     // start handling
 
     final resizedBox =
@@ -343,6 +379,7 @@ extension BoxExtension on Box {
     );
   }
 
+  /// Rotate a point around an origin by an angle
   Offset rotatePoint(Offset point, Offset origin, double angle) {
     final cosTheta = cos(angle * pi / 180);
     final sinTheta = sin(angle * pi / 180);
@@ -357,6 +394,7 @@ extension BoxExtension on Box {
     return Offset(newX, newY) + origin;
   }
 
+  /// Get the angle between two points
   double getAngleFromPoints(Offset point1, Offset point2) {
     return atan2(point2.dy - point1.dy, point2.dx - point1.dx);
   }
