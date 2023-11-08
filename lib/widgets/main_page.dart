@@ -126,7 +126,6 @@ class _MainPageState extends State<MainPage> {
                       context.read<PointersCubit>().update(buttons);
                     },
                     onPointerUp: (event) {
-                      print('UP!');
                       final buttons = <PointerButton>[];
                       if (event.kind == PointerDeviceKind.mouse) {
                         if (event.buttons == kMiddleMouseButton) {
