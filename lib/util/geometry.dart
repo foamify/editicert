@@ -302,12 +302,6 @@ extension BoxExtension on Box {
             ? Offset(resizedHeight * initialRatio, resizedHeight)
             : Offset(resizedWidth, resizedWidth / initialRatio);
 
-        final initialFlipX = initialBox.flipX;
-        final initialFlipY = initialBox.flipY;
-
-        if (initialFlipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
-        if (initialFlipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
-
         final resizeFlipX = resizedBox.flipX;
         final resizeFlipY = resizedBox.flipY;
 
