@@ -1,26 +1,14 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class PointersCubit extends Cubit<List<PointerButton>> {
-  PointersCubit() : super([]);
+class PointersCubit extends Cubit<PointerButton?> {
+  PointersCubit() : super(null);
 
-  void add(PointerButton button) {
-    if (!state.contains(button)) {
-      state.add(button);
-    }
-  }
-
-  void remove(PointerButton button) {
-    if (state.contains(button)) {
-      state.remove(button);
-    }
-  }
-
-  void update(List<PointerButton> buttons) {
-    emit([...buttons]);
+  void update(PointerButton? button) {
+    emit(button);
   }
 
   void clear() {
-    state.clear();
+    emit(null);
   }
 }
 

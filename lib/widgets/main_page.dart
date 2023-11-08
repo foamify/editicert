@@ -111,34 +111,32 @@ class _MainPageState extends State<MainPage> {
                     onPointerDown: (event) {
                       _keyboardFocus.requestFocus();
 
-                      final buttons = <PointerButton>[];
+                      PointerButton? button;
                       if (event.kind == PointerDeviceKind.mouse) {
-                        if (event.buttons == kMiddleMouseButton) {
-                          buttons.add(PointerButton.middle);
-                        }
-                        if (event.buttons == kPrimaryMouseButton) {
-                          buttons.add(PointerButton.left);
-                        }
-                        if (event.buttons == kSecondaryMouseButton) {
-                          buttons.add(PointerButton.right);
+                        switch (event.buttons) {
+                          case kPrimaryMouseButton:
+                            button = PointerButton.left;
+                          case kSecondaryMouseButton:
+                            button = PointerButton.right;
+                          case kMiddleMouseButton:
+                            button = PointerButton.middle;
                         }
                       }
-                      context.read<PointersCubit>().update(buttons);
+                      context.read<PointersCubit>().update(button);
                     },
                     onPointerUp: (event) {
-                      final buttons = <PointerButton>[];
+                      PointerButton? button;
                       if (event.kind == PointerDeviceKind.mouse) {
-                        if (event.buttons == kMiddleMouseButton) {
-                          buttons.add(PointerButton.middle);
-                        }
-                        if (event.buttons == kPrimaryMouseButton) {
-                          buttons.add(PointerButton.left);
-                        }
-                        if (event.buttons == kSecondaryMouseButton) {
-                          buttons.add(PointerButton.right);
+                        switch (event.buttons) {
+                          case kPrimaryMouseButton:
+                            button = PointerButton.left;
+                          case kSecondaryMouseButton:
+                            button = PointerButton.right;
+                          case kMiddleMouseButton:
+                            button = PointerButton.middle;
                         }
                       }
-                      context.read<PointersCubit>().update(buttons);
+                      context.read<PointersCubit>().update(button);
                     },
                     child: MouseRegion(
                       child: BlocBuilder<CanvasTransformCubit,
@@ -149,10 +147,10 @@ class _MainPageState extends State<MainPage> {
                             scaleEnabled: false,
                             transformationController: transformControl,
                             onInteractionStart: (details) {
-                              final buttons =
+                              final button =
                                   context.read<PointersCubit>().state;
-                              if (!buttons.contains(PointerButton.middle) &&
-                                  buttons.isNotEmpty) {
+                              if (button != PointerButton.middle &&
+                                  button != null) {
                                 return;
                               }
                               context
@@ -160,10 +158,10 @@ class _MainPageState extends State<MainPage> {
                                   .add(PanCanvasInitial());
                             },
                             onInteractionUpdate: (details) {
-                              final buttons =
+                              final button =
                                   context.read<PointersCubit>().state;
-                              if (!buttons.contains(PointerButton.middle) &&
-                                  buttons.isNotEmpty) {
+                              if (button != PointerButton.middle &&
+                                  button != null) {
                                 return;
                               }
                               final eventHandlerBloc =
