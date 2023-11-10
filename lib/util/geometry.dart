@@ -48,6 +48,7 @@ class Box extends Equatable {
 }
 
 /// Extensions for [Box]
+/// This is horrible and need to be refactored someday
 extension BoxExtension on Box {
   /// Whether the box is flipped horizontally
   bool get flipX => offset0.dx > offset2.dx;
