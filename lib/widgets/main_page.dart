@@ -392,7 +392,15 @@ class _MainPageState extends State<MainPage> {
                                   LogicalKeyboardKey.altRight,
                                 ]);
 
-                                if (pressedShift) {
+                                if (pressedShift && pressedAlt) {
+                                  print('pressed Both');
+                                  box.value = box.value.resizeSymmetricScaled(
+                                    initialBox,
+                                    initialPosition,
+                                    transform.toScene(details.localPosition),
+                                    alignment.$2,
+                                  );
+                                } else if (pressedShift) {
                                   box.value = box.value.resizeScaled(
                                     initialBox,
                                     initialPosition,

@@ -231,8 +231,10 @@ extension BoxExtension on Box {
     // start handling
 
     switch (alignment) {
-      case Alignment.topCenter || Alignment.bottomCenter:
+      case Alignment.topCenter:
         rotatedDelta = Offset(0, rotatedDelta.dy);
+      case Alignment.bottomCenter:
+        rotatedDelta = Offset(0, -rotatedDelta.dy);
 
       case Alignment.centerLeft || Alignment.centerRight:
         rotatedDelta = Offset(rotatedDelta.dx, 0);
@@ -372,6 +374,78 @@ extension BoxExtension on Box {
     }
 
     // return
+
+    return Box(
+      quad: quadFromOffsets(resizedOffsets),
+      angle: angle,
+      origin: origin,
+    );
+  }
+
+  Box resizeSymmetricScaled(
+    Box initialBox,
+    Offset initialLocalPosition,
+    Offset localPosition,
+    Alignment alignment,
+  ) {
+    final resizedBox = resizeSymmetric(
+      initialBox,
+      initialLocalPosition,
+      localPosition,
+      alignment,
+    );
+    var resizedOffsets = [...resizedBox.offsets];
+
+    final initialRatio = initialBox.rect.size.aspectRatio;
+
+    final resizedRatio = resizedBox.rect.size.aspectRatio;
+
+    final isWidthShortest = resizedRatio < initialRatio;
+
+    var goalSize = isWidthShortest
+        ? Offset(
+            resizedBox.rect.size.height * initialRatio,
+            resizedBox.rect.size.height,
+          )
+        : Offset(
+            resizedBox.rect.size.width,
+            resizedBox.rect.size.width / initialRatio,
+          );
+
+    final initialFlipX = initialBox.flipX;
+    final initialFlipY = initialBox.flipY;
+
+    if (initialFlipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
+    if (initialFlipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
+
+    final initialOffsets = initialBox.offsets;
+
+    resizedOffsets[0] = initialOffsets[2] - goalSize;
+    resizedOffsets[1] = initialOffsets[3] - Offset(-goalSize.dx, goalSize.dy);
+
+    resizedOffsets[3] = initialOffsets[1] - Offset(goalSize.dx, -goalSize.dy);
+    resizedOffsets[2] = initialOffsets[0] + goalSize;
+
+    final resizeFlipX = resizedBox.flipX;
+    final resizeFlipY = resizedBox.flipY;
+
+    if (resizeFlipX != initialFlipX) {
+      resizedOffsets = [
+        resizedOffsets[1],
+        resizedOffsets[0],
+        resizedOffsets[3],
+        resizedOffsets[2],
+      ];
+    }
+
+    if (resizeFlipY != initialFlipY) {
+      resizedOffsets = [
+        resizedOffsets[3],
+        resizedOffsets[2],
+        resizedOffsets[1],
+        resizedOffsets[0],
+      ];
+    }
 
     return Box(
       quad: quadFromOffsets(resizedOffsets),
