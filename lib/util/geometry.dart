@@ -402,6 +402,15 @@ extension BoxExtension on Box {
 
     final isWidthShortest = resizedRatio < initialRatio;
 
+    print(isWidthShortest);
+
+    final isEdgeResize = [
+      Alignment.topLeft,
+      Alignment.topRight,
+      Alignment.bottomLeft,
+      Alignment.bottomRight,
+    ].contains(alignment);
+
     var goalSize = isWidthShortest
         ? Offset(
             resizedBox.rect.size.height * initialRatio,
@@ -411,6 +420,20 @@ extension BoxExtension on Box {
             resizedBox.rect.size.width,
             resizedBox.rect.size.width / initialRatio,
           );
+    if (!isEdgeResize) {
+      switch (alignment) {
+        case Alignment.topCenter || Alignment.bottomCenter:
+          goalSize = Offset(
+            resizedBox.rect.size.height * initialRatio,
+            resizedBox.rect.size.height,
+          );
+        case _:
+          goalSize = Offset(
+            resizedBox.rect.size.width,
+            resizedBox.rect.size.width / initialRatio,
+          );
+      }
+    }
 
     final initialFlipX = initialBox.flipX;
     final initialFlipY = initialBox.flipY;
@@ -418,32 +441,34 @@ extension BoxExtension on Box {
     if (initialFlipX) goalSize = Offset(-goalSize.dx, goalSize.dy);
     if (initialFlipY) goalSize = Offset(goalSize.dx, -goalSize.dy);
 
-    final initialOffsets = initialBox.offsets;
+    final resizedCenter = resizedBox.rect.center;
 
-    resizedOffsets[0] = initialOffsets[2] - goalSize;
-    resizedOffsets[1] = initialOffsets[3] - Offset(-goalSize.dx, goalSize.dy);
+    resizedOffsets[0] = resizedCenter - goalSize / 2;
+    resizedOffsets[1] = resizedCenter - Offset(-goalSize.dx, goalSize.dy) / 2;
 
-    resizedOffsets[3] = initialOffsets[1] - Offset(goalSize.dx, -goalSize.dy);
-    resizedOffsets[2] = initialOffsets[0] + goalSize;
+    resizedOffsets[3] = resizedCenter - Offset(goalSize.dx, -goalSize.dy) / 2;
+    resizedOffsets[2] = resizedCenter + goalSize / 2;
 
     final resizeFlipX = resizedBox.flipX;
     final resizeFlipY = resizedBox.flipY;
 
-    if (resizeFlipX != initialFlipX) {
+    if ((isEdgeResize && resizeFlipX != initialFlipX) ||
+        (!isEdgeResize && resizeFlipY != initialFlipY)) {
       resizedOffsets = [
-        resizedOffsets[1],
-        resizedOffsets[0],
         resizedOffsets[3],
         resizedOffsets[2],
+        resizedOffsets[1],
+        resizedOffsets[0],
       ];
     }
 
-    if (resizeFlipY != initialFlipY) {
+    if ((isEdgeResize && resizeFlipY != initialFlipY) ||
+        (!isEdgeResize && resizeFlipX != initialFlipX)) {
       resizedOffsets = [
-        resizedOffsets[3],
-        resizedOffsets[2],
         resizedOffsets[1],
         resizedOffsets[0],
+        resizedOffsets[3],
+        resizedOffsets[2],
       ];
     }
 

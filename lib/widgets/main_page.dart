@@ -393,7 +393,6 @@ class _MainPageState extends State<MainPage> {
                                 ]);
 
                                 if (pressedShift && pressedAlt) {
-                                  print('pressed Both');
                                   box.value = box.value.resizeSymmetricScaled(
                                     initialBox,
                                     initialPosition,
