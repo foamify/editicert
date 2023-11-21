@@ -8,6 +8,7 @@ import 'package:editicert/state/pointers_cubit.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';
+import 'package:editicert/widgets/canvas_interactive_viewer.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -142,48 +143,52 @@ class _MainPageState extends State<MainPage> {
                       child: BlocBuilder<CanvasTransformCubit,
                           TransformationController>(
                         builder: (cubitContext, state) {
-                          return InteractiveViewer.builder(
+                          return CanvasInteractiveViewer.builder(
+                            boundaryMargin:
+                                const EdgeInsets.all(double.infinity),
                             clipBehavior: Clip.none,
-                            scaleEnabled: false,
+                            // scaleEnabled: false,
                             transformationController: transformControl,
-                            onInteractionStart: (details) {
-                              final button =
-                                  context.read<PointersCubit>().state;
-                              if (button != PointerButton.middle &&
-                                  button != null) {
-                                return;
-                              }
-                              context
-                                  .read<EventHandlerBloc>()
-                                  .add(PanCanvasInitial());
-                            },
-                            onInteractionUpdate: (details) {
-                              final button =
-                                  context.read<PointersCubit>().state;
-                              if (button != PointerButton.middle &&
-                                  button != null) {
-                                return;
-                              }
-                              final eventHandlerBloc =
-                                  context.read<EventHandlerBloc>();
-                              if (details.focalPointDelta != Offset.zero) {
-                                eventHandlerBloc.add(
-                                  PanCanvasEvent(details.focalPointDelta),
-                                );
-                              } else if (details.scale != 0) {
-                                eventHandlerBloc.add(
-                                  ZoomCanvasEvent(
-                                    details.scale,
-                                    details.focalPoint,
-                                  ),
-                                );
-                              }
-                            },
-                            onInteractionEnd: (details) {
-                              context
-                                  .read<EventHandlerBloc>()
-                                  .add(PanCanvasEnd());
-                            },
+                            // onInteractionStart: (details) {
+                            //   final button =
+                            //       context.read<PointersCubit>().state;
+                            //   if (button != PointerButton.middle &&
+                            //       button != null) {
+                            //     return;
+                            //   }
+                            //   context
+                            //       .read<EventHandlerBloc>()
+                            //       .add(PanCanvasInitial());
+                            // },
+                            // onInteractionUpdate: (details) {
+                            //   final button =
+                            //       context.read<PointersCubit>().state;
+                            //   if (button != PointerButton.middle &&
+                            //       button != null) {
+                            //     return;
+                            //   }
+                            //   final eventHandlerBloc =
+                            //       context.read<EventHandlerBloc>();
+                            //   if (details.focalPointDelta != Offset.zero) {
+                            //     eventHandlerBloc.add(
+                            //       PanCanvasEvent(details.focalPointDelta),
+                            //     );
+                            //   } else if (details.scale != 0) {
+                            //     print(details.)
+                            //     print('Scale: ${details.scale}');
+                            //     eventHandlerBloc.add(
+                            //       ZoomCanvasEvent(
+                            //         details.scale,
+                            //         details.focalPoint,
+                            //       ),
+                            //     );
+                            //   }
+                            // },
+                            // onInteractionEnd: (details) {
+                            //   context
+                            //       .read<EventHandlerBloc>()
+                            //       .add(PanCanvasEnd());
+                            // },
                             builder: (iVContext, viewport) {
                               // return Container(
                               //   width: 200,
@@ -336,6 +341,7 @@ class _MainPageState extends State<MainPage> {
                                 const Text('Rotate box by ${180 / 12} degrees'),
                           ),
                           GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onPanUpdate: (event) {
                               box.value = box.value.rotateByPan(
                                 transform.toScene(event.globalPosition),
@@ -349,6 +355,7 @@ class _MainPageState extends State<MainPage> {
                             ),
                           ),
                           GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onPanUpdate: (event) {
                               box.value = box.value.translate(
                                 event.delta / matrix.getMaxScaleOnAxis(),
@@ -372,6 +379,7 @@ class _MainPageState extends State<MainPage> {
                             ('bottomRight', Alignment.bottomRight),
                           ].map(
                             (alignment) => GestureDetector(
+                              behavior: HitTestBehavior.opaque,
                               onPanStart: (details) => setState(() {
                                 initialBox = box.value;
                                 initialPosition =
