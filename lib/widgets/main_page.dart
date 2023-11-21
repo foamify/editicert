@@ -67,13 +67,13 @@ class _MainPageState extends State<MainPage> {
         ],
         child: CallbackShortcuts(
           bindings: {},
-          child: RawKeyboardListener(
+          child: KeyboardListener(
             autofocus: true,
             focusNode: _keyboardFocus,
-            onKey: (key) {
-              if (key is RawKeyDownEvent) {
+            onKeyEvent: (key) {
+              if (key is KeyDownEvent) {
                 context.read<KeysCubit>().add(key.logicalKey);
-              } else if (key is RawKeyUpEvent) {
+              } else if (key is KeyUpEvent) {
                 context.read<KeysCubit>().remove(key.logicalKey);
               }
             },
