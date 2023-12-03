@@ -144,6 +144,7 @@ class _MainPageState extends State<MainPage> {
                           TransformationController>(
                         builder: (cubitContext, state) {
                           return CanvasInteractiveViewer.builder(
+                            minScale: .01,
                             boundaryMargin:
                                 const EdgeInsets.all(double.infinity),
                             clipBehavior: Clip.none,
