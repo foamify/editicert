@@ -130,10 +130,21 @@ extension BoxExtension on Box {
 
   /// Adds the angle, which is determined by the given offset relative to origin
   /// to the box without rotating the quad
-  Box rotateByPan(Offset offset) {
+  Box rotateByPan(Offset offset, [Alignment alignment = Alignment.center]) {
     final rotation = getAngleFromPoints(offset, origin) + pi;
+    late final double additionalAngle;
+    if (alignment != Alignment.center) {
+      final edge = alignment.alongSize(rect.size);
+      additionalAngle = getAngleFromPoints(edge, localOrigin) + pi;
+    } else {
+      additionalAngle = 0;
+    }
 
-    return Box(quad: quad, angle: rotation / pi * 180, origin: origin);
+    return Box(
+      quad: quad,
+      angle: (rotation - additionalAngle) / pi * 180,
+      origin: origin,
+    );
   }
 
   /// Translate the quad by the given offset
@@ -150,13 +161,14 @@ extension BoxExtension on Box {
     Box initialBox,
     Offset initialLocalPosition,
     Offset localPosition,
-    Alignment alignment,
-  ) {
+    Alignment alignment, {
+    bool rotate = false,
+  }) {
     // init vars
     final delta = localPosition - initialLocalPosition;
     final initialOffsets = initialBox.offsets;
     final originalOffsets = initialOffsets;
-    var rotatedDelta = rotatePoint(delta, Offset.zero, -angle);
+    var rotatedDelta = rotate ? rotatePoint(delta, Offset.zero, -angle) : delta;
 
     // start handling
 
@@ -220,13 +232,14 @@ extension BoxExtension on Box {
     Box initialBox,
     Offset initialLocalPosition,
     Offset localPosition,
-    Alignment alignment,
-  ) {
+    Alignment alignment, {
+    bool rotate = false,
+  }) {
     // init vars
     final delta = localPosition - initialLocalPosition;
     final initialOffsets = initialBox.offsets;
     final originalOffsets = initialOffsets;
-    var rotatedDelta = rotatePoint(delta, Offset.zero, -angle);
+    var rotatedDelta = rotate ? rotatePoint(delta, Offset.zero, -angle) : delta;
 
     // start handling
 
@@ -237,7 +250,7 @@ extension BoxExtension on Box {
         rotatedDelta = Offset(0, -rotatedDelta.dy);
 
       case Alignment.centerLeft || Alignment.centerRight:
-        rotatedDelta = Offset(rotatedDelta.dx, 0);
+        rotatedDelta = Offset(delta.dx, 0);
     }
 
     final invertedDelta = Offset(-rotatedDelta.dx, -rotatedDelta.dy);
@@ -245,10 +258,14 @@ extension BoxExtension on Box {
     final resizedOffsets = [...originalOffsets];
 
     final indexes = switch (alignment) {
+      Alignment.topLeft ||
+      Alignment.centerLeft ||
+      Alignment.topCenter ||
+      Alignment.bottomCenter =>
+        [0, 1, 2, 3],
       Alignment.topRight => [1, 0, 3, 2],
-      Alignment.centerRight => [2, 3, 0, 1],
-      Alignment.bottomLeft => [3, 2, 1, 0],
-      _ => [0, 1, 2, 3],
+      Alignment.centerRight || Alignment.bottomRight => [2, 3, 0, 1],
+      _ => [3, 2, 1, 0], // bottomLeft
     };
 
     final [offset0, offset1, offset2, offset3] = indexes;
@@ -273,12 +290,18 @@ extension BoxExtension on Box {
     Box initialBox,
     Offset initialLocalPosition,
     Offset localPosition,
-    Alignment alignment,
-  ) {
+    Alignment alignment, {
+    bool rotate = false,
+  }) {
     // start handling
 
-    final resizedBox =
-        resize(initialBox, initialLocalPosition, localPosition, alignment);
+    final resizedBox = resize(
+      initialBox,
+      initialLocalPosition,
+      localPosition,
+      alignment,
+      rotate: rotate,
+    );
     final resizedOffsets = [...resizedBox.offsets];
 
     final initialRatio = initialBox.rect.size.aspectRatio;
@@ -386,13 +409,15 @@ extension BoxExtension on Box {
     Box initialBox,
     Offset initialLocalPosition,
     Offset localPosition,
-    Alignment alignment,
-  ) {
+    Alignment alignment, {
+    bool rotate = false,
+  }) {
     final resizedBox = resizeSymmetric(
       initialBox,
       initialLocalPosition,
       localPosition,
       alignment,
+      rotate: rotate,
     );
     var resizedOffsets = [...resizedBox.offsets];
 
@@ -401,8 +426,6 @@ extension BoxExtension on Box {
     final resizedRatio = resizedBox.rect.size.aspectRatio;
 
     final isWidthShortest = resizedRatio < initialRatio;
-
-    print(isWidthShortest);
 
     final isEdgeResize = [
       Alignment.topLeft,
@@ -452,23 +475,23 @@ extension BoxExtension on Box {
     final resizeFlipX = resizedBox.flipX;
     final resizeFlipY = resizedBox.flipY;
 
-    if ((isEdgeResize && resizeFlipX != initialFlipX) ||
-        (!isEdgeResize && resizeFlipY != initialFlipY)) {
-      resizedOffsets = [
-        resizedOffsets[3],
-        resizedOffsets[2],
-        resizedOffsets[1],
-        resizedOffsets[0],
-      ];
-    }
-
-    if ((isEdgeResize && resizeFlipY != initialFlipY) ||
+    if (isEdgeResize && resizeFlipX != initialFlipX ||
         (!isEdgeResize && resizeFlipX != initialFlipX)) {
       resizedOffsets = [
         resizedOffsets[1],
         resizedOffsets[0],
         resizedOffsets[3],
         resizedOffsets[2],
+      ];
+    }
+
+    if (isEdgeResize && resizeFlipY != initialFlipY ||
+        (!isEdgeResize && resizeFlipY != initialFlipY)) {
+      resizedOffsets = [
+        resizedOffsets[3],
+        resizedOffsets[2],
+        resizedOffsets[1],
+        resizedOffsets[0],
       ];
     }
 

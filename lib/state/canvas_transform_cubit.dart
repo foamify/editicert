@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CanvasTransformCubit extends Cubit<TransformationController> {
-  CanvasTransformCubit() : super(TransformationController());
+  CanvasTransformCubit(super.initialValue);
 
   void changeController(TransformationController value) => emit(value);
 

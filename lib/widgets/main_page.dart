@@ -16,7 +16,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  const MainPage({required this.transformationController, super.key});
+
+  final TransformationController transformationController;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -39,8 +41,22 @@ class _MainPageState extends State<MainPage> {
     ),
   );
 
+  TransformationController get transformationController =>
+      widget.transformationController;
+
+  @override
+  void initState() {
+    super.initState();
+    transformationController.addListener(() {
+      context.read<CanvasTransformCubit>().updateValue(
+            transformationController.value,
+          );
+    });
+  }
+
   @override
   void dispose() {
+    transformationController.dispose();
     _keyboardFocus.dispose();
     box.dispose();
     super.dispose();
@@ -48,7 +64,6 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final transformControl = context.watch<CanvasTransformCubit>().state;
     return ColoredBox(
       color: const Color(0xFF333333),
       child: MultiBlocListener(
@@ -149,7 +164,7 @@ class _MainPageState extends State<MainPage> {
                                 const EdgeInsets.all(double.infinity),
                             clipBehavior: Clip.none,
                             // scaleEnabled: false,
-                            transformationController: transformControl,
+                            transformationController: transformationController,
                             // onInteractionStart: (details) {
                             //   final button =
                             //       context.read<PointersCubit>().state;
@@ -199,8 +214,9 @@ class _MainPageState extends State<MainPage> {
                               return ValueListenableBuilder(
                                 valueListenable: box,
                                 builder: (context, value, child) {
-                                  return SizedBox.square(
-                                    dimension: 400,
+                                  return SizedBox(
+                                    width: MediaQuery.sizeOf(context).width,
+                                    height: MediaQuery.sizeOf(context).height,
                                     child: Stack(
                                       clipBehavior: Clip.none,
                                       children: [
@@ -276,18 +292,6 @@ class _MainPageState extends State<MainPage> {
                                             color: colors[3].withOpacity(.25),
                                           ),
                                         ),
-                                        for (var i = 0;
-                                            i < value.offsets.length;
-                                            i++)
-                                          Positioned(
-                                            left: value.rotated.offsets[i].dx,
-                                            top: value.rotated.offsets[i].dy,
-                                            child: Container(
-                                              width: 10,
-                                              height: 10,
-                                              color: colors[i],
-                                            ),
-                                          ),
                                       ],
                                     ),
                                   );
@@ -299,6 +303,24 @@ class _MainPageState extends State<MainPage> {
                       ),
                     ),
                   ),
+                ),
+                BlocBuilder<CanvasTransformCubit, TransformationController>(
+                  builder: (context, transform) {
+                    return ValueListenableBuilder(
+                      valueListenable: box,
+                      builder: (context, value, child) => Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          for (var i = 0; i < value.offsets.length; i++)
+                            buildEdgeRotators(value, i, context, transform),
+                          for (var i = 0; i < value.offsets.length; i++)
+                            buildSideResizers(value, i, context, transform),
+                          for (var i = 0; i < value.offsets.length; i++)
+                            buildEdgeResizers(value, i, context, transform),
+                        ],
+                      ),
+                    );
+                  },
                 ),
                 BlocBuilder<CanvasTransformCubit, TransformationController>(
                   builder: (_, transform) {
@@ -338,8 +360,9 @@ class _MainPageState extends State<MainPage> {
                             onPressed: () {
                               box.value = box.value.rotate(180 / 12);
                             },
-                            child:
-                                const Text('Rotate box by ${180 / 12} degrees'),
+                            child: const Text(
+                              'Rotate box by ${180 / 12} degrees',
+                            ),
                           ),
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
@@ -407,6 +430,7 @@ class _MainPageState extends State<MainPage> {
                                     initialPosition,
                                     transform.toScene(details.localPosition),
                                     alignment.$2,
+                                    rotate: true,
                                   );
                                 } else if (pressedShift) {
                                   box.value = box.value.resizeScaled(
@@ -414,6 +438,7 @@ class _MainPageState extends State<MainPage> {
                                     initialPosition,
                                     transform.toScene(details.localPosition),
                                     alignment.$2,
+                                    rotate: true,
                                   );
                                 } else if (pressedAlt) {
                                   box.value = box.value.resizeSymmetric(
@@ -421,6 +446,7 @@ class _MainPageState extends State<MainPage> {
                                     initialPosition,
                                     transform.toScene(details.localPosition),
                                     alignment.$2,
+                                    rotate: true,
                                   );
                                 } else {
                                   box.value = box.value.resize(
@@ -428,6 +454,7 @@ class _MainPageState extends State<MainPage> {
                                     initialPosition,
                                     transform.toScene(details.localPosition),
                                     alignment.$2,
+                                    rotate: true,
                                   );
                                 }
                               },
@@ -448,6 +475,248 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget buildEdgeRotators(
+    Box value,
+    int i,
+    BuildContext context,
+    TransformationController canvasTransform,
+  ) {
+    final scale = canvasTransform.value.getMaxScaleOnAxis();
+    final translate = canvasTransform.value.getTranslation();
+    final valueOffset = value.rotated.offsets[i] * scale;
+    final offset = Offset(translate.x, translate.y) + valueOffset;
+    return Positioned(
+      left: offset.dx,
+      top: offset.dy,
+      child: BlocBuilder<CanvasTransformCubit, TransformationController>(
+        builder: (_, transform) {
+          final alignment = switch (i) {
+            0 => Alignment.topLeft,
+            1 => Alignment.topRight,
+            2 => Alignment.bottomRight,
+            _ => Alignment.bottomLeft,
+          };
+          return AnimatedSlide(
+            duration: Duration.zero,
+            offset: const Offset(-.5, -.5),
+            child: Transform.rotate(
+              angle: value.angle * pi / 180,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanUpdate: (event) {
+                  box.value = box.value.rotateByPan(
+                    transform.toScene(event.globalPosition),
+                    alignment,
+                  );
+                },
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  color: colors[i].withOpacity(.25),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget buildEdgeResizers(
+    Box value,
+    int i,
+    BuildContext context,
+    TransformationController canvasTransform,
+  ) {
+    final scale = canvasTransform.value.getMaxScaleOnAxis();
+    final translate = canvasTransform.value.getTranslation();
+    final valueOffset = value.rotated.offsets[i] * scale;
+    final offset = Offset(translate.x, translate.y) + valueOffset;
+    return Positioned(
+      left: offset.dx,
+      top: offset.dy,
+      child: BlocBuilder<CanvasTransformCubit, TransformationController>(
+        builder: (_, transform) {
+          final alignment = switch (i) {
+            0 => Alignment.topLeft,
+            1 => Alignment.topRight,
+            2 => Alignment.bottomRight,
+            _ => Alignment.bottomLeft,
+          };
+          return AnimatedSlide(
+            duration: Duration.zero,
+            offset: const Offset(-.5, -.5),
+            child: Transform.rotate(
+              angle: value.angle * pi / 180,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (details) => setState(() {
+                  initialBox = box.value;
+                  initialPosition = transform.toScene(details.localPosition);
+                }),
+                onPanUpdate: (details) {
+                  final keys = context.read<KeysCubit>().state;
+
+                  final pressedShift = keys.containsAny([
+                    LogicalKeyboardKey.shift,
+                    LogicalKeyboardKey.shiftLeft,
+                    LogicalKeyboardKey.shiftRight,
+                  ]);
+
+                  final pressedAlt = keys.containsAny([
+                    LogicalKeyboardKey.alt,
+                    LogicalKeyboardKey.altLeft,
+                    LogicalKeyboardKey.altRight,
+                  ]);
+
+                  if (pressedShift && pressedAlt) {
+                    box.value = box.value.resizeSymmetricScaled(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  } else if (pressedShift) {
+                    box.value = box.value.resizeScaled(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  } else if (pressedAlt) {
+                    box.value = box.value.resizeSymmetric(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  } else {
+                    box.value = box.value.resize(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  }
+                },
+                child: Container(width: 10, height: 10, color: colors[i]),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget buildSideResizers(
+    Box value,
+    int i,
+    BuildContext context,
+    TransformationController canvasTransform,
+  ) {
+    final scale = canvasTransform.value.getMaxScaleOnAxis();
+    final translate = canvasTransform.value.getTranslation();
+    final valueOffset = value.rotated.offsets[i] * scale;
+    final offset = Offset(translate.x, translate.y) + valueOffset;
+    return Positioned(
+      left: offset.dx,
+      top: offset.dy,
+      child: BlocBuilder<CanvasTransformCubit, TransformationController>(
+        builder: (_, transform) {
+          final alignment = switch (i) {
+            0 => Alignment.centerLeft,
+            1 => Alignment.topCenter,
+            2 => Alignment.centerRight,
+            _ => Alignment.bottomCenter,
+          };
+          return Transform.rotate(
+            angle: value.angle * pi / 180,
+            alignment: Alignment.topLeft,
+            child: Transform.translate(
+              offset: switch (i) {
+                0 => Offset(
+                    -5,
+                    value.flipY ? -value.rect.height * scale + 5 : 5,
+                  ),
+                1 =>
+                  Offset(value.flipX ? 5 : -value.rect.width * scale + 5, -5),
+                2 => Offset(
+                    -5,
+                    value.flipY ? 5 : -value.rect.height * scale + 5,
+                  ),
+                _ =>
+                  Offset(value.flipX ? -value.rect.width * scale + 5 : 5, -5),
+              },
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanStart: (details) => setState(() {
+                  initialBox = box.value;
+                  initialPosition = transform.toScene(details.localPosition);
+                }),
+                onPanUpdate: (details) {
+                  final keys = context.read<KeysCubit>().state;
+
+                  final pressedShift = keys.containsAny([
+                    LogicalKeyboardKey.shift,
+                    LogicalKeyboardKey.shiftLeft,
+                    LogicalKeyboardKey.shiftRight,
+                  ]);
+
+                  final pressedAlt = keys.containsAny([
+                    LogicalKeyboardKey.alt,
+                    LogicalKeyboardKey.altLeft,
+                    LogicalKeyboardKey.altRight,
+                  ]);
+
+                  if (pressedShift && pressedAlt) {
+                    box.value = box.value.resizeSymmetricScaled(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  } else if (pressedShift) {
+                    box.value = box.value.resizeScaled(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  } else if (pressedAlt) {
+                    box.value = box.value.resizeSymmetric(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  } else {
+                    box.value = box.value.resize(
+                      initialBox,
+                      initialPosition,
+                      transform.toScene(details.localPosition),
+                      alignment,
+                    );
+                  }
+                },
+                child: Container(
+                  width: switch (i) {
+                    0 || 2 => 10,
+                    _ => max(0, value.rect.width * scale - 10),
+                  },
+                  height: switch (i) {
+                    1 || 3 => 10,
+                    _ => max(0, value.rect.height * scale - 10),
+                  },
+                  color: colors[i].withOpacity(.5),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

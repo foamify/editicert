@@ -76,7 +76,7 @@ void main() async {
         BlocProvider(create: (_) => CanvasCubit()),
         BlocProvider(create: (_) => ComponentsCubit([])),
       ],
-      child: const Main(),
+      child: Main(),
     ),
   );
   if (!kIsWeb) {
@@ -102,7 +102,9 @@ class _MyDelegate extends NSWindowDelegate {
 }
 
 class Main extends StatelessWidget {
-  const Main({super.key});
+  Main({super.key});
+
+  final _transformationController = TransformationController();
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +267,9 @@ class Main extends StatelessWidget {
         home: MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => CanvasEventsCubit()),
-            BlocProvider(create: (_) => CanvasTransformCubit()),
+            BlocProvider(
+              create: (_) => CanvasTransformCubit(_transformationController),
+            ),
             BlocProvider(create: (_) => KeysCubit()),
             BlocProvider(create: (_) => PointersCubit()),
             BlocProvider(create: (_) => PointerCubit(Offset.zero)),
@@ -284,7 +288,9 @@ class Main extends StatelessWidget {
               ),
             ),
           ],
-          child: const MainPage(),
+          child: MainPage(
+            transformationController: _transformationController,
+          ),
         ),
       ),
     );
