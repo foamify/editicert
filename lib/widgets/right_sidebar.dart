@@ -20,13 +20,18 @@ class _RightSidebarState extends State<RightSidebar> {
     super.initState();
     final canvasData = context.canvasCubit.state;
     backgroundColorController = TextEditingController(
-      text: canvasData.color.value.toRadixString(16).toUpperCase().substring(2),
+      text: canvasData.color
+          .toColor()
+          .value
+          .toRadixString(16)
+          .toUpperCase()
+          .substring(2),
     );
     backgroundWidthController = TextEditingController(
-      text: canvasData.size.width.toString(),
+      text: canvasData.size.x.toString(),
     );
     backgroundHeightController = TextEditingController(
-      text: canvasData.size.height.toString(),
+      text: canvasData.size.y.toString(),
     );
   }
 
@@ -228,7 +233,7 @@ class _RightSidebarState extends State<RightSidebar> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(2),
                     border: Border.all(color: Colors.white, width: .5),
-                    color: canvasStateProvider.color,
+                    color: canvasStateProvider.color.toColor(),
                   ),
                   child: InkWell(
                     onTap: widget.toggleColorPicker,
@@ -257,7 +262,7 @@ class _RightSidebarState extends State<RightSidebar> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              '${(canvasStateProvider.color.opacity * 100).truncate()}%',
+              '${(canvasStateProvider.color.toColor().opacity * 100).truncate()}%',
               style: textTheme.bodySmall,
             ),
           ),
@@ -307,7 +312,7 @@ class _RightSidebarState extends State<RightSidebar> {
               context.canvasCubit.update(
                 backgroundSize: Size(
                   double.parse(text),
-                  canvasStateProvider.size.height,
+                  canvasStateProvider.size.y,
                 ),
               );
               print(canvasStateProvider.size);
@@ -323,7 +328,7 @@ class _RightSidebarState extends State<RightSidebar> {
             controller: backgroundHeightController,
             onChanged: (String text) => context.canvasCubit.update(
                   backgroundSize: Size(
-                    canvasStateProvider.size.width,
+                    canvasStateProvider.size.x,
                     double.parse(text),
                   ),
                 ),
@@ -405,7 +410,7 @@ class _RightSidebarState extends State<RightSidebar> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ...controls!.mapIndexed(
+                        ...?controls?.mapIndexed(
                           (i, outerContent) => Padding(
                             padding: EdgeInsets.only(
                               bottom: i == controls.length - 1 ? 0 : 8.0,

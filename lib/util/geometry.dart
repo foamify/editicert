@@ -110,6 +110,18 @@ extension BoxExtension on Box {
   /// The rect of the quad
   Rect get rect => Rect.fromPoints(offset0, offset2);
 
+  /// The width of the rect
+  double get width => rect.width;
+
+  /// The height of the rect
+  double get height => rect.height;
+
+  /// Top left x coordinate
+  double get x => rect.topLeft.dx;
+
+  /// Top left y coordinate
+  double get y => rect.topLeft.dy;
+
   /// The box with the quad rotated by the given angle relative to the origin
   Box get rotated {
     final rotatedPoints = offsets.map((offset) {
@@ -131,7 +143,7 @@ extension BoxExtension on Box {
   /// Adds the angle, which is determined by the given offset relative to origin
   /// to the box without rotating the quad
   Box rotateByPan(Offset offset, [Alignment alignment = Alignment.center]) {
-    final rotation = getAngleFromPoints(offset, origin) + pi;
+    final rotation = getAngleFromPoints(offset, rect.center) + pi;
     late final double additionalAngle;
     if (alignment != Alignment.center) {
       final edge = alignment.alongSize(rect.size);
@@ -521,4 +533,10 @@ extension BoxExtension on Box {
   double getAngleFromPoints(Offset point1, Offset point2) {
     return atan2(point2.dy - point1.dy, point2.dx - point1.dx);
   }
+
+  Box clone() => Box(
+        quad: quad,
+        angle: angle,
+        origin: origin,
+      );
 }

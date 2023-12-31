@@ -4,6 +4,7 @@
 
 import 'dart:math' as math;
 
+import 'package:editicert/state/canvas_state.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
@@ -11,7 +12,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix4, Quad, Vector3;
 
 // Examples can assume:
@@ -980,7 +980,7 @@ class _CanvasInteractiveViewerState extends State<CanvasInteractiveViewer>
   void _receivedPointerSignal(PointerSignalEvent event) {
     final double scaleChange;
     if (event is PointerScrollEvent) {
-      final keys = context.read<KeysCubit>().state;
+      final keys = canvasLogicalKeys();
 
       final pressedMeta = keys.containsAny([
         LogicalKeyboardKey.meta,
@@ -1245,7 +1245,7 @@ class _CanvasInteractiveViewerState extends State<CanvasInteractiveViewer>
       );
     }
 
-    final keys = context.watch<KeysCubit>().state;
+    final keys = canvasLogicalKeys();
 
     final pressedMeta = keys.containsAny([
       LogicalKeyboardKey.meta,

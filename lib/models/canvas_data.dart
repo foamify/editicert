@@ -1,6 +1,5 @@
-import 'dart:ui';
-
 import 'package:equatable/equatable.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 class CanvasData extends Equatable {
   CanvasData({
@@ -8,24 +7,28 @@ class CanvasData extends Equatable {
     required this.hidden,
     required this.opacity,
     required this.size,
+    required this.offset,
   });
 
-  Color color;
+  Vector4 color;
   bool hidden;
   double opacity;
-  Size size;
+  Vector2 size;
+  Vector2 offset;
 
   CanvasData copyWith({
-    Color? color,
+    Vector4? color,
     bool? hidden,
     double? opacity,
-    Size? size,
+    Vector2? size,
+    Vector2? offset,
   }) {
     return CanvasData(
       color: color ?? this.color,
       hidden: hidden ?? this.hidden,
       opacity: opacity ?? this.opacity,
       size: size ?? this.size,
+      offset: offset ?? this.offset,
     );
   }
 

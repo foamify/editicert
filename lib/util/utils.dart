@@ -4,8 +4,10 @@ import 'dart:math';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:uuid/uuid.dart';
 
 final _get = GetIt.I.get;
+final uuid = Uuid();
 
 const kSidebarWidth = 240.0;
 const kTopbarHeight = 52.0;
