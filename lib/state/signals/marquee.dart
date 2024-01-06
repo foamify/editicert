@@ -57,18 +57,18 @@ final marqueeRect = computed(() {
     var intersect = false;
     var offsetInside = 0;
 
-    linesElement.forEach((element1) {
-      if (intersect) return;
-      linesRect.forEach((element2) {
-        if (intersect) return;
+    for (final element1 in linesElement) {
+      if (intersect) continue;
+      for (final element2 in linesRect) {
+        if (intersect) continue;
         intersect = isTwoLinesIntersetcing(
           element1.$1,
           element1.$2,
           element2.$1,
           element2.$2,
         );
-      });
-    });
+      }
+    }
 
     element.transform.rotated.offsets.map(fromScene).forEach((e) {
       if (rect.contains(e)) {

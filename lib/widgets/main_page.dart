@@ -212,7 +212,7 @@ class _MainPageState extends State<MainPage> {
                                     onExit: (event) =>
                                         canvasHoveredElement.value = null,
                                     child: Padding(
-                                      padding: const EdgeInsets.all(2.0),
+                                      padding: const EdgeInsets.all(2),
                                       child: GestureDetector(
                                         onTap: () =>
                                             canvasSelectedElement.value = e.id,
@@ -243,7 +243,7 @@ class _MainPageState extends State<MainPage> {
                                               margin: EdgeInsets.zero,
                                               child: Padding(
                                                 padding:
-                                                    const EdgeInsets.all(8.0),
+                                                    const EdgeInsets.all(8),
                                                 child: SizedBox(
                                                   width: double.infinity,
                                                   child:

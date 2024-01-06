@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-final uuid = Uuid();
+const uuid = Uuid();
 
 typedef Edges = ({Offset bl, Offset br, Offset tl, Offset tr});
 
@@ -152,12 +152,10 @@ Offset getOffset(
 ///
 /// returns whether there is an intersection or not
 bool isTwoLinesIntersetcing(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4) {
-  final double t =
-      ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) /
-          ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
-  final double u =
-      ((p1.x - p3.x) * (p1.y - p2.y) - (p1.y - p3.y) * (p1.x - p2.x)) /
-          ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
+  final t = ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) /
+      ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
+  final u = ((p1.x - p3.x) * (p1.y - p2.y) - (p1.y - p3.y) * (p1.x - p2.x)) /
+      ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
 
   return 0 <= t && t <= 1 && 0 <= u && u <= 1;
 }
