@@ -103,16 +103,14 @@ class ElementSideResizer extends StatelessWidget {
                       canvasElements.value = [...elements]..[index] = element;
                     },
                     onPanEnd: (details) {
-                      element
-                        ..transform = Box(
-                          quad: box.quad,
-                          angle: box.angle,
-                          origin: box.rect.center,
-                        )
-                        ..transform = element.transform.translate(
-                          -element.transform.rotated.rect.center +
-                              box.rotated.rect.center,
-                        );
+                      element.transform = Box(
+                        quad: box.quad,
+                        angle: box.angle,
+                        origin: box.rect.center,
+                      ).translate(
+                        -element.transform.rotated.rect.center +
+                            box.rotated.rect.center,
+                      );
                       canvasElements.value = [...elements]..[index] = element;
                     },
                     child:

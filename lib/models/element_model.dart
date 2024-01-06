@@ -9,6 +9,7 @@ class ElementModel {
     id = uuid.v4();
     parentId = '';
     childId = '';
+    name = '';
     data = ElementData(
       name: '',
       shadow: [],

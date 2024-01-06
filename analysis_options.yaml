@@ -10,3 +10,4 @@ dart_code_metrics:
   rules-exclude:
     - test/**
     - lib/generated/**
+    - lib/widgets/canvas_interactive_viewer.dart
