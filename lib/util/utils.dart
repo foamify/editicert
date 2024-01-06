@@ -3,11 +3,9 @@
 import 'dart:math';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-final _get = GetIt.I.get;
 final uuid = Uuid();
 
 typedef Edges = ({Offset bl, Offset br, Offset tl, Offset tr});
