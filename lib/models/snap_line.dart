@@ -25,7 +25,7 @@ extension SnapLineExtension on SnapLine {
     if (isSnapX) {
       return (pos1.x - pos2.x).abs();
     }
-    return (pos1.y - pos2.y).abs();
+    return (pos1.y - pos2.y);
   }
 
   /// Creates a [SnapLine] with the given positions.

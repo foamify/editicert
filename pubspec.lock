@@ -225,14 +225,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.7.0"
-  dart_sort_queue:
-    dependency: "direct main"
-    description:
-      name: dart_sort_queue
-      sha256: f3353ba8b4850e072d3368757f62edb79af34a9703c3e3df9c59342721f5f5b1
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.2+3"
   dart_style:
     dependency: transitive
     description:

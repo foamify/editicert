@@ -4,7 +4,6 @@
 
 import 'dart:math' as math;
 
-import 'package:editicert/state/signal_state.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:flutter/foundation.dart' show clampDouble;

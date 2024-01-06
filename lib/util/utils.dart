@@ -10,11 +10,6 @@ import 'package:vector_math/vector_math_64.dart';
 final _get = GetIt.I.get;
 final uuid = Uuid();
 
-const kSidebarWidth = 240.0;
-const kTopbarHeight = 52.0;
-const kGestureSize = 8.0;
-const kGextFieldWidth = 96.0;
-
 typedef Edges = ({Offset bl, Offset br, Offset tl, Offset tr});
 
 extension RectEx on Rect {

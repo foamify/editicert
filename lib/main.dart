@@ -3,34 +3,40 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:editicert/models/component_data.dart';
-import 'package:editicert/models/component_transform.dart';
-import 'package:editicert/models/component_type.dart';
+import 'package:editicert/models/element_model.dart';
+import 'package:editicert/models/snap_line.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
+import 'package:editicert/util/element/translate.dart';
 import 'package:editicert/util/extensions.dart';
-import 'package:editicert/util/utils.dart';
-import 'package:editicert/widgets/main_page.dart';
-import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:editicert/util/geometry.dart';
+import 'package:editicert/widgets/canvas_interactive_viewer.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
+import 'package:signals/signals_flutter.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
 
-part 'widgets/canvas.dart';
 // part 'widgets/controller_widget.dart';
 // part 'widgets/creator_widget.dart';
 // part 'widgets/custom_cursor_widget.dart';
 // part 'widgets/home_page.dart';
-part 'widgets/left_sidebar.dart';
-part 'widgets/right_sidebar.dart';
-part 'widgets/selector_widget.dart';
+// part 'widgets/left_sidebar.dart';
+part 'widgets/main_page.dart';
+// part 'widgets/right_sidebar.dart';
 // part 'widgets/top_bar.dart';
+part 'widgets/canvas/marquee_widget.dart';
+part 'widgets/canvas/marquee_paint.dart';
+part 'widgets/canvas/snap_line_paint.dart';
+part 'widgets/canvas/debug_points.dart';
+part 'widgets/canvas/canvas_widget.dart';
+part 'widgets/element/element_translator.dart';
+part 'widgets/element/element_rotator.dart';
+part 'widgets/element/element_side_resizer.dart';
+part 'widgets/element/element_edge_resizer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,14 +49,12 @@ void main() async {
       await WindowManipulator.initialize(enableWindowDelegate: true);
       final delegate = _MyDelegate();
       WindowManipulator.addNSWindowDelegate(delegate);
-      final options = NSAppPresentationOptions.from({
+      NSAppPresentationOptions.from({
         NSAppPresentationOption.fullScreen,
         NSAppPresentationOption.autoHideToolbar,
         NSAppPresentationOption.autoHideMenuBar,
         NSAppPresentationOption.autoHideDock,
-      });
-
-      options.applyAsFullScreenPresentationOptions();
+      }).applyAsFullScreenPresentationOptions();
 
       await Future.wait([
         WindowManipulator.makeTitlebarTransparent(),
@@ -64,7 +68,7 @@ void main() async {
     }
   }
 
-  runApp(Main());
+  runApp(const Main());
   if (!kIsWeb) {
     await windowManager.waitUntilReadyToShow();
 
@@ -87,10 +91,10 @@ class _MyDelegate extends NSWindowDelegate {
   }
 }
 
+// ignore: public_member_api_docs
 class Main extends StatelessWidget {
-  Main({super.key});
-
-  final _transformationController = TransformationController();
+  // ignore: public_member_api_docs
+  const Main({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -252,7 +256,7 @@ class Main extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: MainPage(),
+        home: const MainPage(),
       ),
     );
   }
