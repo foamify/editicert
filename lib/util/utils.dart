@@ -150,7 +150,7 @@ Offset getOffset(
 /// First two vectors [p1] and [p2] are the first line, and the second two
 /// vectors [p3] and [p4] are the second line.
 ///
-/// [returns] whether there is an intersection or not
+/// returns whether there is an intersection or not
 bool isTwoLinesIntersetcing(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4) {
   final double t =
       ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) /
