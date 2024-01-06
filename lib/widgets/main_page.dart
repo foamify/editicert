@@ -138,54 +138,6 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      children: [
-                        FilledButton(
-                          onPressed: () {
-                            canvasElements.add(ElementModel());
-                          },
-                          child: const Text('Add Box'),
-                        ),
-                        const SizedBox.square(dimension: 12),
-                        FilledButton(
-                          onPressed: () {
-                            canvasElements.value = [...canvasElements()]
-                              ..removeLast();
-                          },
-                          child: const Text('Remove Last Box'),
-                        ),
-                        const SizedBox.square(dimension: 12),
-                        Watch.builder(
-                          builder: (context) {
-                            final selected = canvasSelectedElement();
-                            final elements = canvasElements();
-                            final element = elements.firstWhereOrNull(
-                              (element) => element.id == selected,
-                            );
-                            if (element == null) return const SizedBox.shrink();
-                            return Text(
-                              [
-                                'id: ${element.id}',
-                                'offset: ${element.transform.rect.topLeft}',
-                                'center: ${element.transform.rect.center}',
-                                'rect: ${element.transform.rect}',
-                                'flipX: ${element.transform.flipX}',
-                                'flipY: ${element.transform.flipY}',
-                              ].join('\n'),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
 
               Watch.builder(
                 builder: (context) {
@@ -387,27 +339,170 @@ class _MainPageState extends State<MainPage> {
                   },
                 ),
               ),
-              IgnorePointer(child: Watch.builder(builder: (context) {
-                final marquee = marqueeRect();
-                if (marquee == null) return const SizedBox.shrink();
-                return Transform.translate(
-                  offset: marquee.topLeft,
-                  child: Container(
-                    width: marquee.width,
-                    height: marquee.height,
-                    decoration: BoxDecoration(
-                      color: Colors.blueAccent.withOpacity(.5),
-                      border: Border.all(
-                        color: Color.alphaBlend(
-                          Colors.blueAccent.withOpacity(.5),
-                          Colors.blueAccent.withOpacity(.5),
+
+              IgnorePointer(
+                child: Watch.builder(
+                  builder: (context) {
+                    final marquee = marqueeRect();
+                    if (marquee == null) return const SizedBox.shrink();
+                    return Transform.translate(
+                      offset: marquee.topLeft,
+                      child: Container(
+                        width: marquee.width,
+                        height: marquee.height,
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withOpacity(.5),
+                          border: Border.all(
+                            color: Color.alphaBlend(
+                              Colors.blueAccent.withOpacity(.5),
+                              Colors.blueAccent.withOpacity(.5),
+                            ),
+                            strokeAlign: BorderSide.strokeAlignOutside,
+                          ),
                         ),
-                        strokeAlign: BorderSide.strokeAlignOutside,
                       ),
+                    );
+                  },
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      children: [
+                        FilledButton(
+                          onPressed: () {
+                            canvasElements.add(ElementModel());
+                          },
+                          child: const Text('Add Box'),
+                        ),
+                        const SizedBox.square(dimension: 12),
+                        FilledButton(
+                          onPressed: () {
+                            canvasElements.value = [...canvasElements()]
+                              ..removeLast();
+                          },
+                          child: const Text('Remove Last Box'),
+                        ),
+                        const SizedBox.square(dimension: 12),
+                        Watch.builder(
+                          builder: (context) {
+                            final selected = canvasSelectedElement();
+                            final elements = canvasElements();
+                            final element = elements.firstWhereOrNull(
+                              (element) => element.id == selected,
+                            );
+                            if (element == null) return const SizedBox.shrink();
+                            return Text(
+                              [
+                                'id: ${element.id}',
+                                'offset: ${element.transform.rect.topLeft}',
+                                'center: ${element.transform.rect.center}',
+                                'rect: ${element.transform.rect}',
+                                'flipX: ${element.transform.flipX}',
+                                'flipY: ${element.transform.flipY}',
+                              ].join('\n'),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                );
-              })),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                left: 0,
+                width: 240,
+                bottom: 0,
+                child: Card(
+                  shape: RoundedRectangleBorder(
+                    // Make sure it corresponds to window border
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Watch.builder(
+                    builder: (context) {
+                      final elements = canvasElements();
+                      return ReorderableListView.builder(
+                        proxyDecorator: (child, index, animation) {
+                          return child;
+                        },
+                        itemCount: elements.length,
+                        itemBuilder: (context, index) {
+                          return [
+                            ...elements.map(
+                              (e) => Watch.builder(
+                                key: ValueKey(e.id),
+                                builder: (context) {
+                                  final hovered = canvasHoveredElement() ==
+                                      elements[index].id;
+                                  final selected = canvasSelectedElement() ==
+                                      elements[index].id;
+                                  return MouseRegion(
+                                    onEnter: (event) =>
+                                        canvasHoveredElement.value = e.id,
+                                    onExit: (event) =>
+                                        canvasHoveredElement.value = null,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2.0),
+                                      child: GestureDetector(
+                                        onTap: () =>
+                                            canvasSelectedElement.value = e.id,
+                                        child: DecoratedBox(
+                                          position:
+                                              DecorationPosition.foreground,
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: selected
+                                                  ? Colors.blueAccent
+                                                  : Colors.transparent,
+                                            ),
+                                          ),
+                                          child: Card(
+                                            color: Color.alphaBlend(
+                                              Colors.blueAccent.withOpacity(
+                                                hovered ? .5 : .1,
+                                              ),
+                                              Theme.of(context).cardColor,
+                                            ),
+                                            margin: EdgeInsets.zero,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: SizedBox(
+                                                width: double.infinity,
+                                                child: Text(e.id.split('-')[1]),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ][index];
+                        },
+                        onReorder: (int oldIndex, int newIndex) {
+                          if (oldIndex == newIndex) return;
+                          if (oldIndex < newIndex) {
+                            newIndex -= 1;
+                          }
+                          canvasElements.value = [...elements]
+                            ..removeAt(oldIndex)
+                            ..insert(newIndex, elements[oldIndex]);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
             ],
           ),
         ),
