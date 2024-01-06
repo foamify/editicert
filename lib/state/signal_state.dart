@@ -137,6 +137,9 @@ final marqueeRect = computed(() {
   // TODO: this is very heavy. Need to find lighter way and/or put it in another thread
 
   untracked(() => canvasHoveredMultipleElements.value = {});
+  final canvasTransform = canvasTransformCurrent.peek().peek();
+  final fromScene = canvasTransform.fromScene;
+  final toScene = canvasTransform.toScene;
   final rect = isMarquee()
       ? Rect.fromPoints(
           pointerPositionInitial().toOffset(),
@@ -158,7 +161,7 @@ final marqueeRect = computed(() {
     (rect.topRight.toVector2(), rect.bottomRight.toVector2()),
     (rect.bottomRight.toVector2(), rect.bottomLeft.toVector2()),
     (rect.bottomLeft.toVector2(), rect.topLeft.toVector2()),
-  ];
+  ].map((e) => (e.$1, e.$2)).toList();
 
   for (final element in canvasElements()) {
     final linesElement = [
@@ -178,7 +181,12 @@ final marqueeRect = computed(() {
         element.transform.rotated.offset3.toVector2(),
         element.transform.rotated.offset0.toVector2(),
       ),
-    ];
+    ]
+        .map((e) => (
+              fromScene(e.$1.toOffset()).toVector2(),
+              fromScene(e.$2.toOffset()).toVector2(),
+            ))
+        .toList();
 
     var intersect = false;
     var offsetInside = 0;
@@ -196,7 +204,7 @@ final marqueeRect = computed(() {
       });
     });
 
-    element.transform.rotated.offsets.forEach((e) {
+    element.transform.rotated.offsets.map(fromScene).forEach((e) {
       if (rect.contains(e)) {
         offsetInside++;
       }
