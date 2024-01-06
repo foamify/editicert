@@ -39,14 +39,14 @@ final class CanvasHoveredElement implements SignalState<String?> {
   Signal<String?> get _signal => _canvasHoveredElement;
 
   /// Sets the hover if it's not the same as [id].
-  void setHover(String? id) {
+  void setHover(String id) {
     if (value != id) {
       value = id;
     }
   }
 
   /// Clears the hover if it's the same as [id].
-  void clearHover(String? id) {
+  void clearHover(String id) {
     if (value == id) {
       value = null;
     }

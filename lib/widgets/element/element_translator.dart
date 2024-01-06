@@ -42,7 +42,8 @@ class ElementTranslator extends StatelessWidget {
           (false, true) => 3,
           _ => 2,
         };
-        final valueOffset = box.rotated.offsets[alignmentIndex] * scale;
+        final valueOffset =
+            box.rotated.offsets.elementAtOrNull(alignmentIndex)! * scale;
         final offset = Offset(translate.x, translate.y) + valueOffset;
 
         final isSelected = canvasSelectedElement() == element.id;

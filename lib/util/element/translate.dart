@@ -27,12 +27,12 @@ void handleMoveUpdate(
 
   if (lines.isNotEmpty) {
     final shortestLineX = lines.where((e) => e.isSnapX).fold(
-          lines.first,
+          lines.firstOrNull!,
           (value, e) => value.length < e.length ? value : e,
         );
 
     final shortestLineY = lines.where((e) => e.isSnapY).fold(
-          lines.first,
+          lines.firstOrNull!,
           (value, e) => value.length < e.length ? value : e,
         );
 
@@ -50,14 +50,12 @@ void handleMoveEnd(
   List<ElementModel> elements,
   int index,
 ) {
-  element
-    ..transform = Box(
-      quad: box.quad,
-      angle: box.angle,
-      origin: box.rect.center,
-    )
-    ..transform = element.transform.translate(
-      -element.transform.rotated.rect.center + box.rotated.rect.center,
-    );
+  element.transform = Box(
+    quad: box.quad,
+    angle: box.angle,
+    origin: box.rect.center,
+  ).translate(
+    -element.transform.rotated.rect.center + box.rotated.rect.center,
+  );
   canvasElements.value = [...elements]..[index] = element;
 }

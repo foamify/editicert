@@ -54,7 +54,7 @@ class _MainPageState extends State<MainPage> {
                 child: Material(
                   color: Colors.transparent,
                   child: Watch.builder(
-                    builder: (context) {
+                    builder: (_) {
                       final elements = canvasElements();
                       return Stack(
                         clipBehavior: Clip.none,
@@ -63,7 +63,7 @@ class _MainPageState extends State<MainPage> {
                             ElementTranslator(
                               index: i,
                               builder: (
-                                context,
+                                _,
                                 element, {
                                 required isHovered,
                                 required isSelected,
@@ -88,7 +88,7 @@ class _MainPageState extends State<MainPage> {
               ),
               ElementTranslator(
                 builder: (
-                  context,
+                  _,
                   element, {
                   required isHovered,
                   required isSelected,
@@ -149,11 +149,11 @@ class _MainPageState extends State<MainPage> {
                         ),
                         const SizedBox.square(dimension: 12),
                         Watch.builder(
-                          builder: (context) {
+                          builder: (_) {
                             final selected = canvasSelectedElement();
                             final elements = canvasElements();
                             final element = elements.firstWhereOrNull(
-                              (element) => element.id == selected,
+                              (e) => e.id == selected,
                             );
                             if (element == null) return const SizedBox.shrink();
                             return Text(
@@ -184,7 +184,7 @@ class _MainPageState extends State<MainPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Watch.builder(
-                    builder: (context) {
+                    builder: (_) {
                       final elements = canvasElements();
                       return ReorderableListView.builder(
                         buildDefaultDragHandles: false,
@@ -192,12 +192,12 @@ class _MainPageState extends State<MainPage> {
                           return child;
                         },
                         itemCount: elements.length,
-                        itemBuilder: (context, index) {
+                        itemBuilder: (_, index) {
                           return [
                             ...elements.map(
                               (e) => Watch.builder(
                                 key: ValueKey(e.id),
-                                builder: (context) {
+                                builder: (_) {
                                   final hovered = canvasHoveredElement() ==
                                       elements[index].id;
                                   final multiHovered =

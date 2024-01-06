@@ -11,7 +11,7 @@ class ElementEdgeResizer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Watch.builder(
-      builder: (context) {
+      builder: (_) {
         final isMoving = canvasIsMovingSelected();
         if (isMoving) return const SizedBox.shrink();
         final elements = canvasElements();
@@ -26,7 +26,7 @@ class ElementEdgeResizer extends StatelessWidget {
         final canvasTransform = canvasTransformCurrent()();
         final scale = canvasTransform.getMaxScaleOnAxis();
         final translate = canvasTransform.getTranslation();
-        final valueOffset = box.rotated.offsets[i] * scale;
+        final valueOffset = box.rotated.offsets.elementAtOrNull(i)! * scale;
         final offset = Offset(translate.x, translate.y) + valueOffset;
         return Positioned(
           left: offset.dx,
@@ -136,7 +136,7 @@ class ElementEdgeResizer extends StatelessWidget {
                         1 || 3 => 10,
                         _ => max(0, box.rect.height * scale - 10),
                       },
-                      color: kColorList[i].withOpacity(.5),
+                      color: kColorList.elementAtOrNull(i)!.withOpacity(.5),
                     ),
                   ),
                 ),

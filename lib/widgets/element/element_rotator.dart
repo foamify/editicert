@@ -26,7 +26,7 @@ class ElementRotator extends StatelessWidget {
         final canvasTransform = canvasTransformCurrent()();
         final scale = canvasTransform.getMaxScaleOnAxis();
         final translate = canvasTransform.getTranslation();
-        final valueOffset = box.rotated.offsets[i] * scale;
+        final valueOffset = box.rotated.offsets.elementAtOrNull(i)! * scale;
         final offset = Offset(translate.x, translate.y) + valueOffset;
         return Positioned(
           left: offset.dx,
@@ -57,7 +57,7 @@ class ElementRotator extends StatelessWidget {
                     child: Container(
                       width: 20,
                       height: 20,
-                      color: kColorList[i].withOpacity(.25),
+                      color: kColorList.elementAtOrNull(i)!.withOpacity(.25),
                     ),
                   ),
                 ),

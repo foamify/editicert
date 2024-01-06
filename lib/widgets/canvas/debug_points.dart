@@ -1,9 +1,7 @@
 part of '../../main.dart';
 
 class DebugPoints extends StatelessWidget {
-  const DebugPoints({
-    super.key,
-  });
+  const DebugPoints({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +13,8 @@ class DebugPoints extends StatelessWidget {
             children: [
               for (var i = 0; i < state.length; i++)
                 Positioned(
-                  left: state[i].x,
-                  top: state[i].y,
+                  left: state.elementAtOrNull(i)!.x,
+                  top: state.elementAtOrNull(i)!.y,
                   child: AnimatedSlide(
                     duration: Duration.zero,
                     offset: const Offset(-.5, -.5),
@@ -25,14 +23,14 @@ class DebugPoints extends StatelessWidget {
                       height: 10,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: kColorList[i].shade900,
+                          color: kColorList.elementAtOrNull(i)!.shade900,
                           strokeAlign: BorderSide.strokeAlignOutside,
                         ),
                         shape: BoxShape.circle,
                       ),
                       foregroundDecoration: BoxDecoration(
                         border: Border.all(
-                          color: kColorList[i].shade100,
+                          color: kColorList.elementAtOrNull(i)!.shade100,
                         ),
                         shape: BoxShape.circle,
                       ),

@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 
-const sidebarPaddingSize = 16.0;
-const sidebarPaddingStep = 4.0;
-const sidebarPaddingHorizontal =
-    EdgeInsets.symmetric(horizontal: sidebarPaddingSize);
+const kSidebarPaddingSize = 16.0;
+const kSidebarPaddingStep = 4.0;
+const kSidebarPaddingHorizontal =
+    EdgeInsets.symmetric(horizontal: kSidebarPaddingSize);
 
 const kSidebarWidth = 240.0;
 const kTopbarHeight = 52.0;

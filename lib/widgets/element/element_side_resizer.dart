@@ -26,7 +26,7 @@ class ElementSideResizer extends StatelessWidget {
         final canvasTransform = canvasTransformCurrent()();
         final scale = canvasTransform.getMaxScaleOnAxis();
         final translate = canvasTransform.getTranslation();
-        final valueOffset = box.rotated.offsets[i] * scale;
+        final valueOffset = box.rotated.offsets.elementAtOrNull(i)! * scale;
         final offset = Offset(translate.x, translate.y) + valueOffset;
         return Positioned(
           left: offset.dx,
@@ -113,8 +113,11 @@ class ElementSideResizer extends StatelessWidget {
                       );
                       canvasElements.value = [...elements]..[index] = element;
                     },
-                    child:
-                        Container(width: 10, height: 10, color: kColorList[i]),
+                    child: Container(
+                      width: 10,
+                      height: 10,
+                      color: kColorList.elementAtOrNull(i),
+                    ),
                   ),
                 ),
               );
