@@ -598,7 +598,7 @@ class _CanvasInteractiveViewerState extends State<CanvasInteractiveViewer>
       return matrix.clone();
     }
 
-    late final Offset alignedTranslation;
+    final Offset alignedTranslation;
 
     if (_currentAxis != null) {
       switch (widget.panAxis) {

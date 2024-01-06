@@ -144,7 +144,7 @@ extension BoxExtension on Box {
   /// to the box without rotating the quad
   Box rotateByPan(Offset offset, [Alignment alignment = Alignment.center]) {
     final rotation = getAngleFromPoints(offset, rect.center) + pi;
-    late final double additionalAngle;
+    final double additionalAngle;
     if (alignment != Alignment.center) {
       final (double x, double y) = (flipX ? -1 : 1, flipY ? -1 : 1);
       final edge = alignment.alongSize(rect.size);
