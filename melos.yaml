@@ -1,0 +1,8 @@
+name: editicert
+
+packages:
+  - /
+
+scripts:
+  analyze:
+    exec: dart analyze .
