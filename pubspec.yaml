@@ -4,36 +4,30 @@ description: Certificate Editor & Batch Exporter
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.1.0 <4.0.0"
+  sdk: ">=3.3.0-174.3.beta <4.0.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
-
-  cupertino_icons: ^1.0.6
-  collection: ^1.17.2
-  transparent_pointer: ^1.0.0
-  flutter_launcher_icons: ^0.13.1
-  window_manager: ^0.3.7
-  macos_window_utils: ^1.4.0
-  touch_bar: ^0.3.0-alpha.1
-  super_drag_and_drop: ^0.8.1
   custom_mouse_cursor: ^1.1.0
   flex_color_picker: ^3.3.0
-  vector_math: ^2.1.4
-  equatable: ^2.0.5
-  signals: ^2.1.10
-  uuid: ^4.3.1
+  super_drag_and_drop: ^0.8.1
+  touch_bar: ^0.3.0-alpha.1
 
 dev_dependencies:
+  collection: ^1.17.2
+  dart_code_metrics_presets: ^2.5.0
+  equatable: ^2.0.5
+  flutter:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
-
-  build_runner: ^2.4.6
-  flutter_lints: ^2.0.3
-  dart_code_metrics_presets: ^2.5.0
+  macos_window_utils: ^1.4.0
+  signals: ^2.1.10
+  transparent_pointer: ^1.0.0
+  uuid: ^4.3.1
+  vector_math: ^2.1.4
   very_good_analysis: ^5.1.0
-  melos: ^3.4.0
+  window_manager: ^0.3.7
 
 flutter:
   uses-material-design: true
