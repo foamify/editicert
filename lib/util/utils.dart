@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 final _get = GetIt.I.get;
 final uuid = Uuid();
@@ -150,4 +151,20 @@ Offset getOffset(
     _ => Offset.zero,
   };
   return offset;
+}
+
+/// Returns whether there is an intersection between two lines.
+/// First two vectors [p1] and [p2] are the first line, and the second two
+/// vectors [p3] and [p4] are the second line.
+///
+/// [returns] whether there is an intersection or not
+bool isTwoLinesIntersetcing(Vector2 p1, Vector2 p2, Vector2 p3, Vector2 p4) {
+  final double t =
+      ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) /
+          ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
+  final double u =
+      ((p1.x - p3.x) * (p1.y - p2.y) - (p1.y - p3.y) * (p1.x - p2.x)) /
+          ((p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x));
+
+  return 0 <= t && t <= 1 && 0 <= u && u <= 1;
 }

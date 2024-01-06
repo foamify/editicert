@@ -201,3 +201,28 @@ extension Vector2Ex on Vector2 {
   ///     A [Offset] object with x and y of the [Vector2].
   Offset toOffset() => Offset(x, y);
 }
+
+/// Extension on the [Matrix4] class.
+extension Matrix4Ex on Matrix4 {
+  /// Return the scene point at the given viewport point.
+  Offset toScene(Offset viewportPoint) {
+    // On viewportPoint, perform the inverse transformation of the scene to get
+    // where the point would be in the scene before the transformation.
+    final inverseMatrix = Matrix4.inverted(this);
+    final untransformed = inverseMatrix.transform3(Vector3(
+      viewportPoint.dx,
+      viewportPoint.dy,
+      0,
+    ));
+    return Offset(untransformed.x, untransformed.y);
+  }
+
+  Offset fromScene(Offset scenePoint) {
+    final untransformed = transform3(Vector3(
+      scenePoint.dx,
+      scenePoint.dy,
+      0,
+    ));
+    return Offset(untransformed.x, untransformed.y);
+  }
+}

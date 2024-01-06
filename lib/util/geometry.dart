@@ -146,8 +146,9 @@ extension BoxExtension on Box {
     final rotation = getAngleFromPoints(offset, rect.center) + pi;
     late final double additionalAngle;
     if (alignment != Alignment.center) {
+      final (double x, double y) = (flipX ? -1 : 1, flipY ? -1 : 1);
       final edge = alignment.alongSize(rect.size);
-      additionalAngle = getAngleFromPoints(edge, localOrigin) + pi;
+      additionalAngle = getAngleFromPoints(edge.scale(x, y), localOrigin) + pi;
     } else {
       additionalAngle = 0;
     }
@@ -534,9 +535,5 @@ extension BoxExtension on Box {
     return atan2(point2.dy - point1.dy, point2.dx - point1.dx);
   }
 
-  Box clone() => Box(
-        quad: quad,
-        angle: angle,
-        origin: origin,
-      );
+  Box clone() => Box(quad: quad, angle: angle, origin: origin);
 }

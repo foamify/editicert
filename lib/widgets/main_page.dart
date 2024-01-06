@@ -1,35 +1,28 @@
 // ignore_for_file: avoid-unsafe-collection-methods
 
 import 'dart:math';
-import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:editicert/models/element_model.dart';
-import 'package:editicert/state/canvas_state.dart';
-import 'package:editicert/state/event_handler_bloc.dart';
-import 'package:editicert/state/pointers_cubit.dart';
-import 'package:editicert/state/state.dart';
+import 'package:editicert/models/snap_line.dart';
+import 'package:editicert/state/signal_state.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';
 import 'package:editicert/widgets/canvas_interactive_viewer.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 class MainPage extends StatefulWidget {
+  const MainPage();
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
   final _keyboardFocus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -39,6 +32,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
+    print('rebuild');
     return ColoredBox(
       color: const Color(0xFF333333),
       child: CallbackShortcuts(
@@ -59,25 +53,6 @@ class _MainPageState extends State<MainPage> {
               GestureDetector(
                 onTap: () {
                   canvasSelectedElement.value = null;
-                },
-              ),
-              Watch.builder(
-                builder: (context) {
-                  final state = debugPoints.value;
-                  return Stack(
-                    children: [
-                      for (var i = 0; i < state.length; i++)
-                        Positioned(
-                          left: state[i].x,
-                          top: state[i].y,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            color: colors[i],
-                          ),
-                        ),
-                    ],
-                  );
                 },
               ),
               // Watch.builder(
@@ -173,8 +148,7 @@ class _MainPageState extends State<MainPage> {
                       children: [
                         FilledButton(
                           onPressed: () {
-                            canvasElements.value = [...canvasElements()]
-                              ..add(ElementModel());
+                            canvasElements.add(ElementModel());
                           },
                           child: const Text('Add Box'),
                         ),
@@ -212,12 +186,67 @@ class _MainPageState extends State<MainPage> {
                   ),
                 ),
               ),
+
+              Watch.builder(
+                builder: (context) {
+                  final keys = canvasLogicalKeys();
+                  if (keys.contains(LogicalKeyboardKey.space)) {
+                    return const SizedBox.shrink();
+                  }
+                  return GestureDetector(
+                    onPanStart: (details) {
+                      batch(() {
+                        canvasTransformInitial.value =
+                            canvasTransformCurrent()();
+                        pointerPositionInitial.value =
+                            details.globalPosition.toVector2();
+                        isMarquee.value = true;
+                      });
+                    },
+                    onPanUpdate: (details) {
+                      pointerPositionCurrent.value =
+                          details.globalPosition.toVector2();
+
+                      final initialPoint = pointerPositionInitial();
+                      final currentPoint = pointerPositionCurrent();
+
+                      final initialTransform = canvasTransformInitial();
+                      if (initialTransform == null) return;
+                      final transform = canvasTransformCurrent()();
+
+                      final delta = initialTransform.fromScene(Offset.zero) -
+                          transform.fromScene(Offset.zero);
+
+                      debugPoints.value = [
+                        initialTransform
+                                .toScene(
+                                  initialTransform.fromScene(
+                                    initialPoint.toOffset() + delta,
+                                  ),
+                                )
+                                .toVector2() +
+                            delta.toVector2(),
+                        currentPoint,
+                      ];
+                    },
+                    onPanEnd: (details) {
+                      batch(() {
+                        canvasTransformInitial.value = null;
+                        isMarquee.value = false;
+                      });
+                      debugPoints.value = [];
+                    },
+                  );
+                },
+              ),
+
               TransparentPointer(
                 child: Material(
                   color: Colors.transparent,
                   child: Watch.builder(
                     builder: (context) {
                       final elements = canvasElements();
+                      print(elements.length);
                       final transform = canvasTransformCurrent()();
                       final scale = transform.getMaxScaleOnAxis();
                       final translate = transform.getTranslation();
@@ -230,53 +259,77 @@ class _MainPageState extends State<MainPage> {
                                 final hovered = canvasHoveredElement();
                                 final selected = canvasSelectedElement();
                                 final element = elements[i];
+                                final hoveredMultiple =
+                                    canvasHoveredMultipleElements()
+                                        .contains(element.id);
                                 final box = element.transform;
-                                final index = switch ((box.flipX, box.flipY)) {
+                                final alignmentIndex =
+                                    switch ((box.flipX, box.flipY)) {
                                   (false, false) => 0,
                                   (true, false) => 1,
                                   (false, true) => 3,
                                   _ => 2,
                                 };
+                                final valueOffset =
+                                    box.rotated.offsets[alignmentIndex] * scale;
                                 final offset =
-                                    box.rotated.offsets[index] * scale;
+                                    Offset(translate.x, translate.y) +
+                                        valueOffset;
                                 return Positioned(
-                                  left: translate.x,
-                                  top: translate.y,
+                                  left: offset.dx,
+                                  top: offset.dy,
                                   child: Transform.scale(
                                     scale: transform.getMaxScaleOnAxis(),
                                     alignment: Alignment.topLeft,
-                                    child: Transform.translate(
-                                      offset: offset,
-                                      child: Transform.rotate(
-                                        angle: box.angle * pi / 180,
-                                        alignment: Alignment.topLeft,
-                                        child: Transform.flip(
-                                          flipX: box.flipX,
-                                          flipY: box.flipY,
-                                          child: MouseRegion(
-                                            onEnter: (event) {
+                                    child: Transform.rotate(
+                                      angle: box.angle * pi / 180,
+                                      alignment: Alignment.topLeft,
+                                      child: Transform.flip(
+                                        flipX: box.flipX,
+                                        flipY: box.flipY,
+                                        child: MouseRegion(
+                                          onEnter: (event) {
+                                            canvasHoveredElement
+                                                .setHover(element.id);
+                                          },
+                                          onExit: (event) =>
                                               canvasHoveredElement
-                                                  .setHover(element.id);
+                                                  .clearHover(element.id),
+                                          child: GestureDetector(
+                                            onTap: () {
+                                              canvasSelectedElement.value =
+                                                  element.id;
                                             },
-                                            onExit: (event) =>
-                                                canvasHoveredElement
-                                                    .clearHover(element.id),
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                canvasSelectedElement.value =
-                                                    element.id;
-                                              },
-                                              child: Container(
-                                                key: ValueKey(element.id),
-                                                width: box.width,
-                                                height: box.height,
-                                                color: selected == element.id
-                                                    ? Colors.blueAccent
-                                                    : hovered == element.id
-                                                        ? Colors.blueAccent
-                                                        : element.data.color,
-                                                child: Text(element.id),
-                                              ),
+                                            onPanStart: (details) {
+                                              handleMoveStart(element, details);
+                                            },
+                                            onPanUpdate: (details) {
+                                              handleMoveUpdate(
+                                                element,
+                                                details,
+                                                elements,
+                                                i,
+                                              );
+                                            },
+                                            onPanEnd: (details) {
+                                              handleMoveEnd(
+                                                element,
+                                                box,
+                                                elements,
+                                                i,
+                                              );
+                                            },
+                                            child: Container(
+                                              key: ValueKey(element.id),
+                                              width: box.width,
+                                              height: box.height,
+                                              color: selected == element.id
+                                                  ? Colors.blueAccent
+                                                  : hovered == element.id ||
+                                                          hoveredMultiple
+                                                      ? Colors.blueAccent
+                                                      : element.data.color,
+                                              child: Text(element.id),
                                             ),
                                           ),
                                         ),
@@ -296,12 +349,132 @@ class _MainPageState extends State<MainPage> {
               for (var i = 0; i < 4; i++) buildEdgeRotators(i),
               for (var i = 0; i < 4; i++) buildSideResizers(i),
               for (var i = 0; i < 4; i++) buildEdgeResizers(i),
+              const SnapLinePainter(),
+              IgnorePointer(
+                child: Watch.builder(
+                  builder: (context) {
+                    final state = debugPoints.value;
+                    return Stack(
+                      children: [
+                        for (var i = 0; i < state.length; i++)
+                          Positioned(
+                            left: state[i].x,
+                            top: state[i].y,
+                            child: AnimatedSlide(
+                              duration: Duration.zero,
+                              offset: const Offset(-.5, -.5),
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: colors[i].shade900,
+                                    strokeAlign: BorderSide.strokeAlignOutside,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                foregroundDecoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: colors[i].shade100,
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              IgnorePointer(child: Watch.builder(builder: (context) {
+                final marquee = marqueeRect();
+                if (marquee == null) return const SizedBox.shrink();
+                return Transform.translate(
+                  offset: marquee.topLeft,
+                  child: Container(
+                    width: marquee.width,
+                    height: marquee.height,
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withOpacity(.5),
+                      border: Border.all(
+                        color: Color.alphaBlend(
+                          Colors.blueAccent.withOpacity(.5),
+                          Colors.blueAccent.withOpacity(.5),
+                        ),
+                        strokeAlign: BorderSide.strokeAlignOutside,
+                      ),
+                    ),
+                  ),
+                );
+              })),
             ],
           ),
         ),
       ),
     );
   }
+
+  // handlers
+
+  void handleMoveEnd(
+    ElementModel element,
+    Box box,
+    List<ElementModel> elements,
+    int index,
+  ) {
+    element
+      ..transform = Box(
+        quad: box.quad,
+        angle: box.angle,
+        origin: box.rect.center,
+      )
+      ..transform = element.transform.translate(
+        -element.transform.rotated.rect.center + box.rotated.rect.center,
+      );
+    canvasElements.value = [...elements]..[index] = element;
+  }
+
+  void handleMoveUpdate(
+    ElementModel element,
+    DragUpdateDetails details,
+    List<ElementModel> elements,
+    int index,
+  ) {
+    final initialBox = element.initialTransform!;
+    final flipX = initialBox.flipX ? -1.0 : 1.0;
+    final flipY = initialBox.flipY ? -1.0 : 1.0;
+    element.transform = initialBox.translate(details.delta.scale(flipX, flipY));
+    print(canvasElements.value.map((e) => e.id));
+    print(canvasElements.value.map((e) => e.transform.offset0));
+
+    final lines = snapLines();
+
+    if (lines.isNotEmpty) {
+      final shortestLineX = lines.where((element) => element.isSnapX).fold(
+            lines.first,
+            (value, element) => value.length < element.length ? value : element,
+          );
+
+      final shortestLineY = lines.where((element) => element.isSnapY).fold(
+            lines.first,
+            (value, element) => value.length < element.length ? value : element,
+          );
+
+      element.transform.translate(shortestLineX.delta.toOffset() / 2);
+      element.transform.translate(shortestLineY.delta.toOffset() / 2);
+    }
+
+    canvasElements.value = [...elements]..[index] = element;
+  }
+
+  void handleMoveStart(ElementModel element, DragStartDetails details) {
+    element.initialTransform = element.transform;
+    pointerPositionInitial.value = details.globalPosition.toVector2();
+  }
+
+  // handlers end
+  // controllers start
 
   Widget buildTranslator() {
     return Watch.builder(
@@ -316,66 +489,55 @@ class _MainPageState extends State<MainPage> {
         final scale = transform.getMaxScaleOnAxis();
         final translate = transform.getTranslation();
         final box = element.transform;
-        final index = switch ((box.flipX, box.flipY)) {
+        final alignmentIndex = switch ((box.flipX, box.flipY)) {
           (false, false) => 0,
           (true, false) => 1,
           (false, true) => 3,
           _ => 2,
         };
-        final offset = box.rotated.offsets[index] * scale;
+        final elementIndex = elements.indexOf(element);
+        final valueOffset = box.rotated.offsets[alignmentIndex] * scale;
+        final offset = Offset(translate.x, translate.y) + valueOffset;
         return Positioned(
-          left: translate.x,
-          top: translate.y,
+          left: offset.dx,
+          top: offset.dy,
           child: Transform.scale(
             scale: transform.getMaxScaleOnAxis(),
             alignment: Alignment.topLeft,
-            child: Transform.translate(
-              offset: offset,
-              child: Transform.rotate(
-                angle: box.angle * pi / 180,
-                alignment: Alignment.topLeft,
-                child: Transform.flip(
-                  flipX: box.flipX,
-                  flipY: box.flipY,
-                  child: MouseRegion(
-                    onEnter: (event) {
-                      canvasHoveredElement.setHover(element.id);
+            child: Transform.rotate(
+              angle: box.angle * pi / 180,
+              alignment: Alignment.topLeft,
+              child: Transform.flip(
+                flipX: box.flipX,
+                flipY: box.flipY,
+                child: MouseRegion(
+                  onEnter: (event) {
+                    canvasHoveredElement.setHover(element.id);
+                  },
+                  onExit: (event) =>
+                      canvasHoveredElement.clearHover(element.id),
+                  child: GestureDetector(
+                    onPanStart: (details) {
+                      canvasIsMovingSelected.value = true;
+                      handleMoveStart(element, details);
                     },
-                    onExit: (event) =>
-                        canvasHoveredElement.clearHover(element.id),
-                    child: GestureDetector(
-                      onTap: () {
-                        canvasSelectedElement.value = element.id;
-                      },
-                      onPanStart: (details) {
-                        element.initialTransform = element.transform;
-                        pointerPositionInitial.value =
-                            details.globalPosition.toVector2;
-                      },
-                      onPanUpdate: (details) {
-                        final initialBox = element.initialTransform!;
-                        element.transform = initialBox.translate(details.delta);
-                        canvasElements.value = [...elements]..[index] = element;
-                      },
-                      onPanEnd: (details) {
-                        element
-                          ..transform = Box(
-                            quad: box.quad,
-                            angle: box.angle,
-                            origin: box.rect.center,
-                          )
-                          ..transform = element.transform.translate(
-                            -element.transform.rotated.rect.center +
-                                box.rotated.rect.center,
-                          );
-                        canvasElements.value = [...elements]..[index] = element;
-                      },
-                      child: Container(
-                        key: ValueKey(element.id),
-                        width: box.width,
-                        height: box.height,
-                        color: Colors.transparent,
-                      ),
+                    onPanUpdate: (details) {
+                      handleMoveUpdate(
+                        element,
+                        details,
+                        elements,
+                        elementIndex,
+                      );
+                    },
+                    onPanEnd: (details) {
+                      canvasIsMovingSelected.value = false;
+                      handleMoveEnd(element, box, elements, elementIndex);
+                    },
+                    child: Container(
+                      key: ValueKey(element.id),
+                      width: box.width,
+                      height: box.height,
+                      color: Colors.transparent,
                     ),
                   ),
                 ),
@@ -387,11 +549,11 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Widget buildEdgeRotators(
-    int i,
-  ) {
+  Widget buildEdgeRotators(int i) {
     return Watch.builder(
       builder: (context) {
+        final isMoving = canvasIsMovingSelected();
+        if (isMoving) return const SizedBox.shrink();
         final elements = canvasElements();
         final selected = canvasSelectedElement();
         final elementIndexed = elements.indexed.firstWhereOrNull(
@@ -447,11 +609,11 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Widget buildEdgeResizers(
-    int i,
-  ) {
+  Widget buildEdgeResizers(int i) {
     return Watch.builder(
       builder: (context) {
+        final isMoving = canvasIsMovingSelected();
+        if (isMoving) return const SizedBox.shrink();
         final elements = canvasElements();
         final selected = canvasSelectedElement();
         final elementIndexed = elements.indexed.firstWhereOrNull(
@@ -488,7 +650,7 @@ class _MainPageState extends State<MainPage> {
                     onPanStart: (details) => setState(() {
                       element.initialTransform = element.transform;
                       pointerPositionInitial.value =
-                          transform.toScene(details.localPosition).toVector2;
+                          transform.toScene(details.localPosition).toVector2();
                     }),
                     onPanUpdate: (details) {
                       final keys = canvasLogicalKeys.value;
@@ -507,7 +669,7 @@ class _MainPageState extends State<MainPage> {
 
                       final initialBox = element.initialTransform!;
                       final initialPosition =
-                          pointerPositionInitial.value().toOffset();
+                          pointerPositionInitial().toOffset();
 
                       if (pressedShift && pressedAlt) {
                         element.transform = box.resizeSymmetricScaled(
@@ -564,11 +726,11 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  Widget buildSideResizers(
-    int i,
-  ) {
+  Widget buildSideResizers(int i) {
     return Watch.builder(
       builder: (context) {
+        final isMoving = canvasIsMovingSelected();
+        if (isMoving) return const SizedBox.shrink();
         final elements = canvasElements();
         final selected = canvasSelectedElement();
         final elementIndexed = elements.indexed.firstWhereOrNull(
@@ -619,7 +781,7 @@ class _MainPageState extends State<MainPage> {
                       element.initialTransform = element.transform;
                       canvasElements.value = [...elements]..[index] = element;
                       pointerPositionInitial.value =
-                          transform.toScene(details.localPosition).toVector2;
+                          transform.toScene(details.localPosition).toVector2();
                     }),
                     onPanUpdate: (details) {
                       final keys = canvasLogicalKeys.value;
@@ -638,7 +800,7 @@ class _MainPageState extends State<MainPage> {
 
                       final initialBox = element.initialTransform!;
                       final initialPosition =
-                          pointerPositionInitial.value().toOffset();
+                          pointerPositionInitial().toOffset();
 
                       if (pressedShift && pressedAlt) {
                         element.transform = box.resizeSymmetricScaled(
@@ -704,6 +866,69 @@ class _MainPageState extends State<MainPage> {
       },
     );
   }
+
+  // controllers end
 }
 
 final colors = [Colors.red, Colors.green, Colors.blue, Colors.yellow];
+
+// ignore: prefer-single-widget-per-file
+class SnapLinePainter extends StatelessWidget {
+  const SnapLinePainter({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Watch.builder(
+      builder: (context) {
+        final lines = [...snapLines()];
+
+        if (lines.isEmpty) {
+          return const SizedBox();
+        }
+
+        final shortestLineX = lines.where((element) => element.isSnapX).fold(
+              lines.first,
+              (value, element) =>
+                  value.length < element.length ? value : element,
+            );
+
+        final shortestLineY = lines.where((element) => element.isSnapY).fold(
+              lines.first,
+              (value, element) =>
+                  value.length < element.length ? value : element,
+            );
+
+        final transform = canvasTransformCurrent()();
+        return CustomPaint(
+          painter: _SnapLinePainter([shortestLineX, shortestLineY], transform),
+        );
+      },
+    );
+  }
+}
+
+class _SnapLinePainter extends CustomPainter {
+  const _SnapLinePainter(this.lines, this.transform);
+
+  final List<SnapLine> lines;
+
+  final Matrix4 transform;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.redAccent
+      ..strokeWidth = .5;
+
+    for (final line in lines) {
+      canvas.drawLine(
+        transform.fromScene(line.pos1.toOffset()),
+        transform.fromScene(line.pos2.toOffset()),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
