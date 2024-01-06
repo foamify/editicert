@@ -27,59 +27,61 @@ final marqueeRect = computed(() {
     (rect.bottomLeft.toVector2(), rect.topLeft.toVector2()),
   ].map((e) => (e.$1, e.$2)).toList();
 
-  for (final element in canvasElements()) {
-    final linesElement = [
-      (
-        element.transform.rotated.offset0.toVector2(),
-        element.transform.rotated.offset1.toVector2(),
-      ),
-      (
-        element.transform.rotated.offset1.toVector2(),
-        element.transform.rotated.offset2.toVector2(),
-      ),
-      (
-        element.transform.rotated.offset2.toVector2(),
-        element.transform.rotated.offset3.toVector2(),
-      ),
-      (
-        element.transform.rotated.offset3.toVector2(),
-        element.transform.rotated.offset0.toVector2(),
-      ),
-    ]
-        .map(
-          (e) => (
-            fromScene(e.$1.toOffset()).toVector2(),
-            fromScene(e.$2.toOffset()).toVector2(),
-          ),
-        )
-        .toList();
+  batch(() {
+    for (final element in canvasElements()) {
+      final linesElement = [
+        (
+          element.transform.rotated.offset0.toVector2(),
+          element.transform.rotated.offset1.toVector2(),
+        ),
+        (
+          element.transform.rotated.offset1.toVector2(),
+          element.transform.rotated.offset2.toVector2(),
+        ),
+        (
+          element.transform.rotated.offset2.toVector2(),
+          element.transform.rotated.offset3.toVector2(),
+        ),
+        (
+          element.transform.rotated.offset3.toVector2(),
+          element.transform.rotated.offset0.toVector2(),
+        ),
+      ]
+          .map(
+            (e) => (
+              fromScene(e.$1.toOffset()).toVector2(),
+              fromScene(e.$2.toOffset()).toVector2(),
+            ),
+          )
+          .toList();
 
-    var intersect = false;
-    var offsetInside = 0;
+      var intersect = false;
+      var offsetInside = 0;
 
-    for (final element1 in linesElement) {
-      if (intersect) continue;
-      for (final element2 in linesRect) {
+      for (final element1 in linesElement) {
         if (intersect) continue;
-        intersect = isTwoLinesIntersetcing(
-          element1.$1,
-          element1.$2,
-          element2.$1,
-          element2.$2,
-        );
+        for (final element2 in linesRect) {
+          if (intersect) continue;
+          intersect = isTwoLinesIntersetcing(
+            element1.$1,
+            element1.$2,
+            element2.$1,
+            element2.$2,
+          );
+        }
+      }
+
+      element.transform.rotated.offsets.map(fromScene).forEach((e) {
+        if (rect.contains(e)) {
+          offsetInside++;
+        }
+      });
+
+      //TODO: change 4 to number of polygon
+      if (intersect || offsetInside == 4) {
+        canvasHoveredMultipleElements.peek().add(element.id);
       }
     }
-
-    element.transform.rotated.offsets.map(fromScene).forEach((e) {
-      if (rect.contains(e)) {
-        offsetInside++;
-      }
-    });
-
-    //TODO: change 4 to number of polygon
-    if (intersect || offsetInside == 4) {
-      canvasHoveredMultipleElements.peek().add(element.id);
-    }
-  }
+  });
   return rect;
 });
