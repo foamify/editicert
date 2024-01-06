@@ -163,20 +163,20 @@ final marqueeRect = computed(() {
   for (final element in canvasElements()) {
     final linesElement = [
       (
-        element.transform.rect.topLeft.toVector2(),
-        element.transform.rect.topRight.toVector2(),
+        element.transform.rotated.offset0.toVector2(),
+        element.transform.rotated.offset1.toVector2(),
       ),
       (
-        element.transform.rect.topRight.toVector2(),
-        element.transform.rect.bottomRight.toVector2(),
+        element.transform.rotated.offset1.toVector2(),
+        element.transform.rotated.offset2.toVector2(),
       ),
       (
-        element.transform.rect.bottomRight.toVector2(),
-        element.transform.rect.bottomLeft.toVector2(),
+        element.transform.rotated.offset2.toVector2(),
+        element.transform.rotated.offset3.toVector2(),
       ),
       (
-        element.transform.rect.bottomLeft.toVector2(),
-        element.transform.rect.topLeft.toVector2(),
+        element.transform.rotated.offset3.toVector2(),
+        element.transform.rotated.offset0.toVector2(),
       ),
     ];
 
