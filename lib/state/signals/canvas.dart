@@ -24,11 +24,13 @@ final canvasTransformCurrent =
 final canvasLogicalKeys = signal(<LogicalKeyboardKey>{});
 
 /// All elements in the canvas
-final canvasElements = signal(<ElementModel>[]);
+final canvasElements = mapSignal(<String, ValueSignal<ElementModel>>{});
 
 final _canvasHoveredElement = signal<String?>('');
 // ignore: public_member_api_docs
 const canvasHoveredElement = CanvasHoveredElement();
+
+final canvasIds = iterableSignal(<String>[]);
 
 // ignore: public_member_api_docs
 final class CanvasHoveredElement implements SignalState<String?> {
@@ -69,12 +71,17 @@ final debugPoints = signal(<Vector2>[]);
 /// Snap lines for the selected element
 final snapLines = computed<Iterable<SnapLine>>(() {
   // TODO: make work for moving element, not selected element
-  final selected = canvasElements()
-      .firstWhereOrNull((element) => element.id == canvasSelectedElement());
+  final selected = canvasElements[canvasSelectedElement()]?.call();
   if (selected == null) return [];
-  return [...canvasElements().whereNot((element) => element.id == selected.id)]
+  return ([...canvasElements.keys]..remove(canvasSelectedElement()))
       .map((e) {
-        final originalPoints = e.transform.rotated;
+        final element = canvasElements[e]?.call();
+        if (element == null) {
+          return [
+            [null],
+          ];
+        }
+        final originalPoints = element.transform.rotated;
         final points = <Vector2>[
           ...originalPoints.offsets.map((e) => e.toVector2()),
           getMiddleOffset(originalPoints.offset0, originalPoints.offset1)

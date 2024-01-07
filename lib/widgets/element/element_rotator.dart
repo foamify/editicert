@@ -5,7 +5,7 @@ class ElementRotator extends StatelessWidget {
   /// Rotates the selected element
   const ElementRotator(this.i, {super.key});
 
-  /// The index of the selected element in the [canvasElements]
+  /// The index of the alignment
   final int i;
 
   @override
@@ -14,13 +14,9 @@ class ElementRotator extends StatelessWidget {
       builder: (_) {
         final isMoving = canvasIsMovingSelected();
         if (isMoving) return const SizedBox.shrink();
-        final elements = canvasElements();
         final selected = canvasSelectedElement();
-        final elementIndexed = elements.indexed.firstWhereOrNull(
-          (element) => element.$2.id == selected,
-        );
-        if (elementIndexed == null) return const SizedBox.shrink();
-        final (index, element) = elementIndexed;
+        final element = canvasElements[selected]?.call();
+        if (element == null) return const SizedBox.shrink();
         final box = element.transform;
         //--
         final canvasTransform = canvasTransformCurrent()();
@@ -52,7 +48,7 @@ class ElementRotator extends StatelessWidget {
                         transform.toScene(event.globalPosition),
                         alignment,
                       );
-                      canvasElements.value = [...elements]..[index] = element;
+                      canvasElements[element.id]?.forceUpdate(element);
                     },
                     child: Container(
                       width: 20,

@@ -14,13 +14,9 @@ class ElementSideResizer extends StatelessWidget {
       builder: (_) {
         final isMoving = canvasIsMovingSelected();
         if (isMoving) return const SizedBox.shrink();
-        final elements = canvasElements();
         final selected = canvasSelectedElement();
-        final elementIndexed = elements.indexed.firstWhereOrNull(
-          (element) => element.$2.id == selected,
-        );
-        if (elementIndexed == null) return const SizedBox.shrink();
-        final (index, element) = elementIndexed;
+        final element = canvasElements[selected]?.call();
+        if (element == null) return const SizedBox.shrink();
         final box = element.transform;
         //--
         final canvasTransform = canvasTransformCurrent()();
@@ -100,7 +96,7 @@ class ElementSideResizer extends StatelessWidget {
                           alignment,
                         );
                       }
-                      canvasElements.value = [...elements]..[index] = element;
+                      canvasElements[element.id]?.forceUpdate(element);
                     },
                     onPanEnd: (details) {
                       element.transform = Box(
@@ -111,7 +107,7 @@ class ElementSideResizer extends StatelessWidget {
                         -element.transform.rotated.rect.center +
                             box.rotated.rect.center,
                       );
-                      canvasElements.value = [...elements]..[index] = element;
+                      canvasElements[element.id]?.forceUpdate(element);
                     },
                     child: Container(
                       width: 10,

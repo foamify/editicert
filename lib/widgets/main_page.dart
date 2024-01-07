@@ -55,13 +55,14 @@ class _MainPageState extends State<MainPage> {
                   color: Colors.transparent,
                   child: Watch.builder(
                     builder: (_) {
-                      final elements = canvasElements();
+                      print('build');
+                      final elements = canvasElements.values;
                       return Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          for (var i = 0; i < elements.length; i++)
+                          for (final e in elements)
                             ElementTranslator(
-                              index: i,
+                              id: e().id,
                               builder: (
                                 _,
                                 element, {
@@ -117,7 +118,8 @@ class _MainPageState extends State<MainPage> {
                       children: [
                         FilledButton(
                           onPressed: () {
-                            canvasElements.add(ElementModel());
+                            final e = ElementModel();
+                            canvasElements.addAll({e.id: ValueSignal(e)});
                           },
                           child: const Text('Add Box'),
                         ),
@@ -125,9 +127,12 @@ class _MainPageState extends State<MainPage> {
                         FilledButton(
                           onPressed: () {
                             batch(() {
-                              for (var i = 0; i < 50; i++) {
-                                canvasElements.add(ElementModel());
-                              }
+                              final elements =
+                                  List.generate(50, (index) => ElementModel());
+                              canvasElements.addEntries(
+                                elements
+                                    .map((e) => MapEntry(e.id, ValueSignal(e))),
+                              );
                             });
                           },
                           child: const Text('Add 50 Box'),
@@ -135,16 +140,14 @@ class _MainPageState extends State<MainPage> {
                         const SizedBox.square(dimension: 12),
                         FilledButton(
                           onPressed: () {
-                            canvasElements.value = [...canvasElements()]
-                              ..removeLast();
+                            final last = canvasElements.keys.last;
+                            canvasElements.remove(last);
                           },
                           child: const Text('Remove Last Box'),
                         ),
                         const SizedBox.square(dimension: 12),
                         FilledButton(
-                          onPressed: () {
-                            canvasElements.value = [];
-                          },
+                          onPressed: canvasElements.clear,
                           child: const Text('Clear Box'),
                         ),
                         const SizedBox.square(dimension: 12),
@@ -152,9 +155,7 @@ class _MainPageState extends State<MainPage> {
                           builder: (_) {
                             final selected = canvasSelectedElement();
                             final elements = canvasElements();
-                            final element = elements.firstWhereOrNull(
-                              (e) => e.id == selected,
-                            );
+                            final element = elements[selected]?.call();
                             if (element == null) return const SizedBox.shrink();
                             return Text(
                               [
@@ -194,18 +195,20 @@ class _MainPageState extends State<MainPage> {
                         itemCount: elements.length,
                         itemBuilder: (_, index) {
                           return [
-                            ...elements.map(
-                              (e) => Watch.builder(
+                            ...elements.values.map((el) {
+                              final e = el();
+
+                              return Watch.builder(
                                 key: ValueKey(e.id),
                                 builder: (_) {
-                                  final hovered = canvasHoveredElement() ==
-                                      elements[index].id;
+                                  final hovered =
+                                      canvasHoveredElement() == e.id;
                                   final multiHovered =
                                       canvasHoveredMultipleElements()
-                                          .contains(elements[index].id);
+                                          .contains(e.id);
                                   final isHovered = hovered || multiHovered;
-                                  final selected = canvasSelectedElement() ==
-                                      elements[index].id;
+                                  final selected =
+                                      canvasSelectedElement() == e.id;
                                   return MouseRegion(
                                     onEnter: (event) =>
                                         canvasHoveredElement.value = e.id,
@@ -246,8 +249,9 @@ class _MainPageState extends State<MainPage> {
                                                     const EdgeInsets.all(8),
                                                 child: SizedBox(
                                                   width: double.infinity,
-                                                  child:
-                                                      Text(e.id.split('-')[1]),
+                                                  child: Text(
+                                                    e.id.split('-')[1],
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -257,8 +261,8 @@ class _MainPageState extends State<MainPage> {
                                     ),
                                   );
                                 },
-                              ),
-                            ),
+                              );
+                            }),
                           ][index];
                         },
                         onReorder: (int oldIndex, int newIndex) {
@@ -266,9 +270,9 @@ class _MainPageState extends State<MainPage> {
                           if (oldIndex < newIndex) {
                             newIndex -= 1;
                           }
-                          canvasElements.value = [...elements]
-                            ..removeAt(oldIndex)
-                            ..insert(newIndex, elements[oldIndex]);
+                          // canvasElements.value = [...elements]
+                          //   ..removeAt(oldIndex)
+                          //   ..insert(newIndex, elements[oldIndex]);
                         },
                       );
                     },

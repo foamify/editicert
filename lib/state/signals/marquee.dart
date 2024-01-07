@@ -28,7 +28,8 @@ final marqueeRect = computed(() {
   ].map((e) => (e.$1, e.$2)).toList();
 
   final ids = <String>[];
-  for (final element in canvasElements()) {
+  for (final e in canvasElements.values) {
+    final element = e();
     final linesElement = [
       (
         element.transform.rotated.offset0.toVector2(),
