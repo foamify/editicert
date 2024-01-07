@@ -11,24 +11,26 @@ typedef ElementTranslatorBuilder = Widget Function(
 /// Translates the selected/provided element
 class ElementTranslator extends StatelessWidget {
   /// Translates the selected/provided element.
-  const ElementTranslator({required this.builder, super.key, this.id});
+  const ElementTranslator({required this.builder, super.key, this.index});
 
   /// The builder that builds the widget
   final ElementTranslatorBuilder builder;
 
   /// Optional: The index of the selected element in the [canvasElements].
   /// If not provided, the [canvasSelectedElement] is used
-  final String? id;
+  final int? index;
 
   @override
   Widget build(BuildContext context) {
     return Watch.builder(
-      builder: (context) {
+      builder: (_) {
         final elements = canvasElements();
         final selected = canvasSelectedElement();
-        final e = id == null ? elements[selected] : elements[id!];
-        if (e == null) return const SizedBox.shrink();
-        final element = e();
+        final element = index == null
+            ? elements.firstWhereOrNull((e) => e.id == selected)
+            : elements.elementAtOrNull(index!);
+        if (element == null) return const SizedBox.shrink();
+        final elementIndex = index ?? elements.indexOf(element);
 
         final transform = canvasTransformCurrent()();
         final scale = transform.getMaxScaleOnAxis();
@@ -73,11 +75,16 @@ class ElementTranslator extends StatelessWidget {
                       handleMoveStart(element, details);
                     },
                     onPanUpdate: (details) {
-                      handleMoveUpdate(element, details);
+                      handleMoveUpdate(
+                        element,
+                        details,
+                        elements,
+                        elementIndex,
+                      );
                     },
                     onPanEnd: (details) {
                       canvasIsMovingSelected.value = false;
-                      handleMoveEnd(element, box);
+                      handleMoveEnd(element, box, elements, elementIndex);
                     },
                     child: builder(
                       context,

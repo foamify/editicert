@@ -12,7 +12,12 @@ void handleMoveStart(ElementModel element, DragStartDetails details) {
 }
 
 /// Update the element position and handles snapping.
-void handleMoveUpdate(ElementModel element, DragUpdateDetails details) {
+void handleMoveUpdate(
+  ElementModel element,
+  DragUpdateDetails details,
+  List<ElementModel> elements,
+  int index,
+) {
   final initialBox = element.initialTransform!.clone();
   final delta = (details.globalPosition.toVector2() - pointerPositionInitial())
       .toOffset();
@@ -36,11 +41,16 @@ void handleMoveUpdate(ElementModel element, DragUpdateDetails details) {
     element.transform.translate(shortestLineY.delta.toOffset() / 2);
   }
 
-  canvasElements[element.id]?.forceUpdate(element);
+  canvasElements.value = [...elements]..[index] = element;
 }
 
 /// End moving the element.
-void handleMoveEnd(ElementModel element, Box box) {
+void handleMoveEnd(
+  ElementModel element,
+  Box box,
+  List<ElementModel> elements,
+  int index,
+) {
   element.transform = Box(
     quad: box.quad,
     angle: box.angle,
@@ -48,5 +58,5 @@ void handleMoveEnd(ElementModel element, Box box) {
   ).translate(
     -element.transform.rotated.rect.center + box.rotated.rect.center,
   );
-  canvasElements[element.id]?.forceUpdate(element);
+  canvasElements.value = [...elements]..[index] = element;
 }
