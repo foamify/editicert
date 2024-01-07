@@ -7,7 +7,7 @@ import 'package:flutter/gestures.dart';
 
 /// Start moving the element.
 void handleMoveStart(ElementModel element, DragStartDetails details) {
-  element.initialTransform = element.transform;
+  element.initialTransform = element.transform.clone();
   pointerPositionInitial.value = details.globalPosition.toVector2();
 }
 
@@ -18,10 +18,11 @@ void handleMoveUpdate(
   List<ElementModel> elements,
   int index,
 ) {
-  final initialBox = element.initialTransform!;
-  final flipX = initialBox.flipX ? -1.0 : 1.0;
-  final flipY = initialBox.flipY ? -1.0 : 1.0;
-  element.transform = initialBox.translate(details.delta.scale(flipX, flipY));
+  final initialBox = element.initialTransform!.clone();
+  final delta = (details.globalPosition.toVector2() - pointerPositionInitial())
+      .toOffset();
+  final scale = canvasTransformCurrent()().getMaxScaleOnAxis();
+  element.transform = initialBox.translate(delta / scale);
 
   final lines = snapLines();
 

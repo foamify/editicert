@@ -535,5 +535,5 @@ extension BoxExtension on Box {
     return atan2(point2.dy - point1.dy, point2.dx - point1.dx);
   }
 
-  Box clone() => Box(quad: quad, angle: angle, origin: origin);
+  Box clone() => Box(quad: Quad.copy(quad), angle: angle, origin: origin);
 }
