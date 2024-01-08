@@ -52,7 +52,7 @@ class _SnapLinePainter extends CustomPainter {
     for (final line in lines) {
       canvas.drawLine(
         transform.fromScene(line.pos1.toOffset()),
-        transform.fromScene(line.pos2.toOffset()),
+        transform.fromScene(line.pos2Snapped.toOffset()),
         paint,
       );
     }

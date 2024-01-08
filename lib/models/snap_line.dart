@@ -3,23 +3,28 @@ import 'package:vector_math/vector_math_64.dart';
 /// Represents an alignment line between two positions.
 class SnapLine {
   /// Creates a [SnapLine] with the given positions.
-  const SnapLine(this.pos1, this.pos2, {required this.isSnapX});
+  const SnapLine(
+    this.pos1,
+    this.pos2, {
+    required this.isSnapX,
+    required this.isSnapY,
+  });
 
-  /// First pos
+  /// First pos, the snapped point
   final Vector2 pos1;
 
-  /// Second pos
+  /// Second pos, the element point
   final Vector2 pos2;
 
   /// Whether the line is horizontal
   final bool isSnapX;
+
+  /// Whether the line is vertical
+  final bool isSnapY;
 }
 
 /// Extension on [SnapLine]
 extension SnapLineExtension on SnapLine {
-  /// Whether the line is vertical
-  bool get isSnapY => !isSnapX;
-
   /// The length of the line
   double get length {
     if (isSnapX) {
@@ -30,12 +35,15 @@ extension SnapLineExtension on SnapLine {
 
   /// Creates a [SnapLine] with the given positions.
   Vector2 get delta {
-    Vector2 output;
+    final output = Vector2.zero();
     if (isSnapX) {
-      output = Vector2(pos1.x - pos2.x, 0);
+      output.x = pos1.x - pos2.x;
     } else {
-      output = Vector2(0, pos1.y - pos2.y);
+      output.y = pos1.y - pos2.y;
     }
     return output;
   }
+
+  Vector2 get pos2Snapped =>
+      isSnapX ? Vector2(pos1.x, pos2.y) : Vector2(pos2.x, pos1.y);
 }

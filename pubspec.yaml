@@ -9,6 +9,9 @@ environment:
 dependencies:
   custom_mouse_cursor: ^1.1.0
   flex_color_picker: ^3.3.0
+  flutter_rust_bridge: 2.0.0-dev.14
+  rust_builder:
+    path: rust_builder
   super_drag_and_drop: ^0.8.1
   touch_bar: ^0.3.0-alpha.1
 
@@ -16,9 +19,9 @@ dev_dependencies:
   collection: ^1.17.2
   dart_code_metrics_presets: ^2.5.0
   equatable: ^2.0.5
+  ffigen: ^8.0.2
   flutter:
     sdk: flutter
-  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
   macos_window_utils: ^1.4.0

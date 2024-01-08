@@ -55,8 +55,8 @@ final class CanvasHoveredElement implements SignalState<String?> {
 
 final canvasSelectedElement = signal<String?>('');
 
-final canvasHoveredMultipleElements = signal(<String>{});
-final canvasSelectedMultipleElements = signal(<String>{});
+final canvasHoveredMultipleElements = iterableSignal(<String>{});
+final canvasSelectedMultipleElements = iterableSignal(<String>{});
 
 /// Whether the canvas is moving an element
 /// Hides the resize/rotate handles of the element visually
@@ -67,51 +67,4 @@ final canvasIsMovingSelected = signal(false);
 final debugPoints = signal(<Vector2>[]);
 
 /// Snap lines for the selected element
-final snapLines = computed<Iterable<SnapLine>>(() {
-  // TODO: make work for moving element, not selected element
-  final selected = canvasElements()
-      .firstWhereOrNull((element) => element.id == canvasSelectedElement());
-  if (selected == null) return [];
-  return [...canvasElements().whereNot((element) => element.id == selected.id)]
-      .map((e) {
-        final originalPoints = e.transform.rotated;
-        final points = <Vector2>[
-          ...originalPoints.offsets.map((e) => e.toVector2()),
-          getMiddleOffset(originalPoints.offset0, originalPoints.offset1)
-              .toVector2(),
-          getMiddleOffset(originalPoints.offset2, originalPoints.offset1)
-              .toVector2(),
-          getMiddleOffset(originalPoints.offset3, originalPoints.offset2)
-              .toVector2(),
-          getMiddleOffset(originalPoints.offset0, originalPoints.offset3)
-              .toVector2(),
-          getMiddleOffset(originalPoints.offset0, originalPoints.offset2)
-              .toVector2(),
-        ];
-        final selectedBox = selected.transform.rotated;
-
-        final selectedPoints = <Vector2>[
-          ...selectedBox.offsets.map((e) => e.toVector2()),
-          getMiddleOffset(selectedBox.offset0, selectedBox.offset1).toVector2(),
-          getMiddleOffset(selectedBox.offset2, selectedBox.offset1).toVector2(),
-          getMiddleOffset(selectedBox.offset3, selectedBox.offset2).toVector2(),
-          getMiddleOffset(selectedBox.offset0, selectedBox.offset3).toVector2(),
-          getMiddleOffset(selectedBox.offset0, selectedBox.offset2).toVector2(),
-        ];
-
-        final closest = selectedPoints.map((e) {
-          return points.map((element) {
-            final isSnapX = (e.x - element.x).abs() < kSnapRadius;
-            final isSnapY = (e.y - element.y).abs() < kSnapRadius;
-            if (isSnapX || isSnapY) {
-              return SnapLine(element, e, isSnapX: isSnapX);
-            }
-            return null;
-          });
-        });
-        return closest;
-      })
-      .flattened
-      .flattened
-      .whereNotNull();
-});
+final snapLines = iterableSignal(<SnapLine>[]);

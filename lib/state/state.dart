@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:editicert/models/canvas_data.dart';
 import 'package:editicert/models/element_model.dart';
 import 'package:editicert/models/snap_line.dart';
+import 'package:editicert/src/rust/api/canvas.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';

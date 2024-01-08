@@ -1,5 +1,6 @@
 // ignore_for_file: prefer-match-file-name
 
+import 'package:editicert/src/rust/api/canvas.dart';
 import 'package:flutter/services.dart';
 import 'package:vector_math/vector_math_64.dart';
 
@@ -67,6 +68,12 @@ extension Vector2Ex on Vector2 {
   /// Returns:
   ///     A [Offset] object with x and y of the [Vector2].
   Offset toOffset() => Offset(x, y);
+
+  /// Converts the current object to a [Point] object.
+  ///
+  /// Returns:
+  ///     A [Point] object with x and y of the [Vector2].
+  CanvasPoint toPoint() => CanvasPoint(x: x, y: y);
 }
 
 /// Extension on the [Matrix4] class.

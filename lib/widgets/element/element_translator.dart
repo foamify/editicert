@@ -48,7 +48,7 @@ class ElementTranslator extends StatelessWidget {
 
         final isSelected = canvasSelectedElement() == element.id;
         final isHovered = canvasHoveredElement() == element.id ||
-            canvasHoveredMultipleElements().contains(element.id);
+            canvasHoveredMultipleElements.contains(element.id);
 
         return Positioned(
           left: offset.dx,

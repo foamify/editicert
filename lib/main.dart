@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:editicert/models/element_model.dart';
 import 'package:editicert/models/snap_line.dart';
+import 'package:editicert/src/rust/frb_generated.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/element/translate.dart';
@@ -39,6 +40,7 @@ part 'widgets/element/element_side_resizer.dart';
 part 'widgets/element/element_edge_resizer.dart';
 
 void main() async {
+  await RustLib.init();
   WidgetsFlutterBinding.ensureInitialized();
   if (!kIsWeb) {
     await windowManager.ensureInitialized();
