@@ -12,6 +12,7 @@ import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/element/translate.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';
+import 'package:editicert/util/utils.dart';
 import 'package:editicert/widgets/canvas_interactive_viewer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ import 'package:macos_window_utils/macos_window_utils.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:vector_math/vector_math_64.dart' hide Colors;
 
 // part 'widgets/controller_widget.dart';
 // part 'widgets/creator_widget.dart';
