@@ -93,10 +93,6 @@ void handleMoveUpdate(
           (value, e) => value.length < e.length ? value : e,
         );
 
-    print('lines');
-    print([shortestLineX.pos1, shortestLineX.pos2, shortestLineX.isSnapX]);
-    print([shortestLineY.pos1, shortestLineY.pos2, shortestLineX.isSnapY]);
-    print(element.transform);
     final snapDelta = Offset(shortestLineX.delta.x, shortestLineY.delta.y);
     element.transform = element.transform.translate(snapDelta);
   }

@@ -14,6 +14,7 @@ class MarqueeWidget extends StatelessWidget {
           return const SizedBox.shrink();
         }
         return GestureDetector(
+          supportedDevices: const {PointerDeviceKind.mouse},
           onPanStart: (details) {
             batch(() {
               canvasTransformInitial.value = canvasTransformCurrent()();
