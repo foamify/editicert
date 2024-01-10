@@ -582,11 +582,16 @@ Quad quadFromLine(Vector2 a, Vector2 c, double angle) {
 Vector2 snapPointToLine(Vector2 end1, Vector2 end2, Vector2 point) {
   final angle1 = getAngleFromPoints(end1.toOffset(), end2.toOffset()) + pi;
   final angle2 = getAngleFromPoints(point.toOffset(), end2.toOffset()) + pi;
+  final end1IsLeft = end1.x < end2.x;
+  final end1IsTop = end1.y < end2.y;
   final pointSnap = getTriangleFromLineAndTwoAngle(
     end2,
     point,
     angle1,
-    end1.x > end2.y ? (angle1 > angle2) : (angle1 < angle2),
+    switch ((end1IsLeft, end1IsTop)) {
+      (false, true) || (true, false) => angle1 > angle2,
+      _ => angle1 < angle2,
+    },
   );
 
   debugPoints.value = [
