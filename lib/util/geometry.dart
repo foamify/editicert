@@ -91,9 +91,10 @@ extension BoxExtension on Box {
       ];
 
   /// The points of the quad as Float32List
-  Float32List get pointsAsFloat32List => Float32List.fromList(
+  Float32List pointsAsFloat32List(Matrix4 transform) => Float32List.fromList(
         [quad.point0, quad.point1, quad.point2, quad.point3, quad.point0]
-            .map((point) => Float32List.fromList([point.x, point.y]))
+            .map((point) => transform.transformed3(point))
+            .map((point) => [point.x, point.y])
             .expand((element) => element)
             .toList(),
       );

@@ -166,105 +166,123 @@ class _MainPageState extends State<MainPage> {
                     // Make sure it corresponds to window border
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Watch.builder(
-                    builder: (_) {
-                      // Only rebuild if the length and ordering is different
-                      canvasElements.listen(context, () {
-                        untracked(() {
-                          final elements =
-                              canvasElements().map((e) => e.id).toList();
-                          if (!elements.equals(sidebarElements())) {
-                            sidebarElements.forceUpdate(elements);
-                          }
-                        });
-                      });
-                      final elements = sidebarElements();
-                      return ReorderableListView.builder(
-                        buildDefaultDragHandles: false,
-                        proxyDecorator: (child, index, animation) {
-                          return child;
-                        },
-                        itemCount: elements.length,
-                        itemBuilder: (_, index) {
-                          return [
-                            ...elements.map(
-                              (e) => Watch.builder(
-                                key: ValueKey(e),
-                                builder: (_) {
-                                  final selected = canvasSelectedElement() == e;
-                                  final isHovered =
-                                      canvasHoveredMultipleElements.select(
-                                            (hover) => hover().contains(e),
-                                          )() ||
-                                          canvasHoveredElement.sig.select(
-                                            (hover) => hover() == e,
-                                          )();
-                                  return MouseRegion(
-                                    onEnter: (event) =>
-                                        canvasHoveredElement.value = e,
-                                    onExit: (event) =>
-                                        canvasHoveredElement.value = null,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2),
-                                      child: GestureDetector(
-                                        onTap: () =>
-                                            canvasSelectedElement.value = e,
-                                        child: ReorderableDragStartListener(
-                                          enabled: kIsWeb ||
-                                              (!Platform.isAndroid &&
-                                                  !Platform.isIOS),
-                                          index: index,
-                                          child: DecoratedBox(
-                                            position:
-                                                DecorationPosition.foreground,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: isHovered
-                                                    ? Colors.blueAccent
-                                                    : Colors.transparent,
-                                              ),
-                                            ),
-                                            child: Card(
-                                              color: Color.alphaBlend(
-                                                Colors.blueAccent.withOpacity(
-                                                  selected ? .5 : .1,
-                                                ),
-                                                Theme.of(context).cardColor,
-                                              ),
-                                              margin: EdgeInsets.zero,
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8),
-                                                child: SizedBox(
-                                                  width: double.infinity,
-                                                  child: Text(e.split('-')[1]),
+                  child: Column(
+                    children: [
+                      Watch.builder(
+                        builder: (_) => Text(sidebarElements.length.toString()),
+                      ),
+                      Expanded(
+                        child: Watch.builder(
+                          builder: (_) {
+                            // Only rebuild if the length and ordering is different
+                            canvasElements.listen(context, () {
+                              untracked(() {
+                                final elements =
+                                    canvasElements().map((e) => e.id).toList();
+                                if (!elements.equals(sidebarElements())) {
+                                  sidebarElements.forceUpdate(elements);
+                                }
+                              });
+                            });
+                            final elements = sidebarElements();
+                            return ReorderableListView.builder(
+                              buildDefaultDragHandles: false,
+                              proxyDecorator: (child, index, animation) {
+                                return child;
+                              },
+                              itemCount: elements.length,
+                              itemBuilder: (_, index) {
+                                return [
+                                  ...elements.map(
+                                    (e) => Watch.builder(
+                                      key: ValueKey(e),
+                                      builder: (_) {
+                                        final selected =
+                                            canvasSelectedElement() == e;
+                                        final isHovered =
+                                            canvasHoveredMultipleElements
+                                                    .select(
+                                                  (hover) =>
+                                                      hover().contains(e),
+                                                )() ||
+                                                canvasHoveredElement.sig.select(
+                                                  (hover) => hover() == e,
+                                                )();
+                                        return MouseRegion(
+                                          onEnter: (event) =>
+                                              canvasHoveredElement.value = e,
+                                          onExit: (event) =>
+                                              canvasHoveredElement.value = null,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(2),
+                                            child: GestureDetector(
+                                              onTap: () => canvasSelectedElement
+                                                  .value = e,
+                                              child:
+                                                  ReorderableDragStartListener(
+                                                enabled: kIsWeb ||
+                                                    (!Platform.isAndroid &&
+                                                        !Platform.isIOS),
+                                                index: index,
+                                                child: DecoratedBox(
+                                                  position: DecorationPosition
+                                                      .foreground,
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                    border: Border.all(
+                                                      color: isHovered
+                                                          ? Colors.blueAccent
+                                                          : Colors.transparent,
+                                                    ),
+                                                  ),
+                                                  child: Card(
+                                                    color: Color.alphaBlend(
+                                                      Colors.blueAccent
+                                                          .withOpacity(
+                                                        selected ? .5 : .1,
+                                                      ),
+                                                      Theme.of(context)
+                                                          .cardColor,
+                                                    ),
+                                                    margin: EdgeInsets.zero,
+                                                    child: Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8),
+                                                      child: SizedBox(
+                                                        width: double.infinity,
+                                                        child: Text(
+                                                            e.split('-')[1]),
+                                                      ),
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        ),
-                                      ),
+                                        );
+                                      },
                                     ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ][index];
-                        },
-                        onReorder: (int oldIndex, int newIndex) {
-                          if (oldIndex == newIndex) return;
-                          if (oldIndex < newIndex) {
-                            newIndex -= 1;
-                          }
-                          final elems = canvasElements();
-                          canvasElements.value = [...elems]
-                            ..removeAt(oldIndex)
-                            ..insert(newIndex, elems[oldIndex]);
-                        },
-                      );
-                    },
+                                  ),
+                                ][index];
+                              },
+                              onReorder: (int oldIndex, int newIndex) {
+                                if (oldIndex == newIndex) return;
+                                if (oldIndex < newIndex) {
+                                  newIndex -= 1;
+                                }
+                                final elems = canvasElements();
+                                canvasElements.value = [...elems]
+                                  ..removeAt(oldIndex)
+                                  ..insert(newIndex, elems[oldIndex]);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -272,11 +290,11 @@ class _MainPageState extends State<MainPage> {
                 child: IgnorePointer(
                   child: Watch.builder(
                     builder: (_) {
-                      // final hovered = sidebarElements.select(
-                      //   (e) => e().firstWhereOrNull(
-                      //     (id) => id == canvasHoveredElement(),
-                      //   ),
-                      // )();
+                      final hovered = sidebarElements.select(
+                        (e) => e().indexed.firstWhereOrNull(
+                              (element) => element.$2 == canvasHoveredElement(),
+                            ),
+                      )();
 
                       final hoveredMultiple = sidebarElements.select(
                         (e) => e().indexed.where(
@@ -285,14 +303,22 @@ class _MainPageState extends State<MainPage> {
                             ),
                       )();
 
+                      final transform = canvasTransformCurrent()();
+
                       final points = hoveredMultiple.map(
                         (e) => canvasElements()[e.$1]
                             .transform
-                            .pointsAsFloat32List,
+                            .pointsAsFloat32List(transform),
                       );
 
                       return CustomPaint(
-                        painter: HoverPainter(points.toList()),
+                        painter: HoverPainter([
+                          ...points,
+                          if (hovered != null)
+                            canvasElements()[hovered.$1]
+                                .transform
+                                .pointsAsFloat32List(transform),
+                        ]),
                       );
                     },
                   ),
