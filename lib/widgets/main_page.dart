@@ -272,11 +272,11 @@ class _MainPageState extends State<MainPage> {
                 child: IgnorePointer(
                   child: Watch.builder(
                     builder: (_) {
-                      final hovered = sidebarElements.select(
-                        (e) => e().firstWhereOrNull(
-                          (id) => id == canvasHoveredElement(),
-                        ),
-                      )();
+                      // final hovered = sidebarElements.select(
+                      //   (e) => e().firstWhereOrNull(
+                      //     (id) => id == canvasHoveredElement(),
+                      //   ),
+                      // )();
 
                       final hoveredMultiple = sidebarElements.select(
                         (e) => e().indexed.where(

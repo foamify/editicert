@@ -13,7 +13,6 @@ import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/element/translate.dart';
 import 'package:editicert/util/extensions.dart';
 import 'package:editicert/util/geometry.dart';
-import 'package:editicert/util/utils.dart';
 import 'package:editicert/widgets/canvas_interactive_viewer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
