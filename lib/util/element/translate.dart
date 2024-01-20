@@ -80,22 +80,22 @@ void handleMoveUpdate(
       scale;
 
   element.transform = initialBox.translate(delta);
-  final lines = calculateSnapLines(element.id, element.transform);
+  // final lines = calculateSnapLines(element.id, element.transform);
 
-  if (lines.isNotEmpty) {
-    final shortestLineX = lines.where((e) => e.isSnapX).fold(
-          lines.firstOrNull!,
-          (value, e) => value.length < e.length ? value : e,
-        );
+  // if (lines.isNotEmpty) {
+  //   final shortestLineX = lines.where((e) => e.isSnapX).fold(
+  //         lines.firstOrNull!,
+  //         (value, e) => value.length < e.length ? value : e,
+  //       );
 
-    final shortestLineY = lines.where((e) => e.isSnapY).fold(
-          lines.firstOrNull!,
-          (value, e) => value.length < e.length ? value : e,
-        );
+  //   final shortestLineY = lines.where((e) => e.isSnapY).fold(
+  //         lines.firstOrNull!,
+  //         (value, e) => value.length < e.length ? value : e,
+  //       );
 
-    final snapDelta = Offset(shortestLineX.delta.x, shortestLineY.delta.y);
-    element.transform = element.transform.translate(snapDelta);
-  }
+  //   final snapDelta = Offset(shortestLineX.delta.x, shortestLineY.delta.y);
+  //   element.transform = element.transform.translate(snapDelta);
+  // }
 
   canvasElements.value = [...elements]..[index] = element;
 }

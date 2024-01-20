@@ -21,6 +21,8 @@ extension SignalStateEx<T> on SignalState<T> {
 
   /// Calls the signal.
   T call() => _signal();
+
+  Signal<T> get sig => _signal;
 }
 
 /// An extension on [SignalState]

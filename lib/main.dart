@@ -8,6 +8,7 @@ import 'package:editicert/models/element_model.dart';
 import 'package:editicert/models/snap_line.dart';
 import 'package:editicert/src/rust/frb_generated.dart';
 import 'package:editicert/state/state.dart';
+import 'package:editicert/ui/painters/hover_painter.dart';
 import 'package:editicert/util/constants.dart';
 import 'package:editicert/util/element/translate.dart';
 import 'package:editicert/util/extensions.dart';

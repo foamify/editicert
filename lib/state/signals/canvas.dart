@@ -21,10 +21,12 @@ final canvasTransformInitial = signal<Matrix4?>(null);
 final canvasTransformCurrent =
     computed(() => canvasTransformController().toSignal());
 
-final canvasLogicalKeys = signal(<LogicalKeyboardKey>{});
+final canvasLogicalKeys = setSignal(<LogicalKeyboardKey>{});
 
 /// All elements in the canvas
-final canvasElements = signal(<ElementModel>[]);
+final canvasElements = listSignal(<ElementModel>[]);
+
+final sidebarElements = listSignal(<String>[]);
 
 final _canvasHoveredElement = signal<String?>('');
 // ignore: public_member_api_docs
@@ -64,7 +66,7 @@ final canvasIsMovingSelected = signal(false);
 
 /// Debug points
 /// Used for debugging to visualize elements and operations
-final debugPoints = signal(<Vector2>[]);
+final debugPoints = listSignal(<Vector2>[]);
 
 /// Snap lines for the selected element
 final snapLines = iterableSignal(<SnapLine>[]);

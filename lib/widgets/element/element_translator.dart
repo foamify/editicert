@@ -3,10 +3,8 @@ part of '../../main.dart';
 /// A widget that translates the selected element.
 typedef ElementTranslatorBuilder = Widget Function(
   BuildContext context,
-  ElementModel element, {
-  required bool isSelected,
-  required bool isHovered,
-});
+  ElementModel element,
+);
 
 /// Translates the selected/provided element
 class ElementTranslator extends StatelessWidget {
@@ -46,10 +44,6 @@ class ElementTranslator extends StatelessWidget {
             box.rotated.offsets.elementAtOrNull(alignmentIndex)! * scale;
         final offset = Offset(translate.x, translate.y) + valueOffset;
 
-        final isSelected = canvasSelectedElement() == element.id;
-        final isHovered = canvasHoveredElement() == element.id ||
-            canvasHoveredMultipleElements.contains(element.id);
-
         return Positioned(
           left: offset.dx,
           top: offset.dy,
@@ -86,12 +80,7 @@ class ElementTranslator extends StatelessWidget {
                       canvasIsMovingSelected.value = false;
                       handleMoveEnd(element, box, elements, elementIndex);
                     },
-                    child: builder(
-                      context,
-                      element,
-                      isHovered: isHovered,
-                      isSelected: isSelected,
-                    ),
+                    child: builder(context, element),
                   ),
                 ),
               ),

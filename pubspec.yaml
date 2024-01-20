@@ -7,29 +7,31 @@ environment:
   sdk: ">=3.3.0-174.3.beta <4.0.0"
 
 dependencies:
-  custom_mouse_cursor: ^1.1.0
-  flex_color_picker: ^3.3.0
-  flutter_rust_bridge: 2.0.0-dev.14
-  rust_builder:
-    path: rust_builder
-  super_drag_and_drop: ^0.8.1
-  touch_bar: ^0.3.0-alpha.1
-
-dev_dependencies:
-  collection: ^1.17.2
-  dart_code_metrics_presets: ^2.5.0
-  equatable: ^2.0.5
-  ffigen: ^8.0.2
   flutter:
     sdk: flutter
+  collection: ^1.17.2
+  custom_mouse_cursor: ^1.1.0
+  flex_color_picker: ^3.3.0
+  flutter_rust_bridge: 2.0.0-dev.21
+  rust_builder:
+    path: rust_builder
+  signals: ^3.0.0
+  super_drag_and_drop: ^0.8.1
+  touch_bar: ^0.3.0-alpha.1
+  vector_math: ^2.1.4
+
+dev_dependencies:
+  dart_code_metrics_presets: ^2.5.0
+  equatable: ^2.0.5
+  ffigen: ^11.0.0
   flutter_test:
     sdk: flutter
+  integration_test:
+    sdk: flutter
   macos_window_utils: ^1.4.0
-  melos: ^3.4.0
-  signals: ^2.1.10
+  melos: ^4.0.0
   transparent_pointer: ^1.0.0
   uuid: ^4.3.1
-  vector_math: ^2.1.4
   very_good_analysis: ^5.1.0
   window_manager: ^0.3.7
 

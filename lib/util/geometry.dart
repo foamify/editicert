@@ -1,6 +1,7 @@
 // ignore_for_file: avoid-unsafe-collection-methods, prefer-match-file-name
 
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:editicert/util/extensions.dart';
 import 'package:equatable/equatable.dart';
@@ -88,6 +89,14 @@ extension BoxExtension on Box {
         quad.point2,
         quad.point3,
       ];
+
+  /// The points of the quad as Float32List
+  Float32List get pointsAsFloat32List => Float32List.fromList(
+        [quad.point0, quad.point1, quad.point2, quad.point3, quad.point0]
+            .map((point) => Float32List.fromList([point.x, point.y]))
+            .expand((element) => element)
+            .toList(),
+      );
 
   /// Convert offset to point
   Vector3 offsetToPoint(Offset offset) => Vector3(offset.dx, offset.dy, 0);
