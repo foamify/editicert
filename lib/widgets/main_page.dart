@@ -55,7 +55,7 @@ class _MainPageState extends State<MainPage> {
                   color: Colors.transparent,
                   child: Watch.builder(
                     builder: (_) {
-                      final elements = canvasElements();
+                      final elements = idElements();
                       return Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -125,28 +125,35 @@ class _MainPageState extends State<MainPage> {
                         ),
                         const SizedBox.square(dimension: 12),
                         FilledButton(
-                          onPressed: () {
-                            canvasElements.value = [];
-                          },
+                          onPressed: canvasElements.clear,
                           child: const Text('Clear Box'),
                         ),
                         const SizedBox.square(dimension: 12),
                         Watch.builder(
                           builder: (_) {
-                            final selected = canvasSelectedElement();
-                            final elements = canvasElements();
-                            final element = elements.firstWhereOrNull(
-                              (e) => e.id == selected,
+                            final selectedId =
+                                idElements.indexed.firstWhereOrNull(
+                              (e) => e.$2 == canvasSelectedElement(),
                             );
-                            if (element == null) return const SizedBox.shrink();
+                            if (selectedId == null) {
+                              return const SizedBox.shrink();
+                            }
+                            final selectedElement = canvasElements.select(
+                              (e) => e().firstWhereOrNull(
+                                (element) => element.id == selectedId.$2,
+                              ),
+                            )();
+                            if (selectedElement == null) {
+                              return const SizedBox.shrink();
+                            }
                             return Text(
                               [
-                                'id: ${element.id}',
-                                'offset: ${element.transform.rect.topLeft}',
-                                'center: ${element.transform.rect.center}',
-                                'rect: ${element.transform.rect}',
-                                'flipX: ${element.transform.flipX}',
-                                'flipY: ${element.transform.flipY}',
+                                'id: ${selectedElement.id}',
+                                'offset: ${selectedElement.transform.rect.topLeft}',
+                                'center: ${selectedElement.transform.rect.center}',
+                                'rect: ${selectedElement.transform.rect}',
+                                'flipX: ${selectedElement.transform.flipX}',
+                                'flipY: ${selectedElement.transform.flipY}',
                               ].join('\n'),
                             );
                           },
@@ -169,7 +176,7 @@ class _MainPageState extends State<MainPage> {
                   child: Column(
                     children: [
                       Watch.builder(
-                        builder: (_) => Text(sidebarElements.length.toString()),
+                        builder: (_) => Text(idElements.length.toString()),
                       ),
                       Expanded(
                         child: Watch.builder(
@@ -179,12 +186,12 @@ class _MainPageState extends State<MainPage> {
                               untracked(() {
                                 final elements =
                                     canvasElements().map((e) => e.id).toList();
-                                if (!elements.equals(sidebarElements())) {
-                                  sidebarElements.forceUpdate(elements);
+                                if (!elements.equals(idElements())) {
+                                  idElements.forceUpdate(elements);
                                 }
                               });
                             });
-                            final elements = sidebarElements();
+                            final elements = idElements();
                             return ReorderableListView.builder(
                               buildDefaultDragHandles: false,
                               proxyDecorator: (child, index, animation) {
@@ -230,7 +237,8 @@ class _MainPageState extends State<MainPage> {
                                                   decoration: BoxDecoration(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            12),
+                                                      12,
+                                                    ),
                                                     border: Border.all(
                                                       color: isHovered
                                                           ? Colors.blueAccent
@@ -250,11 +258,13 @@ class _MainPageState extends State<MainPage> {
                                                     child: Padding(
                                                       padding:
                                                           const EdgeInsets.all(
-                                                              8),
+                                                        8,
+                                                      ),
                                                       child: SizedBox(
                                                         width: double.infinity,
                                                         child: Text(
-                                                            e.split('-')[1]),
+                                                          e.split('-')[1],
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
@@ -290,13 +300,13 @@ class _MainPageState extends State<MainPage> {
                 child: IgnorePointer(
                   child: Watch.builder(
                     builder: (_) {
-                      final hovered = sidebarElements.select(
+                      final hovered = idElements.select(
                         (e) => e().indexed.firstWhereOrNull(
                               (element) => element.$2 == canvasHoveredElement(),
                             ),
                       )();
 
-                      final hoveredMultiple = sidebarElements.select(
+                      final hoveredMultiple = idElements.select(
                         (e) => e().indexed.where(
                               (element) => canvasHoveredMultipleElements
                                   .contains(element.$2),

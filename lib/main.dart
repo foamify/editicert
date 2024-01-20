@@ -104,6 +104,8 @@ class Main extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    effect(() {});
+
     // final isSelectedEmpty =
     //     context.select((SelectedCubit selected) => selected.state.isEmpty);
 

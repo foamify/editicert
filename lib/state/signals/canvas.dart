@@ -26,7 +26,7 @@ final canvasLogicalKeys = setSignal(<LogicalKeyboardKey>{});
 /// All elements in the canvas
 final canvasElements = listSignal(<ElementModel>[]);
 
-final sidebarElements = listSignal(<String>[]);
+final idElements = listSignal(<String>[]);
 
 final _canvasHoveredElement = signal<String?>('');
 // ignore: public_member_api_docs
