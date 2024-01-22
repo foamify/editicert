@@ -1,0 +1,11 @@
+name: editicert
+
+packages:
+  - /
+
+scripts:
+  dcm:analyze:
+    exec: dcm a lib
+  gen:
+    exec: flutter_rust_bridge_codegen generate
+  

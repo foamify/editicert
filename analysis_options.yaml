@@ -3,6 +3,14 @@ include: package:very_good_analysis/analysis_options.yaml
 linter:
   rules:
 
+analyzer:
+  exclude:
+    - test/**
+    - lib/generated/**
+    - lib/src/**
+    - lib/widgets/canvas_interactive_viewer.dart
+    - rust_builder/**
+
 dart_code_metrics:
   extends:
     - package:dart_code_metrics_presets/recommended.yaml
@@ -10,3 +18,6 @@ dart_code_metrics:
   rules-exclude:
     - test/**
     - lib/generated/**
+    - lib/src/**
+    - lib/widgets/canvas_interactive_viewer.dart
+    - rust_builder/**
