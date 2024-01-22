@@ -22,24 +22,27 @@ class ElementTranslator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Watch.builder(
       builder: (_) {
-        final elements = canvasElements();
-        final selected = canvasSelectedElement();
-        final element = index == null
-            ? elements.firstWhereOrNull((e) => e.id == selected)
-            : elements.elementAtOrNull(index!);
-        if (element == null) return const SizedBox.shrink();
-        final elementIndex = index ?? elements.indexOf(element);
-
-        final transform = canvasTransformCurrent()();
-        final scale = transform.getMaxScaleOnAxis();
-        final translate = transform.getTranslation();
+        final ValueSignal<ElementModel>? elem;
+        if (index != null) {
+          elem = canvasElements.peek().elementAtOrNull(index!);
+        } else {
+          elem = canvasElements.peek().firstWhereOrNull(
+                (element) => element().id == canvasSelectedElement(),
+              );
+        }
+        if (elem == null) return const SizedBox.shrink();
+        final element = elem();
         final box = element.transform;
+
         final alignmentIndex = switch ((box.flipX, box.flipY)) {
           (false, false) => 0,
           (true, false) => 1,
           (false, true) => 3,
           _ => 2,
         };
+        final transform = canvasTransformCurrent.peek().peek();
+        final scale = transform.getMaxScaleOnAxis();
+        final translate = transform.getTranslation();
         final valueOffset =
             box.rotated.offsets.elementAtOrNull(alignmentIndex)! * scale;
         final offset = Offset(translate.x, translate.y) + valueOffset;
@@ -69,16 +72,11 @@ class ElementTranslator extends StatelessWidget {
                       handleMoveStart(element, details);
                     },
                     onPanUpdate: (details) {
-                      handleMoveUpdate(
-                        element,
-                        details,
-                        elements,
-                        elementIndex,
-                      );
+                      handleMoveUpdate(elem!, details);
                     },
                     onPanEnd: (details) {
                       canvasIsMovingSelected.value = false;
-                      handleMoveEnd(element, box, elements, elementIndex);
+                      handleMoveEnd(elem!, box);
                     },
                     child: builder(context, element),
                   ),

@@ -16,11 +16,12 @@ class ElementRotator extends StatelessWidget {
         if (isMoving) return const SizedBox.shrink();
         final elements = canvasElements();
         final selected = canvasSelectedElement();
-        final elementIndexed = elements.indexed.firstWhereOrNull(
-          (element) => element.$2.id == selected,
+        final elementIndexed = elements.firstWhereOrNull(
+          (element) => element().id == selected,
         );
         if (elementIndexed == null) return const SizedBox.shrink();
-        final (index, element) = elementIndexed;
+        final (elem) = elementIndexed;
+        final element = elem();
         final box = element.transform;
         //--
         final canvasTransform = canvasTransformCurrent()();
@@ -52,7 +53,7 @@ class ElementRotator extends StatelessWidget {
                         transform.toScene(event.globalPosition),
                         alignment,
                       );
-                      canvasElements.value = [...elements]..[index] = element;
+                      elem.forceUpdate(element);
                     },
                     child: Container(
                       width: 20,

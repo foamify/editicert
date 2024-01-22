@@ -16,11 +16,12 @@ class ElementEdgeResizer extends StatelessWidget {
         if (isMoving) return const SizedBox.shrink();
         final elements = canvasElements();
         final selected = canvasSelectedElement();
-        final elementIndexed = elements.indexed.firstWhereOrNull(
-          (element) => element.$2.id == selected,
+        final elementIndexed = elements.firstWhereOrNull(
+          (element) => element().id == selected,
         );
         if (elementIndexed == null) return const SizedBox.shrink();
-        final (index, element) = elementIndexed;
+        final (elem) = elementIndexed;
+        final element = elem();
         final box = element.transform;
         //--
         final canvasTransform = canvasTransformCurrent()();
@@ -62,7 +63,7 @@ class ElementEdgeResizer extends StatelessWidget {
                     behavior: HitTestBehavior.opaque,
                     onPanStart: (details) {
                       element.initialTransform = element.transform;
-                      canvasElements.value = [...elements]..[index] = element;
+                      elem.forceUpdate(element);
                       pointerPositionInitial.value =
                           transform.toScene(details.localPosition).toVector2();
                     },
@@ -114,7 +115,7 @@ class ElementEdgeResizer extends StatelessWidget {
                           alignment,
                         );
                       }
-                      canvasElements.value = [...elements]..[index] = element;
+                      elem.forceUpdate(element);
                     },
                     onPanEnd: (details) {
                       element.transform = Box(
@@ -125,7 +126,7 @@ class ElementEdgeResizer extends StatelessWidget {
                         -element.transform.rotated.rect.center +
                             box.rotated.rect.center,
                       );
-                      canvasElements.value = [...elements]..[index] = element;
+                      elem.forceUpdate(element);
                     },
                     child: Container(
                       width: switch (i) {

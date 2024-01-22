@@ -21,10 +21,16 @@ final canvasTransformInitial = signal<Matrix4?>(null);
 final canvasTransformCurrent =
     computed(() => canvasTransformController().toSignal());
 
+final canvasScale =
+    computed(() => canvasTransformCurrent()().getMaxScaleOnAxis());
+
+final canvasTranslate =
+    computed(() => canvasTransformCurrent()().getTranslation());
+
 final canvasLogicalKeys = setSignal(<LogicalKeyboardKey>{});
 
 /// All elements in the canvas
-final canvasElements = listSignal(<ElementModel>[]);
+final canvasElements = listSignal(<ValueSignal<ElementModel>>[]);
 
 final idElements = listSignal(<String>[]);
 
@@ -70,3 +76,35 @@ final debugPoints = listSignal(<Vector2>[]);
 
 /// Snap lines for the selected element
 final snapLines = iterableSignal(<SnapLine>[]);
+
+final hoveredPoints = computed(() {
+  final hovered = idElements.select(
+    (e) => e().indexed.firstWhereOrNull(
+          (element) => element.$2 == canvasHoveredElement(),
+        ),
+  )();
+
+  final hoveredMultiple = idElements.select(
+    (e) => e().indexed.where(
+          (element) => canvasHoveredMultipleElements.contains(element.$2),
+        ),
+  )();
+
+  final transform = canvasTransformCurrent.peek().peek();
+
+  return [
+    ...hoveredMultiple.map(
+      (e) => canvasElements
+          .peek()[e.$1]
+          .peek()
+          .transform
+          .pointsAsFloat32List(transform),
+    ),
+    if (hovered != null)
+      canvasElements
+          .peek()[hovered.$1]
+          .peek()
+          .transform
+          .pointsAsFloat32List(transform),
+  ];
+});

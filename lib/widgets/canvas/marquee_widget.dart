@@ -25,12 +25,12 @@ class MarqueeWidget extends StatelessWidget {
           onPanUpdate: (details) {
             pointerPositionCurrent.value = details.globalPosition.toVector2();
 
-            final initialPoint = pointerPositionInitial();
-            final currentPoint = pointerPositionCurrent();
+            final initialPoint = pointerPositionInitial.peek();
+            final currentPoint = pointerPositionCurrent.peek();
 
-            final initialTransform = canvasTransformInitial();
+            final initialTransform = canvasTransformInitial.peek();
             if (initialTransform == null) return;
-            final transform = canvasTransformCurrent()();
+            final transform = canvasTransformCurrent.peek().peek();
 
             final delta = initialTransform.fromScene(Offset.zero) -
                 transform.fromScene(Offset.zero);
@@ -51,8 +51,8 @@ class MarqueeWidget extends StatelessWidget {
             batch(() {
               canvasTransformInitial.value = null;
               isMarquee.value = false;
+              debugPoints.value = [];
             });
-            debugPoints.value = [];
           },
         );
       },

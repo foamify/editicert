@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:collection/collection.dart';
 import 'package:editicert/models/element_model.dart';
 import 'package:editicert/models/snap_line.dart';
+import 'package:editicert/src/rust/api/canvas.dart';
 import 'package:editicert/src/rust/frb_generated.dart';
 import 'package:editicert/state/state.dart';
 import 'package:editicert/ui/painters/hover_painter.dart';
@@ -20,6 +21,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:macos_window_utils/macos/ns_window_delegate.dart';
 import 'package:macos_window_utils/macos_window_utils.dart';
+import 'package:signals/signals.dart';
 import 'package:signals/signals_flutter.dart';
 import 'package:transparent_pointer/transparent_pointer.dart';
 import 'package:window_manager/window_manager.dart';
@@ -42,6 +44,8 @@ part 'widgets/element/element_translator.dart';
 part 'widgets/element/element_rotator.dart';
 part 'widgets/element/element_side_resizer.dart';
 part 'widgets/element/element_edge_resizer.dart';
+part 'widgets/ui/left_sidebar.dart';
+part 'widgets/ui/right_sidebar.dart';
 
 void main() async {
   await RustLib.init();
@@ -104,8 +108,6 @@ class Main extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    effect(() {});
-
     // final isSelectedEmpty =
     //     context.select((SelectedCubit selected) => selected.state.isEmpty);
 

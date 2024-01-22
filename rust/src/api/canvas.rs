@@ -1,4 +1,5 @@
 use nalgebra::{Matrix4, Point3};
+use rayon::prelude::*;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CanvasPoint {
@@ -120,40 +121,37 @@ pub fn get_intersecting_ids(
     polygons: Vec<Polygon>,
     matrix_storage: Vec<f64>,
 ) -> Vec<String> {
-    let mut intersecting_ids = vec![];
-
     let matrix = Matrix4::from_vec(matrix_storage);
 
-    for polygon in polygons {
-        let mut is_break = false;
-        for line in &polygon.lines {
-            if rect.contains_point(matrix.from_scene(line.p1))
-            {
-                intersecting_ids.push(polygon.id.clone());
-                is_break = true;
-            }
-            if is_break {
-                break;
-            }
-            for rect_line in rect
-                .lines()
-                .iter()
-                .map(|l| Line {
-                    p1: matrix.to_scene(l.p1),
-                    p2: matrix.to_scene(l.p2),
-                })
-                .collect::<Vec<Line>>()
-            {
+    polygons.par_iter()
+        .filter_map(|polygon| {
+            let mut is_break = false;
+            for line in &polygon.lines {
+                if rect.contains_point(matrix.from_scene(line.p1)) {
+                    return Some(polygon.id.clone());
+                }
                 if is_break {
                     break;
                 }
-                if is_two_lines_intersecting(*line, rect_line) {
-                    intersecting_ids.push(polygon.id.clone());
-                    is_break = true;
+                for rect_line in rect
+                    .lines()
+                    .iter()
+                    .map(|l| Line {
+                        p1: matrix.to_scene(l.p1),
+                        p2: matrix.to_scene(l.p2),
+                    })
+                    .collect::<Vec<Line>>()
+                {
+                    if is_break {
+                        break;
+                    }
+                    if is_two_lines_intersecting(*line, rect_line) {
+                        return Some(polygon.id.clone());
+                    }
                 }
             }
-        }
-    }
-
-    intersecting_ids
+            None
+        })
+        .collect()
 }
+

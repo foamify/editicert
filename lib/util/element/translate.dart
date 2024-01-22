@@ -7,6 +7,7 @@ import 'package:editicert/util/geometry.dart';
 import 'package:editicert/util/utils.dart';
 import 'package:flutter/gestures.dart';
 import 'package:collection/collection.dart';
+import 'package:signals/signals_flutter.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 /// Start moving the element.
@@ -32,8 +33,8 @@ Iterable<SnapLine> calculateSnapLines(String id, Box transform) {
   };
 
   final expand =
-      canvasElements().where((element) => element.id != id).expand((e) {
-    final originalPoints = e.transform.rotated;
+      canvasElements().where((element) => element().id != id).expand((e) {
+    final originalPoints = e.peek().transform.rotated;
     final points = {
       originalPoints.quad.point0.xy,
       originalPoints.quad.point1.xy,
@@ -68,18 +69,17 @@ Iterable<SnapLine> calculateSnapLines(String id, Box transform) {
 
 /// Update the element position and handles snapping.
 void handleMoveUpdate(
-  ElementModel element,
+  ValueSignal<ElementModel> element,
   DragUpdateDetails details,
-  List<ElementModel> elements,
-  int index,
 ) {
-  final initialBox = element.initialTransform!.clone();
+  final newElement = element();
+  final initialBox = newElement.initialTransform!.clone();
   final scale = canvasTransformCurrent()().getMaxScaleOnAxis();
   final delta = (details.globalPosition.toVector2() - pointerPositionInitial())
           .toOffset() /
       scale;
 
-  element.transform = initialBox.translate(delta);
+  newElement.transform = initialBox.translate(delta);
   // final lines = calculateSnapLines(element.id, element.transform);
 
   // if (lines.isNotEmpty) {
@@ -97,22 +97,18 @@ void handleMoveUpdate(
   //   element.transform = element.transform.translate(snapDelta);
   // }
 
-  canvasElements.value = [...elements]..[index] = element;
+  element.forceUpdate(newElement);
 }
 
 /// End moving the element.
-void handleMoveEnd(
-  ElementModel element,
-  Box box,
-  List<ElementModel> elements,
-  int index,
-) {
-  element.transform = Box(
+void handleMoveEnd(ValueSignal<ElementModel> element, Box box) {
+  final newElement = element();
+  newElement.transform = Box(
     quad: box.quad,
     angle: box.angle,
     origin: box.rect.center,
   ).translate(
-    -element.transform.rotated.rect.center + box.rotated.rect.center,
+    -newElement.transform.rotated.rect.center + box.rotated.rect.center,
   );
-  canvasElements.value = [...elements]..[index] = element;
+  element.forceUpdate(newElement);
 }
